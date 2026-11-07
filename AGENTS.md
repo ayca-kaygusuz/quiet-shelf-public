@@ -21,3 +21,11 @@ built locally instead of committed.
 Keep `archive/browser-connector/` and its tests preserved but inactive. Do not
 reactivate, package or run the archived connector or its disabled tests unless
 explicitly requested. Run the active checks with `npm test`.
+
+## Interface
+
+Preserve the approved rounded, flat design in both Dark Ink and Sage / Beige.
+Use solid color tokens, without gradients, bevels or shadows. Themes share the
+same functions and charts. Keep appearance/chart-scope preferences separate
+from book records; they are browser-local until device syncing is implemented.
+Never replace actual library counts or chart values with illustrative data.

@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.11.**
+A personal reading tracker for books, manga and comics. **Current version: 0.9.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -51,7 +51,8 @@ holds titles you no longer own, including books you gave away or borrowed.
 Use **Bought it — move to library** in a wishlist title’s Overview after buying
 it, or use **Keep this title in** to move it between any of the three collections.
 Moving a title preserves its reading status and all completion dates.
-Each view has its own list, search, status filters and dashboard counts.
+Each view has its own list, search, status filters and filter counts.
+The Library insights charts have a separate scope, described below.
 Archived titles are excluded from the main library's counts.
 
 When adding a title, choose its destination under **Keep this title in**.
@@ -60,6 +61,31 @@ to My library. New entries still default to Unread.
 Existing titles have the same control in **Overview**. Moving a title between
 collections works in both directions and preserves its status and all
 completion dates. Existing records from earlier versions remain in My library.
+
+## Interface, themes and insights
+
+The interface uses rounded panels, compact book rows, flat solid colors and
+bundled Manrope type. **Dark Ink** is the default charcoal/violet theme;
+**Sage / Beige** provides a lighter alternative with the same layout and charts.
+Use the Theme selector in the header to switch. The font is embedded so loading
+it does not contact a font service. Its license is in `assets/Manrope-OFL.txt`.
+
+**Library insights** shows a reading-status ring with real title counts and a
+bar chart of completed readings over the last six calendar months. Each
+completion counts, including rereads; the graph does not count only titles
+currently marked Done. Months without completions show zero, and an empty
+period has an explicit empty state. The chart uses the dates you recorded.
+
+The default chart scope is **My library only**. Independent **Include archive**
+and **Include wishlist** switches add those collections. Browsing a different
+collection, searching, or filtering the list does not change the chart scope.
+The status pills above the list filter the current collection; collection tabs
+show each collection's total count. Series retain their separate grouped rows.
+
+Theme and chart-scope preferences are remembered separately in this browser,
+using a versioned preferences object. They are not part of library backups and
+do not yet sync between devices. The details panel stays visible while scrolling
+on desktop, and the interface stacks on narrow screens.
 
 ## Series and sorting
 
@@ -209,8 +235,8 @@ Closing or updating the server does not erase browser records; clearing the
 browser's storage does.
 
 **Back up** exports all three collections, saved series settings, and all
-completion dates to JSON. Open/closed group preferences and sorting are local
-interface preferences and are not included in this backup.
+completion dates to JSON. Themes, chart scope, open/closed group preferences
+and sorting are local interface preferences and are not included in this backup.
 **Restore** imports that file and replaces the current records after
 confirmation. Back up the target library before restoring if you need to keep
 it. Backups from before the reading archive was added remain compatible.

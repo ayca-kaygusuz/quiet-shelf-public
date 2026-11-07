@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 mkdirSync('work',{recursive:true});
 execFileSync(process.platform==='win32'?'python':'python3',['-c',`import zipfile
-files=['src/index.html','src/catalog.mjs','pc/server.mjs','pc/start-windows.bat','pc/start-mac.command','pc/README.txt']
+files=['src/index.html','src/catalog.mjs','pc/server.mjs','pc/start-windows.bat','pc/start-mac.command','pc/README.txt','assets/Manrope-OFL.txt']
 with zipfile.ZipFile('work/quiet-shelf-pc.zip','w',zipfile.ZIP_DEFLATED) as z:
  for name in files:z.write(name,'quiet-shelf/'+name)
 with zipfile.ZipFile('work/quiet-shelf-update.zip','w',zipfile.ZIP_DEFLATED) as z:

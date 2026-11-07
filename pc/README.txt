@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.8.11
+QUIET SHELF — PC VERSION 0.9.0
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -9,6 +9,16 @@ macOS/Linux: run node pc/server.mjs from the extracted project folder.
 
 Open http://127.0.0.1:8765 and keep the terminal window open while using it.
 Press Ctrl+C to stop. After updating files, restart and refresh the browser.
+
+THEMES AND LIBRARY INSIGHTS
+Theme in the header switches between Dark Ink and Sage / Beige, with flat
+colors, rounded panels and bundled Manrope type (no online font request).
+The theme and chart scope are remembered in this browser, separately from backups.
+The status ring uses real title counts. Finished readings shows the last six
+calendar months and includes every recorded completion, including rereads.
+Include archive and Include wishlist independently add those collections to
+stats. The charts default to My library only, regardless of the collection
+currently open. The list's status pills filter the collection you are browsing.
 
 COLLECTIONS AND READING HISTORY
 My library holds titles currently yours. Wishlist saves books to buy; use
