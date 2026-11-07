@@ -199,7 +199,12 @@ interface preferences and are not included in this backup.
 confirmation. Back up the target library before restoring if you need to keep
 it. Backups from before the reading archive was added remain compatible.
 
-Git contains the application and its history, not your personal library.
+Git contains application source, synthetic test records, and public catalog
+metadata fixtures. Your library records and completion dates stay in browser
+storage unless you export them. Never commit personal backups, API keys or
+account/session information. Local `private/`, `data/`, `backups/`, and `exports/`
+folders, environment files, database files and common key formats are ignored;
+ignore rules do not remove anything already present in Git history.
 Phone/computer syncing and Kitapyurdu account-list import/sync are not
 implemented.
 
@@ -257,7 +262,10 @@ The build uses `python` on Windows and `python3` elsewhere. It writes:
 - `work/quiet-shelf-update.zip`: updated application files for an existing copy.
 - `dist/server/index.js`: generated hosted Worker with embedded download packages.
 
-`work/` and the portable runtime are ignored by Git. `src/` is the authoritative
-application source. `.openai/hosting.json` identifies the existing private
-Sites publication; it contains hosting configuration rather than credentials.
+`src/` is the authoritative application source. Generated `dist/` and `work/`
+files and the portable runtime are ignored by Git. Build outputs may embed
+source files and ZIP downloads; regenerate them locally instead of committing
+them. Building and running the PC app do not require hosting configuration.
+
+Deployment identity in `.openai/hosting.json` is local and ignored by Git.
 Publishing is separate from building and is not performed by `npm run build`.

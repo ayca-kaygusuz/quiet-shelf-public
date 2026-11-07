@@ -9,3 +9,24 @@ quiet-shelf-*.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Private deployment identity and generated distribution bundles
+/.openai/hosting.json
+/dist/
+
+# Local personal data, exports, databases and authentication material
+/private/
+/data/
+/backups/
+/exports/
+credentials*.json
+service-account*.json
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.db
+*.db-*
+*.pem
+*.key
+*.p12
+*.pfx

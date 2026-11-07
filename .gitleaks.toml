@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public browser-storage namespace, not an authentication credential"
+regexTarget = "secret"
+regexes = ['''^quiet-shelf-v1$''']

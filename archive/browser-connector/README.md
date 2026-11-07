@@ -3,8 +3,8 @@
 Preserved at the user's request. This directory is repository-only: it is not
 imported, served, packaged into downloads, or included in active test runs.
 
-`snapshot/` preserves the connector architecture from commit
-`d30bd5d30b52ead24fe1f58c9eaff2ad59fa211f`: extension sources and manifests,
+`snapshot/` preserves the last connector implementation before it was archived:
+extension sources and manifests,
 Chrome/Firefox packages, bridge UI, local download routes, and packaging code.
 The two connector tests are preserved byte-for-byte as `.cjs.disabled` files,
 outside the active test directory. They must remain inactive until requested.
