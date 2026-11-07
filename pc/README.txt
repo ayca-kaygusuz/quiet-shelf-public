@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.8.0
+QUIET SHELF — PC VERSION 0.8.1
 
 START
 Use Node.js 22 or newer (24 LTS recommended).

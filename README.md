@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.1.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -62,7 +62,8 @@ completion dates. Existing records from earlier versions remain in My library.
 Numbered titles such as **ReLIFE Cilt 1** and **ReLIFE Cilt 2** are grouped
 automatically once matching, distinct volumes are recorded. Detection supports
 Cilt, Vol./Volume, Tome, # numbers, Japanese volume markers, and trailing volume
-numbers. Standalone years and titles made entirely of digits are not treated
+numbers. Titles such as **Chainsaw Man 1. Cilt / Testere Adam** are detected
+even when the volume marker is followed by a translated subtitle. Standalone years and titles made entirely of digits are not treated
 as numbered series. Entries with different known languages remain separate.
 
 Click the arrow beside a series to expand or collapse it. Volumes are ordered
