@@ -208,6 +208,14 @@ ignore rules do not remove anything already present in Git history.
 Phone/computer syncing and Kitapyurdu account-list import/sync are not
 implemented.
 
+## Keeping the development mirrors synchronized
+
+In the maintainer's development checkout, `github` names the private GitHub
+remote and `public` names the public GitHub remote. Push each source update to
+both, using the same commit, and verify that their branch heads match. Private
+configuration and personal data stay outside both repositories. `AGENTS.md`
+records this workflow for future coding sessions.
+
 ## Development and active checks
 
 ```sh
