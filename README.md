@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.3.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.4.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -69,7 +69,8 @@ as numbered series. Entries with different known languages remain separate.
 Series and standalone titles appear in separate sections. Series use distinct
 headers and indented volume rows so their boundaries stay clear. Series groups
 start expanded by default. Click the arrow beside a series to
-collapse or reopen it. Volumes are ordered
+collapse or reopen it. Use **Collapse all series / Expand all series** beside
+the title count to toggle all groups in the current filtered collection. Volumes are ordered
 numerically (1, 2, 10), and each retains its own status, collection and history.
 A series can span collections, while each view only shows its own titles.
 Search expands matching groups so individual results remain visible.
