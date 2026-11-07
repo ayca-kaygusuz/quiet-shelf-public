@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.5.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.6.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -38,6 +38,10 @@ npm start
 If using portable Node.js on Windows, restart with `pc/start-windows.bat`
 instead of `npm start`. Refresh the browser after restarting; use Ctrl+Shift+R
 if it still shows the old version. The current version appears in the footer.
+
+On desktop, the title-details sidebar stays visible while you scroll the list.
+Long details scroll inside the panel; selecting a different title returns its
+details to the top. Narrow screens use the normal single-column layout.
 
 ## Library, reading archive and wishlist
 
