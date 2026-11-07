@@ -22,4 +22,4 @@ Firefox temporary add-ons must be loaded again after Firefox restarts.
 Use the same browser for the connector and Quiet Shelf.
 No login to Quiet Shelf, paid service, or API key is needed for the connector.
 Permissions are restricted to the local app and these named stores:
-D&R, Idefix, and Amazon TR/US/UK/DE/JP.
+D&R, Idefix, Amazon TR/US/UK/DE/JP, Google Books and AniList.

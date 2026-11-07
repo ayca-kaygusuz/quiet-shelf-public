@@ -1,7 +1,7 @@
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-const hosts=['http://127.0.0.1:8765/*','https://www.dr.com.tr/*','https://www.idefix.com/*','https://www.amazon.com.tr/*','https://www.amazon.com/*','https://www.amazon.co.uk/*','https://www.amazon.de/*','https://www.amazon.co.jp/*'];
-const manifest={manifest_version:3,name:'Quiet Shelf Bookstore Connector',version:'0.6.0',description:'Returns bookstore search results to your local Quiet Shelf.',permissions:['scripting'],host_permissions:hosts,content_scripts:[{matches:['http://127.0.0.1:8765/*'],js:['content.js'],run_at:'document_idle'}]};
+const hosts=['http://127.0.0.1:8765/*','https://books.google.com/*','https://anilist.co/*','https://www.dr.com.tr/*','https://www.idefix.com/*','https://www.amazon.com.tr/*','https://www.amazon.com/*','https://www.amazon.co.uk/*','https://www.amazon.de/*','https://www.amazon.co.jp/*'];
+const manifest={manifest_version:3,name:'Quiet Shelf Bookstore Connector',version:'0.6.1',description:'Returns bookstore search results to your local Quiet Shelf.',permissions:['scripting'],host_permissions:hosts,content_scripts:[{matches:['http://127.0.0.1:8765/*'],js:['content.js'],run_at:'document_idle'}]};
 for(const browser of ['chrome','firefox']){const m={...manifest,background:browser==='chrome'?{service_worker:'background.js'}:{scripts:['background.js']},...(browser==='firefox'?{browser_specific_settings:{gecko:{id:'quiet-shelf-local@example.invalid',strict_min_version:'140.0',data_collection_permissions:{required:['none']}}}}:{})};writeFileSync('connector/manifest-'+browser+'.json',JSON.stringify(m,null,2))}
 execFileSync('python3',['-c',`import zipfile
 for browser in ['chrome','firefox']:
