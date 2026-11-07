@@ -1,6 +1,6 @@
 {
   "name": "quiet-shelf",
-  "version": "0.8.6",
+  "version": "0.8.8",
   "private": true,
   "description": "A personal book, manga and comic reading library",
   "engines": { "node": ">=22" },

@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.6.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.8.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -68,16 +68,22 @@ automatically once matching, distinct volumes are recorded. Detection supports
 Cilt, Vol./Volume, Tome, # numbers, Japanese volume markers, and trailing volume
 numbers. Titles such as **Chainsaw Man 1. Cilt / Testere Adam** are detected
 even when the volume marker is followed by a translated subtitle. Standalone years and titles made entirely of digits are not treated
-as numbered series. Entries with different known languages remain separate.
+as numbered series. Automatically detected series with different known languages remain separate.
+Custom series share a stable identity regardless of an entry’s language metadata.
+Previously split custom groups with the same normalized name are combined
+automatically when loading records or restoring a backup, preserving every
+entry and completion date.
 
 Series and standalone titles appear in separate sections. Series use distinct
 headers and indented volume rows so their boundaries stay clear. Series groups
-start expanded by default. Click the arrow beside a series to
-collapse or reopen it. Use **Collapse all series / Expand all series** beside
+remember their last open/closed state in this browser, including changes made
+with the bulk toggle. New groups, or groups without usable saved preferences,
+start expanded. Click the arrow beside a series to collapse or reopen it. Use **Collapse all series / Expand all series** beside
 the title count to toggle all groups in the current filtered collection. Volumes are ordered
 numerically (1, 2, 10), and each retains its own status, collection and history.
 A series can span collections, while each view only shows its own titles.
-Search expands matching groups so individual results remain visible.
+Search respects the saved open/closed state; matching counts remain visible
+in collapsed group headers.
 
 Optional series-name and volume fields are available when adding titles. In
 Overview, **Series grouping** lets you keep automatic detection, set a custom
@@ -104,7 +110,10 @@ is required for manual entry; author and description are optional.
 - **Done** records a completion date. When adding a completed title, the date
   defaults to today and can be changed to an earlier date.
 
-Marking an existing title Done adds today's date to its reading history.
+Reading actions sit beside the status selector, separate from series editing.
+**Record a finished reading…** and changing an existing title to Done both ask
+for confirmation before adding today's date to its reading history. Cancelling
+leaves the status and dates unchanged.
 **Start rereading** returns it to In progress without removing earlier dates;
 finishing again adds another date. In **Reading history**, you can edit or
 remove completion dates and add past readings. Future completion dates are
@@ -128,6 +137,21 @@ weak results, the app tries a shorter main-title query on the same source and
 with the same language filter (up to three query variants). Results are
 deduplicated, and wrong known volume numbers are excluded. Source access blocks
 and quota errors are still reported; the app does not switch databases silently.
+
+Valid ISBN-10/13 queries accept hyphens, spaces and an optional ISBN prefix.
+Exact ISBN lookup bypasses the edition-language filter and verifies matching
+identifiers rather than returning unrelated editions. Google Books and Open
+Library receive explicit ISBN queries. Kitapyurdu results without an ISBN are
+checked against up to four product pages; only verified matches are displayed.
+Catalog indexing still limits coverage: for example, Kitapyurdu's search does
+not return ISBN **9786054782369**, although its *The Valley Of Fear* page exists.
+
+Paste a product/edition link into the same search field to load that exact
+listing inside the app, then select it and save. Supported links are Kitapyurdu,
+BKM Kitap, Open Library edition pages and Google Books volume pages. The source
+selector switches to the link's catalog; normal source access restrictions still
+apply. Kitapyurdu imports also read the page's displayed language when its
+structured metadata omits it.
 
 | Source | Current behavior and observed access limits |
 | --- | --- |
@@ -162,7 +186,8 @@ Closing or updating the server does not erase browser records; clearing the
 browser's storage does.
 
 **Back up** exports all three collections, saved series settings, and all
-completion dates to JSON.
+completion dates to JSON. Open/closed group preferences and sorting are local
+interface preferences and are not included in this backup.
 **Restore** imports that file and replaces the current records after
 confirmation. Back up the target library before restoring if you need to keep
 it. Backups from before the reading archive was added remain compatible.
@@ -181,7 +206,8 @@ Or run `node scripts/check.mjs`. The runner explicitly includes the active
 checks for series detection and overrides, wishlist moves, sorting, initial statuses
 and dates, reversible collection moves, persistence,
 legacy backups, rereads, deletion, menus, source selection, language filtering,
-parser fixtures, request routing and API failures. These checks use fixtures or
+parser fixtures, exact ISBN queries, catalog-link import, completion
+confirmation, remembered group states, request routing and API failures. These checks use fixtures or
 mocks; live source access and visual browser behavior require separate checks.
 
 Main files:

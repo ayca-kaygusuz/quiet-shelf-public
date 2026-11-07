@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.8.6
+QUIET SHELF — PC VERSION 0.8.8
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -21,15 +21,21 @@ New titles default to Unread. You can also add them In progress or Done.
 Done defaults to today's completion date; earlier dates can be entered.
 Starting a reread preserves history; finishing adds another completion date.
 The Reading history tab lets you edit dates or add past readings.
+Reading actions sit beside the status selector, separate from series editing.
+Recording a finished reading or changing an existing title to Done asks for
+confirmation before recording today. Cancel keeps your status and dates intact.
 
 SERIES AND SORTING
 Numbered titles such as ReLIFE Cilt 1 and ReLIFE Cilt 2 group automatically.
-Series and standalones have separate sections. Series start expanded, with
-volumes in numerical order; click the group header to collapse. The Collapse
+Series and standalones have separate sections. Series remember their last
+open/closed state in this browser and default open without a saved preference.
+Volumes stay in numerical order; click the group header to collapse. The Collapse
 all series / Expand all series button toggles groups in the current view. Correct the series
 name/volume or mark a title standalone in its Overview. Existing-series dropdowns
 in the add form and manual series editor let you reuse names without retyping. Each volume keeps its
-own reading history and collection.
+own reading history and collection. Same-name custom series use a shared group
+identity; existing split custom groups combine automatically on load/restore,
+preserving records and reading history.
 Sort by date added, title, author, status or most recently finished. Older
 entries without added timestamps use their saved order.
 
@@ -38,6 +44,10 @@ Select Kitapyurdu, BKM Kitap, Open Library, Google Books or AniList.
 Only the selected source is searched. Language filters apply where supported.
 Full titles are normalized and ranked; weak long-title matches trigger a shorter
 main-title search on the same source. Known wrong volume numbers are excluded.
+Valid ISBN searches verify the identifier and bypass the language filter.
+A catalog may omit a book from its search index even if its page still exists.
+Paste its Kitapyurdu/BKM/Open Library/Google Books edition link into the same
+search field to import that listing directly; select the result and save.
 AniList provides manga series rather than translated print editions.
 Internet access is needed for catalog searches and covers. Services may block
 requests or enforce quotas. Google Books accepts an optional personal API key;
