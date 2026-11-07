@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.7.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -39,17 +39,47 @@ If using portable Node.js on Windows, restart with `pc/start-windows.bat`
 instead of `npm start`. Refresh the browser after restarting; use Ctrl+Shift+R
 if it still shows the old version. The current version appears in the footer.
 
-## Library and reading archive
+## Library, reading archive and wishlist
 
 **My library** is the default view for titles currently yours. **Reading archive**
 holds titles you no longer own, including books you gave away or borrowed.
+**Wishlist** holds titles you want to buy, separately from the main library.
+Use **Bought it — move to library** in a wishlist title’s Overview after buying
+it, or use **Keep this title in** to move it between any of the three collections.
+Moving a title preserves its reading status and all completion dates.
 Each view has its own list, search, status filters and dashboard counts.
 Archived titles are excluded from the main library's counts.
 
 When adding a title, choose its destination under **Keep this title in**.
+Adding while browsing the wishlist defaults to the wishlist; other views default
+to My library. New entries still default to Unread.
 Existing titles have the same control in **Overview**. Moving a title between
 collections works in both directions and preserves its status and all
 completion dates. Existing records from earlier versions remain in My library.
+
+## Series and sorting
+
+Numbered titles such as **ReLIFE Cilt 1** and **ReLIFE Cilt 2** are grouped
+automatically once matching, distinct volumes are recorded. Detection supports
+Cilt, Vol./Volume, Tome, # numbers, Japanese volume markers, and trailing volume
+numbers. Standalone years and titles made entirely of digits are not treated
+as numbered series. Entries with different known languages remain separate.
+
+Click the arrow beside a series to expand or collapse it. Volumes are ordered
+numerically (1, 2, 10), and each retains its own status, collection and history.
+A series can span collections, while each view only shows its own titles.
+Search expands matching groups so individual results remain visible.
+
+Optional series-name and volume fields are available when adding titles. In
+Overview, **Series grouping** lets you keep automatic detection, set a custom
+series, or mark a title standalone. Click **Save series** to apply corrections.
+
+The list's sort selector offers date added (oldest/newest), title (A–Z/Z–A),
+author, reading status, and most recently finished. The last choice is remembered
+across collections and reloads. Series groups follow the selected sort; volumes
+inside a group stay in numerical order. New records save an added timestamp.
+Older records without timestamps use their saved order as a fallback; historical
+added dates are not invented.
 
 ## Adding titles and recording rereads
 
@@ -110,7 +140,8 @@ profile and address each time. Local and hosted app storage is separate.
 Closing or updating the server does not erase browser records; clearing the
 browser's storage does.
 
-**Back up** exports both collections and all completion dates to JSON.
+**Back up** exports all three collections, saved series settings, and all
+completion dates to JSON.
 **Restore** imports that file and replaces the current records after
 confirmation. Back up the target library before restoring if you need to keep
 it. Backups from before the reading archive was added remain compatible.
@@ -126,7 +157,8 @@ npm test
 ```
 
 Or run `node scripts/check.mjs`. The runner explicitly includes the active
-checks for initial statuses and dates, reversible collection moves, persistence,
+checks for series detection and overrides, wishlist moves, sorting, initial statuses
+and dates, reversible collection moves, persistence,
 legacy backups, rereads, deletion, menus, source selection, language filtering,
 parser fixtures, request routing and API failures. These checks use fixtures or
 mocks; live source access and visual browser behavior require separate checks.
