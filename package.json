@@ -1,0 +1,12 @@
+{
+  "name": "quiet-shelf",
+  "version": "0.6.2",
+  "private": true,
+  "description": "A personal book, manga and comic reading library",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node pc/server.mjs",
+    "test": "node scripts/check.mjs",
+    "build": "node build.mjs"
+  }
+}

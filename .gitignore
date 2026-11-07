@@ -1,0 +1,11 @@
+# Local runtime, work files, personal exports and credentials
+/runtime/
+/work/
+node_modules/
+.env
+.env.*
+!.env.example
+quiet-shelf-*.json
+*.log
+.DS_Store
+Thumbs.db
