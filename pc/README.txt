@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.8.8
+QUIET SHELF — PC VERSION 0.8.9
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -42,8 +42,11 @@ entries without added timestamps use their saved order.
 SEARCH
 Select Kitapyurdu, BKM Kitap, Open Library, Google Books or AniList.
 Only the selected source is searched. Language filters apply where supported.
-Full titles are normalized and ranked; weak long-title matches trigger a shorter
-main-title search on the same source. Known wrong volume numbers are excluded.
+Original title wording is searched first; apostrophes such as DEHB'li stay
+within the word when normalizing. Curly and straight apostrophes match.
+Results are ranked against the original query; weak long-title matches trigger
+normalized/shorter main-title searches on the same source and language.
+Known wrong volume numbers are excluded.
 Valid ISBN searches verify the identifier and bypass the language filter.
 A catalog may omit a book from its search index even if its page still exists.
 Paste its Kitapyurdu/BKM/Open Library/Google Books edition link into the same
