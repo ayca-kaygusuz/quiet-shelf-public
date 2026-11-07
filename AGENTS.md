@@ -2,9 +2,9 @@
 
 ## Publishing source updates
 
-When the development checkout has both GitHub remotes configured, push every
-source update to both `github` (the private repository) and `public` (the public
-repository). Push the same commit to each. Verify both branch heads before
+For maintained project updates, push every source update to both `github`
+(the private repository) and `public` (the public repository). Ensure both
+remotes are configured before publishing. Push the same commit to each. Verify both branch heads before
 reporting an update complete. If either push is blocked, report which copy is
 pending and finish synchronizing it when access becomes available.
 

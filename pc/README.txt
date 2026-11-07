@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.8.10
+QUIET SHELF — PC VERSION 0.8.11
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -19,7 +19,14 @@ are preserved. The main library excludes archived titles from its list/counts.
 
 New titles default to Unread. You can also add them In progress or Done.
 Done defaults to today's completion date; earlier dates can be entered.
-Starting a reread preserves history; finishing adds another completion date.
+Entering In progress records today's start date, including when adding a title.
+Finishing preserves that start alongside the completion date. Going straight to
+Done defaults the start to the selected finish date; both move together when
+you edit the finish, until you explicitly edit the start. Adding past readings
+uses this same default. Starting a reread records a new start and preserves all
+earlier readings. History lets you edit both dates, with start no later than finish.
+Older completed entries default their start to their existing finish. Older
+In progress entries with no start stay unspecified until corrected or restarted.
 The Reading history tab lets you edit dates or add past readings.
 Reading actions sit beside the status selector, separate from series editing.
 Recording a finished reading or changing an existing title to Done asks for

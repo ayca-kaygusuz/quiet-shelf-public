@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.10.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.11.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -109,7 +109,8 @@ Use **Add title** to search a catalog or enter a title manually. Only the title
 is required for manual entry; author and description are optional.
 
 - **Unread** is the default status for each new entry.
-- **In progress** can be selected when adding or updating a title.
+- **In progress** can be selected when adding or updating a title. Entering
+  this status records today as the current reading’s start date.
 - **Done** records a completion date. When adding a completed title, the date
   defaults to today and can be changed to an earlier date.
 
@@ -120,7 +121,22 @@ leaves the status and dates unchanged.
 **Start rereading** returns it to In progress without removing earlier dates;
 finishing again adds another date. In **Reading history**, you can edit or
 remove completion dates and add past readings. Future completion dates are
-not accepted.
+not accepted. Every completed reading keeps both its start and finish date.
+If you mark a title Done without first setting it In progress, its start date
+defaults to the selected finish date. This also applies to adding past readings
+and adding titles already Done. When the start defaults to the finish, editing
+the finish date keeps them together until you explicitly edit the start.
+
+Each reread records a new start when you choose In progress or Start rereading;
+earlier readings retain their own dates. The history tab shows the current
+reading's start date and lets you edit start/finish dates. A start must be on or
+before its finish; future dates are rejected. Returning to Unread clears only
+the unfinished reading's start, preserving completed history.
+
+Older completed records without a start default to their existing finish date.
+An older In progress entry with no known start stays unspecified until you
+enter it or begin a new reading; no historical start is guessed. Both dates
+are included in backups and retained when moving between collections.
 
 Title deletion is inside the **⋮** menu and asks for confirmation. Deleting a
 title also deletes its reading history. Sample titles can be removed together
