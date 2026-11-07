@@ -1,8 +1,13 @@
 @echo off
 cd /d "%~dp0.."
+if exist "%~dp0..\runtime\node.exe" (
+  "%~dp0..\runtime\node.exe" "%~dp0server.mjs"
+  pause
+  exit /b
+)
 where node >nul 2>nul
 if errorlevel 1 (
-  echo Please install the free Node.js LTS from https://nodejs.org then try again.
+  echo Node.js was not found. Keep the portable runtime folder inside quiet-shelf.
   pause
   exit /b 1
 )
