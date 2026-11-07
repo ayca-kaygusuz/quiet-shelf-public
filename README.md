@@ -1,87 +1,177 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. It runs on your PC and
-stores your library in your browser, with JSON backup and restore.
+A personal reading tracker for books, manga and comics. **Current version: 0.7.0.**
+Run it on your PC, keep your reading history in your browser, and back it up as
+JSON. Internet access is used for catalog searches and cover images.
 
 ## Run locally
 
-Install Node.js 22 or newer (24 LTS recommended), open a terminal in this folder,
-and run:
+Use Node.js 22 or newer; Node.js 24 LTS is recommended. From the project root:
 
+```sh
+npm start
 ```
-node pc/server.mjs
+
+No npm dependencies need installing. You can also run `node pc/server.mjs`.
+On Windows, double-click `pc/start-windows.bat`, or run it in PowerShell:
+
+```powershell
+.\pc\start-windows.bat
 ```
 
-Or use `pc/start-windows.bat`. The Windows launcher also supports a portable
-`runtime/node.exe` inside this project, without a system-wide installation.
-No npm dependencies need installing. The app opens http://127.0.0.1:8765.
-Keep the terminal open while using it. Ctrl+C stops the server.
+The Windows launcher first checks for a portable `runtime/node.exe` inside this
+project, then checks for Node.js on PATH. A portable runtime is not included in
+the repository or download packages.
 
-Use the same browser and address each time. Browser data is separate between
-the local app and the hosted app. Use Back up / Restore to transfer records;
-restore replaces the target library. Clearing browser storage erases records,
-so keep backups. Git contains the application, not your personal reading data.
+Open http://127.0.0.1:8765 in your browser. Keep the terminal open while using
+the app; Ctrl+C stops the server. The server listens only on your own computer.
 
-## Features
+### Update a Git checkout
 
-- Dashboard, searchable library, and title details with reading-history tabs.
-- Separate Reading archive for titles not currently owned; excluded from the
-  default library list and counts. Titles can be moved between collections
-  without changing their completion dates. Backups include both collections.
-- Unread / In progress / Done; new titles default to Unread. You can add a title
-  in progress or done; Done starts with an editable completion date (today by default).
-- Starting a reread preserves prior completion dates. Finishing appends a date.
-- Editable completion dates, title deletion through overflow menus, sample cleanup.
-- Manual entry, source selection, edition-language filters and metadata import.
-- Browser-scoped storage, JSON export/import; device syncing is not implemented.
+Stop the running server, then run these commands from the repository folder:
 
-## Search sources and current limitations
+```sh
+git pull --ff-only
+npm start
+```
 
-Only the selected source is queried. No credentials are needed for ordinary
-catalog searches. An optional Google Books key is sent to Google through the
-server; it is not stored in the library or included in backups.
+If using portable Node.js on Windows, restart with `pc/start-windows.bat`
+instead of `npm start`. Refresh the browser after restarting; use Ctrl+Shift+R
+if it still shows the old version. The current version appears in the footer.
 
-| Source | Behavior / current limitation |
+## Library and reading archive
+
+**My library** is the default view for titles currently yours. **Reading archive**
+holds titles you no longer own, including books you gave away or borrowed.
+Each view has its own list, search, status filters and dashboard counts.
+Archived titles are excluded from the main library's counts.
+
+When adding a title, choose its destination under **Keep this title in**.
+Existing titles have the same control in **Overview**. Moving a title between
+collections works in both directions and preserves its status and all
+completion dates. Existing records from earlier versions remain in My library.
+
+## Adding titles and recording rereads
+
+Use **Add title** to search a catalog or enter a title manually. Only the title
+is required for manual entry; author and description are optional.
+
+- **Unread** is the default status for each new entry.
+- **In progress** can be selected when adding or updating a title.
+- **Done** records a completion date. When adding a completed title, the date
+  defaults to today and can be changed to an earlier date.
+
+Marking an existing title Done adds today's date to its reading history.
+**Start rereading** returns it to In progress without removing earlier dates;
+finishing again adds another date. In **Reading history**, you can edit or
+remove completion dates and add past readings. Future completion dates are
+not accepted.
+
+Title deletion is inside the **⋮** menu and asks for confirmation. Deleting a
+title also deletes its reading history. Sample titles can be removed together
+from the library's **⋮** menu.
+
+## Catalog search
+
+Choose one **Search source** at a time. The app remembers the last source and
+language selection. Where supported, **Edition language** narrows results;
+suggestions display available author, publisher, language and ISBN details.
+Select a result, review its details, then add it to either collection.
+
+| Source | Current behavior and observed access limits |
 | --- | --- |
-| Kitapyurdu | Edition search/import; rejects the current hosted server with HTTP 403. Local searches have worked. |
-| BKM Kitap | Edition search/import with language metadata; hosted requests have succeeded. |
-| Open Library | International edition search/import with language filters; coverage varies. |
-| Google Books | Volume search/import; shared unauthenticated quota has returned 429. Optional user API key supported. |
-| AniList | Manga series records, not specific translated editions; API access has failed from the cloud environment. |
+| Kitapyurdu | Edition search/import with a language filter. Local searches have worked; the hosted server has received HTTP 403 responses. |
+| BKM Kitap | Edition search/import. Language filtering uses the listing's language metadata. Hosted searches and imports have succeeded. |
+| Open Library | International edition search/import with language filtering. Coverage varies by title and language. |
+| Google Books | Volume search/import with language filtering. Shared unauthenticated requests have hit quota limits; an optional personal API key is supported. |
+| AniList | Manga series search/import, rather than a specific translated print edition. Edition-language filtering is disabled for this source. API access has failed from the cloud environment. |
 
-Third-party services can restrict access or change their responses. A deployment
-success does not prove every source works. No Kitapyurdu account-list import or
-bidirectional account sync is implemented.
+Access can change independently of the application. A successful deployment or
+fixture test does not establish that every live catalog is reachable.
+D&R, İdefix and regional Amazon searches are not active sources in this version.
 
-## Active checks
+### Google Books API key
 
-```
+In Google Cloud, create a project, enable **Books API**, and create an API key
+for **Public data**. Restrict the key to **Books API**. Quiet Shelf makes the
+request through its server, so website/referrer restrictions do not match the
+current request path.
+
+In **Add title**, select Google Books and paste the key into its API-key field,
+then enter or change your search term. The key is sent through the app server
+to Google. It is not saved in your library, source preferences, backups or Git.
+The form resets when reopened, so the key must currently be entered again for
+each Add title session. Your project's Google quota still applies.
+
+## Saving, backups and syncing
+
+Records are stored in the browser's local storage. Use the same browser,
+profile and address each time. Local and hosted app storage is separate.
+Closing or updating the server does not erase browser records; clearing the
+browser's storage does.
+
+**Back up** exports both collections and all completion dates to JSON.
+**Restore** imports that file and replaces the current records after
+confirmation. Back up the target library before restoring if you need to keep
+it. Backups from before the reading archive was added remain compatible.
+
+Git contains the application and its history, not your personal library.
+Phone/computer syncing and Kitapyurdu account-list import/sync are not
+implemented.
+
+## Development and active checks
+
+```sh
 npm test
 ```
 
-Or `node scripts/check.mjs`. These checks exercise data persistence, rereads,
-deletion, menu state, source selection, parser fixtures, routing, language
-filters and API failures. They use fixtures/mocks rather than live services;
-they do not substitute for browser testing or live source verification.
+Or run `node scripts/check.mjs`. The runner explicitly includes the active
+checks for initial statuses and dates, reversible collection moves, persistence,
+legacy backups, rereads, deletion, menus, source selection, language filtering,
+parser fixtures, request routing and API failures. These checks use fixtures or
+mocks; live source access and visual browser behavior require separate checks.
 
-## Archived connector
+Main files:
 
-`archive/browser-connector/` preserves the removed connector architecture,
-original disabled tests, and reactivation instructions/patch. It is not loaded,
-served, packaged or included in active checks. Do not reactivate it or its tests
-unless explicitly requested. See its README for details and limitations.
+| Path | Purpose |
+| --- | --- |
+| `src/index.html` | Interface, browser storage, reading history and collections |
+| `src/catalog.mjs` | Catalog adapters and API request handling |
+| `pc/server.mjs` | Local HTTP server |
+| `pc/start-windows.bat` | Windows launcher, including portable Node.js support |
+| `scripts/check.mjs` | Explicit active-test runner |
+| `tests/` | Active checks and catalog metadata fixtures |
+| `build.mjs` | Download packaging and hosted Worker generation |
 
-## Build download packages and hosted worker
+## Archived browser connector
 
-The local app needs no build step. Packaging requires Python 3 in addition to
-Node.js. Run from the project root:
+[`archive/browser-connector/`](archive/browser-connector/README.md) preserves the
+removed connector architecture and both original tests. The tests are stored
+as `.cjs.disabled` files outside the active test directory. The connector and
+its tests are not loaded, served, packaged, or run by `npm test`.
 
-```
+Keep them inactive unless explicitly requested. The archive includes a
+reactivation patch and instructions. Later application changes may require
+merging the connector portions manually; do not overwrite the current app
+with the older snapshot. This development archive is unrelated to the app's
+Reading archive collection.
+
+## Build downloads and hosted Worker
+
+The local app runs directly from source. To create distribution packages,
+install Python 3 in addition to Node.js, then run from the project root:
+
+```sh
 npm run build
 ```
 
-This writes PC/update ZIPs into ignored `work/` and a generated Worker module
-into `dist/server/index.js`. `src/` is the authoritative application source.
-The `.openai/hosting.json` manifest identifies the existing private Sites
-publication; it is hosting configuration, not a credential. Publishing is a
-separate action and is not performed by the build command.
+The build uses `python` on Windows and `python3` elsewhere. It writes:
+
+- `work/quiet-shelf-pc.zip`: local application package.
+- `work/quiet-shelf-update.zip`: updated application files for an existing copy.
+- `dist/server/index.js`: generated hosted Worker with embedded download packages.
+
+`work/` and the portable runtime are ignored by Git. `src/` is the authoritative
+application source. `.openai/hosting.json` identifies the existing private
+Sites publication; it contains hosting configuration rather than credentials.
+Publishing is separate from building and is not performed by `npm run build`.
