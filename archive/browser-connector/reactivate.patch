@@ -1,0 +1,471 @@
+diff --git b/build.mjs a/build.mjs
+index bf88c3f..b6199fc 100644
+--- b/build.mjs
++++ a/build.mjs
+@@ -1,7 +1,14 @@
+ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+ import {execFileSync} from 'node:child_process';
++const hosts=['http://127.0.0.1:8765/*','https://books.google.com/*','https://anilist.co/*','https://www.dr.com.tr/*','https://www.idefix.com/*','https://www.amazon.com.tr/*','https://www.amazon.com/*','https://www.amazon.co.uk/*','https://www.amazon.de/*','https://www.amazon.co.jp/*'];
++const manifest={manifest_version:3,name:'Quiet Shelf Bookstore Connector',version:'0.6.1',description:'Returns bookstore search results to your local Quiet Shelf.',permissions:['scripting'],host_permissions:hosts,content_scripts:[{matches:['http://127.0.0.1:8765/*'],js:['content.js'],run_at:'document_idle'}]};
++for(const browser of ['chrome','firefox']){const m={...manifest,background:browser==='chrome'?{service_worker:'background.js'}:{scripts:['background.js']},...(browser==='firefox'?{browser_specific_settings:{gecko:{id:'quiet-shelf-local@example.invalid',strict_min_version:'140.0',data_collection_permissions:{required:['none']}}}}:{})};writeFileSync('connector/manifest-'+browser+'.json',JSON.stringify(m,null,2))}
+ execFileSync('python3',['-c',`import zipfile
+-files=['src/index.html','src/catalog.mjs','pc/server.mjs','pc/start-windows.bat','pc/start-mac.command','pc/README.txt']
++for browser in ['chrome','firefox']:
++ with zipfile.ZipFile('connector/browser-connector-'+browser+'.zip','w',zipfile.ZIP_DEFLATED) as z:
++  z.write('connector/manifest-'+browser+'.json','manifest.json')
++  for f in ['background.js','content.js','README.txt']: z.write('connector/'+f,f)
++files=['src/index.html','src/catalog.mjs','pc/server.mjs','pc/start-windows.bat','pc/start-mac.command','pc/README.txt','connector/browser-connector-chrome.zip','connector/browser-connector-firefox.zip']
+ with zipfile.ZipFile('/workspace/work/quiet-shelf-pc.zip','w',zipfile.ZIP_DEFLATED) as z:
+  for name in files:z.write(name,'quiet-shelf/'+name)
+ with zipfile.ZipFile('/workspace/work/quiet-shelf-update.zip','w',zipfile.ZIP_DEFLATED) as z:
+@@ -10,4 +17,5 @@ with zipfile.ZipFile('/workspace/work/quiet-shelf-update.zip','w',zipfile.ZIP_DE
+ `]);
+ const html=readFileSync('src/index.html','utf8'),api=readFileSync('src/catalog.mjs','utf8');
+ const downloads={'/download/quiet-shelf-update.zip':readFileSync('/workspace/work/quiet-shelf-update.zip').toString('base64'),'/download/quiet-shelf-pc.zip':readFileSync('/workspace/work/quiet-shelf-pc.zip').toString('base64')};
++for(const browser of ['chrome','firefox'])downloads['/download/browser-connector-'+browser+'.zip']=readFileSync('connector/browser-connector-'+browser+'.zip').toString('base64');
+ mkdirSync('dist/server',{recursive:true});writeFileSync('dist/server/index.js',api+'\nconst html='+JSON.stringify(html)+';\nconst downloads='+JSON.stringify(downloads)+';\nexport default {async fetch(request){let u=new URL(request.url);if(u.pathname==="/api/books"||u.pathname==="/api/book")return catalog(request);if(downloads[u.pathname])return new Response(Uint8Array.from(atob(downloads[u.pathname]),c=>c.charCodeAt(0)),{headers:{"Content-Type":"application/zip","Content-Disposition":"attachment; filename="+u.pathname.split("/").pop(),"Cache-Control":"no-store"}});if(u.pathname!=="/")return new Response("Not found",{status:404});return new Response(html,{headers:{"Content-Type":"text/html; charset=utf-8","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer"}})}};');
+diff --git b/connector/README.txt a/connector/README.txt
+new file mode 100644
+index 0000000..61e3d95
+--- /dev/null
++++ a/connector/README.txt
+@@ -0,0 +1,25 @@
++QUIET SHELF BROWSER CONNECTOR
++
++This connector reads public search results from the listed bookstores and returns
++selectable titles to Quiet Shelf. It does not read PC files, send browser cookies
++to Quiet Shelf, or run on unrelated websites. It briefly opens search tabs.
++If a store requests a CAPTCHA, complete it yourself and retry the search.
++It cannot guarantee access or stable page layouts at third-party stores.
++
++EDGE / CHROME
++1. Extract the ZIP inside your chosen connector folder.
++2. Open edge://extensions or chrome://extensions.
++3. Enable Developer mode, choose Load unpacked, select the extracted folder
++   containing manifest.json.
++4. Refresh http://127.0.0.1:8765. Quiet Shelf should show Browser connector connected.
++
++FIREFOX
++Use the Firefox package. Extract it in your chosen connector folder.
++Open about:debugging#/runtime/this-firefox, choose Load Temporary Add-on,
++and select manifest.json. Refresh Quiet Shelf.
++Firefox temporary add-ons must be loaded again after Firefox restarts.
++
++Use the same browser for the connector and Quiet Shelf.
++No login to Quiet Shelf, paid service, or API key is needed for the connector.
++Permissions are restricted to the local app and these named stores:
++D&R, Idefix, Amazon TR/US/UK/DE/JP, Google Books and AniList.
+diff --git b/connector/background.js a/connector/background.js
+new file mode 100644
+index 0000000..ff7775c
+--- /dev/null
++++ a/connector/background.js
+@@ -0,0 +1,25 @@
++const extensionAPI=typeof browser==='object'?browser:chrome;
++const stores={google:{name:'Google Books',origin:'https://books.google.com',path:'/books?q='},anilist:{name:'AniList',origin:'https://anilist.co',path:'/search/manga?search='},dr:{name:'D&R',origin:'https://www.dr.com.tr',path:'/search?q='},idefix:{name:'İdefix',origin:'https://www.idefix.com',path:'/arama?q='},amazontr:{name:'Amazon Türkiye',origin:'https://www.amazon.com.tr',path:'/s?k='},amazonus:{name:'Amazon US',origin:'https://www.amazon.com',path:'/s?k='},amazonuk:{name:'Amazon UK',origin:'https://www.amazon.co.uk',path:'/s?k='},amazonde:{name:'Amazon Germany',origin:'https://www.amazon.de',path:'/s?k='},amazonjp:{name:'Amazon Japan',origin:'https://www.amazon.co.jp',path:'/s?k='}};
++const running=new Map();
++const pause=ms=>new Promise(r=>setTimeout(r,ms));
++function extract(source,origin){
++ const clean=s=>String(s||'').replace(/\s+/g,' ').trim();const results=[],seen=new Set();
++ function add(item){if(!item.title||!item.sourceUrl||seen.has(item.sourceUrl))return;seen.add(item.sourceUrl);results.push(item)}
++ if(source==='google'||source==='anilist'){
++ for(let link of document.querySelectorAll('a[href]')){let u;try{u=new URL(link.href,origin)}catch{continue}let valid=source==='google'?u.hostname==='books.google.com'&&u.pathname==='/books'&&/^[\w-]+$/.test(u.searchParams.get('id')||''):u.hostname==='anilist.co'&&/^\/manga\/\d+/.test(u.pathname);if(!valid)continue;let title=clean(link.querySelector('h2,h3')?.textContent||link.getAttribute('title')||link.querySelector('img')?.alt||link.textContent);if(title.length<3||/^(preview|more editions|read more|full view|limited preview|önizleme|daha fazla)$/i.test(title))continue;add({title,author:'',cover:link.querySelector('img')?.src||'',sourceUrl:source==='google'?'https://books.google.com/books?id='+encodeURIComponent(u.searchParams.get('id')):'https://anilist.co'+u.pathname,format:source==='anilist'?'Manga':'Book',recordKind:source==='anilist'?'series':'edition',language:'',connector:true});if(results.length>=12)break}
++ }else if(source.startsWith('amazon')){for(const card of document.querySelectorAll('[data-component-type="s-search-result"][data-asin]')){let asin=card.getAttribute('data-asin');if(!/^[A-Z0-9]{10}$/.test(asin))continue;let heading=card.querySelector('h2');let title=clean(heading?.innerText);if(!title)continue;let author=clean(card.querySelector('.a-row .a-size-base.a-link-normal')?.textContent||'');let img=card.querySelector('img.s-image');add({title,author,cover:img?.src||'',sourceUrl:origin+'/dp/'+asin,format:'Book',language:'',recordKind:'edition',connector:true})}}
++ else{
++  const structured=[];for(let tag of document.querySelectorAll('script[type="application/ld+json"]')){try{let j=JSON.parse(tag.textContent);structured.push(...(j['@graph']||(Array.isArray(j)?j:[j])))}catch{}}
++  const nodes=structured.flatMap(n=>n['@type']==='ItemList'?(n.itemListElement||[]).map(x=>x.item):[n]);
++  const productURL=value=>{try{let u=new URL(value,origin);return u.origin===origin&&(source==='idefix'?/-p-\d+/.test(u.pathname):/\/kitap\//i.test(u.pathname))?u.origin+u.pathname:''}catch{return ''}};
++  for(let n of nodes){if(!n||!['Book','Product'].some(t=>[n['@type']].flat().includes(t)))continue;let url=productURL(n.url||n.offers?.url);let name=v=>(Array.isArray(v)?v:[v]).filter(Boolean).map(x=>typeof x==='string'?x:x.name||'').join(', ');add({title:clean(n.name),author:clean(name(n.author)),publisher:clean(name(n.publisher)),isbn:clean(n.isbn||''),language:clean(n.inLanguage||''),cover:(Array.isArray(n.image)?n.image[0]:typeof n.image==='string'?n.image:n.image?.url)||'',sourceUrl:url,format:'Book',recordKind:'edition',connector:true})}
++  if(!results.length){for(let link of document.querySelectorAll('a[href]')){let url=productURL(link.href);if(!url)continue;let title=clean(link.querySelector('h2,h3,[class*="title"],[class*="Title"]')?.textContent||link.getAttribute('title')||link.getAttribute('aria-label')||link.querySelector('img')?.alt||link.textContent);if(title.length<3||/^(incele|satın al|sepete ekle|ürünü incele)$/i.test(title))continue;add({title,author:'',cover:link.querySelector('img')?.src||'',sourceUrl:url,language:'',format:'Book',recordKind:'edition',connector:true});if(results.length>=12)break}}
++ }
++ const blocked=!!document.querySelector('#captchacharacters,form[action*="validateCaptcha"],#challenge-running,#challenge-form')||/captcha|access denied|attention required|robot check/i.test(document.title);
++ return {results:results.slice(0,12),blocked,ready:document.readyState==='complete'};
++}
++extensionAPI.runtime.onMessage.addListener((message,sender,reply)=>{
++ if(message?.type!=='search'||!sender.tab?.id||!/^http:\/\/127\.0\.0\.1:8765\/$/.test(sender.url||'')||!stores[message.source]||typeof message.q!=='string'||message.q.trim().length<2||message.q.length>160){reply({error:'Invalid Quiet Shelf search request.'});return false}
++ const old=running.get(sender.tab.id);if(old)old.cancelled=true;const job={cancelled:false};running.set(sender.tab.id,job);const store=stores[message.source];(async()=>{let tab,keep=false;try{tab=await extensionAPI.tabs.create({url:store.origin+store.path+encodeURIComponent(message.q)+(message.source.startsWith('amazon')?'&i=stripbooks':''),active:false});for(let i=0;i<30;i++){await pause(1000);if(job.cancelled){reply({error:'Search superseded'});return}let current=await extensionAPI.tabs.get(tab.id);if(current.status!=='complete')continue;let [{result}]=await extensionAPI.scripting.executeScript({target:{tabId:tab.id},func:extract,args:[message.source,store.origin]});if(result.results.length){reply({results:result.results.map(b=>({...b,source:store.name})),source:message.source});return}if(result.blocked){keep=true;await extensionAPI.tabs.update(tab.id,{active:true});reply({error:store.name+' requires you to complete its access check in the opened tab. Then retry the search in Quiet Shelf.'});return}}
++ keep=true;reply({error:store.name+' returned no readable product results. Its search tab has been left open for inspection.'})}catch(e){reply({error:store.name+' browser search failed: '+String(e.message).slice(0,160)})}finally{if(running.get(sender.tab.id)===job)running.delete(sender.tab.id);if(tab&&!keep)try{await extensionAPI.tabs.remove(tab.id)}catch{}}})();return true;
++});
+diff --git b/connector/browser-connector-chrome.zip a/connector/browser-connector-chrome.zip
+new file mode 100644
+index 0000000000000000000000000000000000000000..1549ab8152cb1a8cbb19a0ae813cfc4f25338100
+GIT binary patch
+literal 4282
+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
+
+literal 0
+HcmV?d00001
+
+diff --git b/connector/browser-connector-firefox.zip a/connector/browser-connector-firefox.zip
+new file mode 100644
+index 0000000000000000000000000000000000000000..594b008dddb3d86723ba6b434d5ad04129d14d63
+GIT binary patch
+literal 4381
+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
+
+literal 0
+HcmV?d00001
+
+diff --git b/connector/content.js a/connector/content.js
+new file mode 100644
+index 0000000..eb439d5
+--- /dev/null
++++ a/connector/content.js
+@@ -0,0 +1,4 @@
++function ready(){window.dispatchEvent(new CustomEvent('quiet-shelf-ready'))}
++window.addEventListener('quiet-shelf-hello',ready);
++window.addEventListener('quiet-shelf-request',event=>{let data;try{data=JSON.parse(event.detail)}catch{return;}if(!data||typeof data.id!=='string')return;chrome.runtime.sendMessage({type:'search',source:data.source,q:data.q},response=>{let error=chrome.runtime.lastError;window.dispatchEvent(new CustomEvent('quiet-shelf-response',{detail:JSON.stringify({id:data.id,...(error?{error:error.message}:response||{error:'Browser connector did not respond.'})})}))})});
++ready();
+diff --git b/connector/manifest-chrome.json a/connector/manifest-chrome.json
+new file mode 100644
+index 0000000..8b874d0
+--- /dev/null
++++ a/connector/manifest-chrome.json
+@@ -0,0 +1,35 @@
++{
++  "manifest_version": 3,
++  "name": "Quiet Shelf Bookstore Connector",
++  "version": "0.6.1",
++  "description": "Returns bookstore search results to your local Quiet Shelf.",
++  "permissions": [
++    "scripting"
++  ],
++  "host_permissions": [
++    "http://127.0.0.1:8765/*",
++    "https://books.google.com/*",
++    "https://anilist.co/*",
++    "https://www.dr.com.tr/*",
++    "https://www.idefix.com/*",
++    "https://www.amazon.com.tr/*",
++    "https://www.amazon.com/*",
++    "https://www.amazon.co.uk/*",
++    "https://www.amazon.de/*",
++    "https://www.amazon.co.jp/*"
++  ],
++  "content_scripts": [
++    {
++      "matches": [
++        "http://127.0.0.1:8765/*"
++      ],
++      "js": [
++        "content.js"
++      ],
++      "run_at": "document_idle"
++    }
++  ],
++  "background": {
++    "service_worker": "background.js"
++  }
++}
+\ No newline at end of file
+diff --git b/connector/manifest-firefox.json a/connector/manifest-firefox.json
+new file mode 100644
+index 0000000..c976596
+--- /dev/null
++++ a/connector/manifest-firefox.json
+@@ -0,0 +1,48 @@
++{
++  "manifest_version": 3,
++  "name": "Quiet Shelf Bookstore Connector",
++  "version": "0.6.1",
++  "description": "Returns bookstore search results to your local Quiet Shelf.",
++  "permissions": [
++    "scripting"
++  ],
++  "host_permissions": [
++    "http://127.0.0.1:8765/*",
++    "https://books.google.com/*",
++    "https://anilist.co/*",
++    "https://www.dr.com.tr/*",
++    "https://www.idefix.com/*",
++    "https://www.amazon.com.tr/*",
++    "https://www.amazon.com/*",
++    "https://www.amazon.co.uk/*",
++    "https://www.amazon.de/*",
++    "https://www.amazon.co.jp/*"
++  ],
++  "content_scripts": [
++    {
++      "matches": [
++        "http://127.0.0.1:8765/*"
++      ],
++      "js": [
++        "content.js"
++      ],
++      "run_at": "document_idle"
++    }
++  ],
++  "background": {
++    "scripts": [
++      "background.js"
++    ]
++  },
++  "browser_specific_settings": {
++    "gecko": {
++      "id": "quiet-shelf-local@example.invalid",
++      "strict_min_version": "140.0",
++      "data_collection_permissions": {
++        "required": [
++          "none"
++        ]
++      }
++    }
++  }
++}
+\ No newline at end of file
+diff --git b/pc/server.mjs a/pc/server.mjs
+index 4981499..c627390 100644
+--- b/pc/server.mjs
++++ a/pc/server.mjs
+@@ -4,6 +4,6 @@ import {spawn} from 'node:child_process';
+ import {catalog} from '../src/catalog.mjs';
+ const html=readFileSync(new URL('../src/index.html',import.meta.url));
+ const host='127.0.0.1',port=8765,origin=`http://${host}:${port}`;
+-const server=http.createServer(async(req,res)=>{try{let u=new URL(req.url,origin);if(req.headers.host!==`${host}:${port}`){res.writeHead(403);return res.end('Invalid host')}if(u.pathname==='/api/books'||u.pathname==='/api/book'){if(req.headers.origin&&req.headers.origin!==origin){res.writeHead(403);return res.end('Invalid origin')}let response=await catalog(new Request(u,{method:req.method}));res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(Buffer.from(await response.arrayBuffer()))}if(u.pathname==='/'&&req.method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Referrer-Policy':'no-referrer'});return res.end(html)}res.writeHead(404);res.end('Not found')}catch(error){console.error(error.message);res.writeHead(500);res.end('Something went wrong. Restart Quiet Shelf and try again.')}});
++const server=http.createServer(async(req,res)=>{try{let u=new URL(req.url,origin);if(req.headers.host!==`${host}:${port}`){res.writeHead(403);return res.end('Invalid host')}if(u.pathname==='/api/books'||u.pathname==='/api/book'){if(req.headers.origin&&req.headers.origin!==origin){res.writeHead(403);return res.end('Invalid origin')}let response=await catalog(new Request(u,{method:req.method}));res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(Buffer.from(await response.arrayBuffer()))}if(req.method==='GET'&&['/download/browser-connector-chrome.zip','/download/browser-connector-firefox.zip'].includes(u.pathname)){let name=u.pathname.split('/').pop();res.writeHead(200,{'Content-Type':'application/zip','Content-Disposition':'attachment; filename='+name});return res.end(readFileSync(new URL('../connector/'+name,import.meta.url)))}if(u.pathname==='/'&&req.method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Referrer-Policy':'no-referrer'});return res.end(html)}res.writeHead(404);res.end('Not found')}catch(error){console.error(error.message);res.writeHead(500);res.end('Something went wrong. Restart Quiet Shelf and try again.')}});
+ server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`Quiet Shelf may already be running. Open ${origin}`:e.message);process.exitCode=1});
+ server.listen(port,host,()=>{console.log(`Quiet Shelf is running at ${origin}\nKeep this window open while you use it. Press Ctrl+C to stop.\nYour library is saved in your browser. Use Back up to keep a copy.`);if(process.env.QUIET_SHELF_NO_OPEN)return;let child=process.platform==='win32'?spawn('cmd',['/c','start','',origin],{stdio:'ignore'}):spawn(process.platform==='darwin'?'open':'xdg-open',[origin],{stdio:'ignore'});child.on('error',()=>console.log(`Open ${origin} in your browser.`));child.unref()});
+diff --git b/src/index.html a/src/index.html
+index 719a753..41cd645 100644
+--- b/src/index.html
++++ a/src/index.html
+@@ -1,6 +1,6 @@
+ <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quiet Shelf — Your reading, at your pace</title><style>
+ :root{font:15px system-ui,sans-serif;color:#323c36;background:#f7f5ef;--green:#42644f;--line:#e3e4db}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}button,input,select,textarea{border:1px solid var(--line);border-radius:9px;padding:10px 14px;background:#fff;color:inherit}button:hover{background:#eaf0e9}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #93b79a;outline-offset:2px}.primary{background:var(--green);color:white;border:0}.primary:hover{background:#304c3b}.muted{color:#7a8178;font-size:13px}.wrap{max-width:1190px;margin:auto;padding:35px 38px}header{display:flex;justify-content:space-between;align-items:center;padding-bottom:25px;border-bottom:1px solid var(--line)}.logo{font-family:Georgia,serif;font-size:26px}.mark{display:inline-grid;place-items:center;background:#e4eadf;width:37px;height:37px;border-radius:10px;margin-right:10px;color:var(--green)}.actions{display:flex;gap:9px;align-items:center}h1{font:normal 39px Georgia,serif;margin:36px 0 10px}h2{font:normal 25px Georgia,serif;margin:0}p{line-height:1.6}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:28px 0}.stat{text-align:left;background:#fffdf8;padding:20px;border-radius:12px}.stat.active{border:1px solid var(--green);background:#eef2e9}.stat strong{display:block;font:32px Georgia,serif;margin:10px 0 4px}.layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,1fr);gap:24px;align-items:start}.panel{border:1px solid var(--line);background:#fffdf9;border-radius:14px;overflow:hidden}.panelhead{padding:22px;display:flex;justify-content:space-between;align-items:center}.tools{display:flex;gap:8px;padding:0 22px 20px}.tools input{width:100%;min-width:0}table{border-collapse:collapse;width:100%}th{text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#7b847a;font-weight:500;background:#f3f4ed;padding:12px 20px}td{border-bottom:1px solid #eeeee6;padding:17px 20px}tr.selected{background:#edf1e7}tr:last-child td{border-bottom:0}.titlebutton{display:flex;align-items:center;text-align:left;gap:14px;background:none;padding:0;border:0;width:100%}.cover{flex-shrink:0;width:38px;height:51px;background:var(--cover,#6a8169);box-shadow:inset 4px 0 #ffffff25;border-radius:2px 5px 5px 2px;color:white;display:grid;place-items:center;font:19px Georgia,serif}.pill{font-size:11px;padding:5px 9px;border-radius:20px;white-space:nowrap;background:#f0eee6;color:#77725e}.pill.inprogress{background:#f6ecd9;color:#916d32}.pill.done{background:#e6eee1;color:#506a48}.detailhero{padding:27px;display:flex;gap:22px;background:#f0f1e7}.detailhero .cover{width:86px;height:123px;font-size:37px}.detailhero h2{margin:7px 0 8px}.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 20px;gap:15px}.tabs button{border:0;border-radius:0;background:none;padding:17px 5px;color:#777}.tabs button.active{border-bottom:2px solid var(--green);color:var(--green)}.detailbody{padding:24px}.detailbody label{display:block;font-size:12px;color:#747b71;margin-bottom:8px}.detailbody select{width:100%}.history{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 0;border-bottom:1px solid var(--line)}.history input{padding:7px;font-size:13px;max-width:155px}.small{font-size:12px;padding:7px 9px}footer{padding-top:25px;display:flex;justify-content:space-between;gap:20px;color:#80867d;font-size:12px}.notice{background:#edf1e7;padding:12px 16px;border-radius:9px;font-size:12px;margin:20px 0}dialog{border:1px solid var(--line);border-radius:16px;padding:28px;max-width:450px;width:95%;background:#fffdf9}dialog::backdrop{background:#26372c65}dialog label{display:block;margin:17px 0 6px}dialog input,dialog select,dialog textarea{width:100%}dialog .actions{justify-content:flex-end;margin-top:22px}#message{min-height:20px;color:#526b48;font-size:13px;margin-top:14px}@media(max-width:850px){.layout{grid-template-columns:1fr}.wrap{padding:22px}.stats{gap:8px}.stat{padding:14px}header .actions{flex-wrap:wrap;justify-content:flex-end}td,th{padding:12px}h1{font-size:32px}}@media(max-width:500px){.stats{grid-template-columns:1fr 1fr}.logo{font-size:21px}.formatcol{display:none}header{align-items:start}.actions{flex-wrap:wrap}.tools{flex-wrap:wrap}}
+-dialog{max-width:560px;max-height:90vh;overflow:auto}.suggestions{border:1px solid var(--line);border-radius:9px;max-height:280px;overflow:auto;margin-top:6px}.suggestion{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:12px}.suggestion:focus{background:#eaf0e9}.suggestion img{width:33px;height:48px;object-fit:contain}.suggestion strong{display:block}.suggestion span{line-height:1.5}.bookcover{object-fit:contain;box-shadow:none;background:transparent}.metadata{font-size:13px;line-height:1.8;color:#677160}.metadata a{color:var(--green)}#lookupStatus{margin:9px 0;min-height:20px;font-size:13px;color:#677160}#editionPreview{background:#edf1e7;border-radius:8px;padding:12px;margin-top:12px;font-size:13px}#lookupResults[hidden],#editionPreview[hidden]{display:none}.danger{color:#9a423b;border-color:#e5cbc5;background:#fffaf7}.danger:hover{background:#f8eae5}.panel{overflow:visible}.detailhero{border-radius:14px 14px 0 0}.detailhero .kebab{margin-left:auto;flex-shrink:0}.kebab{position:relative;display:inline-block;vertical-align:middle}.kebab-trigger{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:36px;min-width:36px;height:36px;padding:0;border:1px solid #d5dccf;border-radius:8px;color:#42644f;background:#fffdf9;cursor:pointer}.kebab-trigger>span{display:block;width:3px;height:3px;border-radius:50%;background:currentColor;pointer-events:none}.kebab-trigger:hover,.kebab-trigger[aria-expanded="true"]{background:#e5ebdf}.kebab[hidden],.kebabmenu[hidden]{display:none!important}.kebabmenu{position:absolute;right:0;top:calc(100% + 5px);z-index:10;min-width:185px;padding:5px;background:#fffdf9;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #23352b20}.kebabmenu button{display:block;width:100%;text-align:left;border:0;background:transparent;white-space:nowrap;font-size:13px;padding:10px 12px}.kebabmenu button:hover{background:#f8eae5}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.libraryactions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.sourcefilters{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}.sourcefilters select{width:100%;min-width:0}#sourceHint{margin-bottom:0}@media(max-width:440px){.sourcefilters{grid-template-columns:1fr}}</style><body><main class="wrap"><header><div class="logo"><span class="mark">▤</span>Quiet Shelf</div><div class="actions"><a id="pcDownload" href="/download/quiet-shelf-pc.zip" style="font-size:13px;color:var(--green);padding:8px">Download PC version</a><button id="export">Back up</button><button id="restore">Restore</button><button class="primary" id="add">+ Add title</button></div></header><h1>A little space for your stories.</h1><p class="muted">Books, manga, comics. All here, at your own pace.</p><div id="stats" class="stats"></div><div class="layout"><section class="panel"><div class="panelhead"><h2>Your library</h2><div class="libraryactions"><span class="muted" id="count"></span><div class="kebab" id="sampleMenu" hidden><button type="button" class="kebab-trigger" data-menu-toggle aria-label="Library options" aria-expanded="false" title="Library options"><span></span><span></span><span></span></button><div class="kebabmenu" hidden><button id="removeSamples" class="danger">Remove sample titles</button></div></div></div></div><div class="tools"><input id="search" type="search" placeholder="Search title or author…" aria-label="Search your library"><select id="format" aria-label="Filter format"><option>All formats</option><option>Book</option><option>Manga</option><option>Comic</option></select></div><table><thead><tr><th>Title / Author</th><th class="formatcol">Format</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="list"></tbody></table></section><aside class="panel" id="detail"></aside></div><div id="message" role="status"></div><footer><span>Saved in this browser · No goals. No deadlines.</span><span>Quiet Shelf / v0.6.2</span></footer><div class="notice" id="sample">You’re exploring a sample library. Make it yours whenever you’re ready. Sample titles can be removed from the ⋮ menu beside Your library.</div></main><dialog id="addDialog"><form id="addForm"><h2>Add a story</h2><p class="muted">Choose a source and find your edition, or enter a title yourself.</p><div class="sourcefilters"><div><label for="lookupSource">Search source</label><select id="lookupSource"><optgroup label="Book catalogs"><option value="kitapyurdu">Kitapyurdu</option><option value="bkm">BKM Kitap</option><option value="openlibrary">Open Library</option><option value="google">Google Books</option></optgroup><optgroup label="Manga series"><option value="anilist">AniList</option></optgroup></select></div><div><label for="lookupLanguage">Edition language</label><select id="lookupLanguage"><option value="tr">Turkish</option><option value="en">English</option><option value="de">German</option><option value="fr">French</option><option value="ja">Japanese</option><option value="es">Spanish</option><option value="it">Italian</option><option value="ru">Russian</option><option value="ar">Arabic</option><option value="ko">Korean</option><option value="zh">Chinese</option><option value="pt">Portuguese</option><option value="">Any language</option></select></div></div><p id="sourceHint" class="muted"></p><div id="googleSettings" hidden><label for="googleApiKey">Google Books API key (optional; stays in this session)</label><input type="password" id="googleApiKey" autocomplete="off" placeholder="Only needed if Google reports a quota limit"><p class="muted">Sent only to Google Books through your local server. Never included in a backup.</p></div><label for="lookup">Search title, author, or ISBN</label><input id="lookup" type="search" placeholder="Title, author, or ISBN…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="lookupResults"><div id="lookupStatus" role="status">Type at least 2 characters for suggestions.</div><div id="lookupResults" class="suggestions" role="listbox" aria-label="Kitapyurdu editions" hidden></div><div id="editionPreview" hidden></div><label for="title">Title *</label><input id="title" required maxlength="300"><label for="author">Author</label><input id="author" maxlength="300"><label for="kind">Format</label><select id="kind"><option>Book</option><option>Manga</option><option>Comic</option></select><label for="description">Description (optional)</label><textarea id="description" rows="3" maxlength="5000"></textarea><div class="actions"><button type="button" id="cancel">Cancel</button><button class="primary">Add to library</button></div></form></dialog><input type="file" accept="application/json,.json" id="file" hidden><script>
++dialog{max-width:560px;max-height:90vh;overflow:auto}.suggestions{border:1px solid var(--line);border-radius:9px;max-height:280px;overflow:auto;margin-top:6px}.suggestion{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:12px}.suggestion:focus{background:#eaf0e9}.suggestion img{width:33px;height:48px;object-fit:contain}.suggestion strong{display:block}.suggestion span{line-height:1.5}.bookcover{object-fit:contain;box-shadow:none;background:transparent}.metadata{font-size:13px;line-height:1.8;color:#677160}.metadata a{color:var(--green)}#lookupStatus{margin:9px 0;min-height:20px;font-size:13px;color:#677160}#editionPreview{background:#edf1e7;border-radius:8px;padding:12px;margin-top:12px;font-size:13px}#lookupResults[hidden],#editionPreview[hidden]{display:none}.danger{color:#9a423b;border-color:#e5cbc5;background:#fffaf7}.danger:hover{background:#f8eae5}.panel{overflow:visible}.detailhero{border-radius:14px 14px 0 0}.detailhero .kebab{margin-left:auto;flex-shrink:0}.kebab{position:relative;display:inline-block;vertical-align:middle}.kebab-trigger{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:36px;min-width:36px;height:36px;padding:0;border:1px solid #d5dccf;border-radius:8px;color:#42644f;background:#fffdf9;cursor:pointer}.kebab-trigger>span{display:block;width:3px;height:3px;border-radius:50%;background:currentColor;pointer-events:none}.kebab-trigger:hover,.kebab-trigger[aria-expanded="true"]{background:#e5ebdf}.kebab[hidden],.kebabmenu[hidden]{display:none!important}.kebabmenu{position:absolute;right:0;top:calc(100% + 5px);z-index:10;min-width:185px;padding:5px;background:#fffdf9;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #23352b20}.kebabmenu button{display:block;width:100%;text-align:left;border:0;background:transparent;white-space:nowrap;font-size:13px;padding:10px 12px}.kebabmenu button:hover{background:#f8eae5}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.libraryactions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.sourcefilters{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}.sourcefilters select{width:100%;min-width:0}#sourceHint{margin-bottom:0}.external-search{display:block;color:var(--green);padding:12px 0}.external-search[hidden]{display:none}@media(max-width:440px){.sourcefilters{grid-template-columns:1fr}}</style><body><main class="wrap"><header><div class="logo"><span class="mark">▤</span>Quiet Shelf</div><div class="actions"><a id="pcDownload" href="/download/quiet-shelf-pc.zip" style="font-size:13px;color:var(--green);padding:8px">Download PC version</a><button id="export">Back up</button><button id="restore">Restore</button><button class="primary" id="add">+ Add title</button></div></header><h1>A little space for your stories.</h1><p class="muted">Books, manga, comics. All here, at your own pace.</p><div id="stats" class="stats"></div><div class="layout"><section class="panel"><div class="panelhead"><h2>Your library</h2><div class="libraryactions"><span class="muted" id="count"></span><div class="kebab" id="sampleMenu" hidden><button type="button" class="kebab-trigger" data-menu-toggle aria-label="Library options" aria-expanded="false" title="Library options"><span></span><span></span><span></span></button><div class="kebabmenu" hidden><button id="removeSamples" class="danger">Remove sample titles</button></div></div></div></div><div class="tools"><input id="search" type="search" placeholder="Search title or author…" aria-label="Search your library"><select id="format" aria-label="Filter format"><option>All formats</option><option>Book</option><option>Manga</option><option>Comic</option></select></div><table><thead><tr><th>Title / Author</th><th class="formatcol">Format</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="list"></tbody></table></section><aside class="panel" id="detail"></aside></div><div id="message" role="status"></div><footer><span>Saved in this browser · No goals. No deadlines.</span><span>Quiet Shelf / v0.6.1</span></footer><div class="notice" id="sample">You’re exploring a sample library. Make it yours whenever you’re ready. Sample titles can be removed from the ⋮ menu beside Your library.</div></main><dialog id="addDialog"><form id="addForm"><h2>Add a story</h2><p class="muted">Choose a source and find your edition, or enter a title yourself.</p><div class="sourcefilters"><div><label for="lookupSource">Search source</label><select id="lookupSource"><optgroup label="Book catalogs"><option value="kitapyurdu">Kitapyurdu</option><option value="bkm">BKM Kitap</option><option value="openlibrary">Open Library</option><option value="google">Google Books</option></optgroup><optgroup label="Manga series"><option value="anilist">AniList</option></optgroup><optgroup label="Bookstores · browser connector"><option value="dr">D&amp;R</option><option value="idefix">İdefix</option><option value="amazontr">Amazon Türkiye</option><option value="amazonus">Amazon US</option><option value="amazonuk">Amazon UK</option><option value="amazonde">Amazon Germany</option><option value="amazonjp">Amazon Japan</option></optgroup></select></div><div><label for="lookupLanguage">Edition language</label><select id="lookupLanguage"><option value="tr">Turkish</option><option value="en">English</option><option value="de">German</option><option value="fr">French</option><option value="ja">Japanese</option><option value="es">Spanish</option><option value="it">Italian</option><option value="ru">Russian</option><option value="ar">Arabic</option><option value="ko">Korean</option><option value="zh">Chinese</option><option value="pt">Portuguese</option><option value="">Any language</option></select></div></div><p id="sourceHint" class="muted"></p><div id="googleSettings" hidden><label for="googleApiKey">Google Books API key (optional; stays in this session)</label><input type="password" id="googleApiKey" autocomplete="off" placeholder="Only needed if Google reports a quota limit"><p class="muted">Sent only to Google Books through your local server. Never included in a backup.</p></div><div id="connectorPanel" class="notice" hidden><strong id="connectorStatus">Browser connector not connected</strong><p class="muted">The browser connector retrieves results when a bookstore or API blocks direct requests. Install the connector in the same browser you use for Quiet Shelf. It reads search pages only on the named bookstores.</p><a href="/download/browser-connector-chrome.zip">Download Edge / Chrome connector</a> · <a href="/download/browser-connector-firefox.zip">Download Firefox connector</a><p class="muted">Extract inside your chosen connector folder. In Edge: edge://extensions → Developer mode → Load unpacked → select the extracted folder with manifest.json. In Chrome use chrome://extensions. In Firefox: about:debugging#/runtime/this-firefox → Load Temporary Add-on → select manifest.json (reload after restarting Firefox). Then refresh Quiet Shelf.</p></div><label for="lookup">Search title, author, or ISBN</label><input id="lookup" type="search" placeholder="Title, author, or ISBN…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="lookupResults"><div id="lookupStatus" role="status">Type at least 2 characters for suggestions.</div><div id="lookupResults" class="suggestions" role="listbox" aria-label="Kitapyurdu editions" hidden></div><div id="editionPreview" hidden></div><label for="title">Title *</label><input id="title" required maxlength="300"><label for="author">Author</label><input id="author" maxlength="300"><label for="kind">Format</label><select id="kind"><option>Book</option><option>Manga</option><option>Comic</option></select><label for="description">Description (optional)</label><textarea id="description" rows="3" maxlength="5000"></textarea><div class="actions"><button type="button" id="cancel">Cancel</button><button class="primary">Add to library</button></div></form></dialog><input type="file" accept="application/json,.json" id="file" hidden><script>
+ 'use strict';
+ const key='quiet-shelf-v1',statuses=['Unread','In progress','Done'];const $=s=>document.querySelector(s);const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+@@ -17,24 +17,29 @@ $('#detail').onclick=e=>{let b=current();if(!b)return;if(e.target.id==='deleteTi
+ $('#detail').onchange=e=>{if(e.target.id==='status')setStatus(e.target.value);if(e.target.dataset.history){if(!validDate(e.target.value)){message('Choose a valid date, today or earlier.');detail();return}current().history.find(h=>h.id===e.target.dataset.history).date=e.target.value;save()}};
+ $('#add').onclick=()=>{$('#addForm').reset();resetLookup();$('#addDialog').showModal();$('#lookup').focus()};$('#cancel').onclick=()=>$('#addDialog').close();$('#addForm').onsubmit=e=>{e.preventDefault();let title=$('#title').value.trim();if(!title)return;let b={...(selectedEdition||{}),id:crypto.randomUUID(),title,author:$('#author').value.trim(),format:$('#kind').value,description:$('#description').value.trim(),color:'#607451',status:'Unread',history:[]};if(b.sourceUrl&&books.some(x=>x.sourceUrl===b.sourceUrl)){message('This edition is already in your library.');$('#addDialog').close();selected=books.find(x=>x.sourceUrl===b.sourceUrl).id;render();return}books.push(b);selected=b.id;filter='All';$('#search').value='';$('#format').value='All formats';tab='overview';save();$('#addDialog').close();e.target.reset()};
+ $('#export').onclick=()=>{let url=URL.createObjectURL(new Blob([JSON.stringify(books,null,2)],{type:'application/json'}));let a=document.createElement('a');a.href=url;a.download='quiet-shelf-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('Backup downloaded. Keep it somewhere safe.')};$('#restore').onclick=()=>$('#file').click();$('#file').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{if(file.size>10000000)throw Error();let incoming=validate(JSON.parse(await file.text()));if(new Set(incoming.map(b=>b.id)).size!==incoming.length)throw Error();if(confirm('Replace your current library with this backup? Download a backup first if you want to keep the current records.')){books=incoming;selected=books[0]?.id;filter='All';save()}}catch(e){message('That backup could not be imported. Your current library is unchanged.')}$('#file').value=''};$('#removeSamples').onclick=()=>{closeMenus();removeSamples()};
+-const sources={kitapyurdu:{name:'Kitapyurdu',defaultLang:'tr',hint:'Turkish bookstore. Search one language at a time; check the publisher before adding.'},bkm:{name:'BKM Kitap',defaultLang:'tr',hint:'Turkish bookstore. A language filter shows editions with a matching language in their listing.'},openlibrary:{name:'Open Library',defaultLang:'en',hint:'International edition catalog. Language is required to match when a filter is selected. Coverage varies by language.'},google:{name:'Google Books',defaultLang:'en',hint:'International volume search with edition language filtering. If Google reaches its shared quota, you can enter your own API key.'},anilist:{name:'AniList',series:true,hint:'Manga SERIES records, not translated print volumes. Results have no edition ISBN or edition language.'}};
++const sources={kitapyurdu:{name:'Kitapyurdu',defaultLang:'tr',hint:'Turkish bookstore. Search one language at a time; check the publisher before adding.'},bkm:{name:'BKM Kitap',defaultLang:'tr',hint:'Turkish bookstore. A language filter shows editions with a matching language in their listing.'},openlibrary:{name:'Open Library',defaultLang:'en',hint:'International edition catalog. Language is required to match when a filter is selected. Coverage varies by language.'},dr:{name:'D&R',browser:true,hint:'Results are retrieved through the browser connector and shown here. Edition language may be missing; check publisher and title.'},idefix:{name:'İdefix',browser:true,hint:'Results are retrieved through the browser connector and shown here. Check publisher and edition before adding.'},google:{name:'Google Books',defaultLang:'en',hint:'International volume search with edition language filtering. If Google reaches its shared quota, you can enter your own API key.'},anilist:{name:'AniList',series:true,hint:'Manga SERIES records, not translated print volumes. Results have no edition ISBN or edition language.'},amazontr:{name:'Amazon Türkiye',browser:true,hint:'Results from this regional Amazon store appear here through the browser connector. A store region does not guarantee edition language.'},amazonus:{name:'Amazon US',browser:true,hint:'Results from this regional Amazon store appear here through the browser connector. A store region does not guarantee edition language.'},amazonuk:{name:'Amazon UK',browser:true,hint:'Results from this regional Amazon store appear here through the browser connector. A store region does not guarantee edition language.'},amazonde:{name:'Amazon Germany',browser:true,hint:'Results from this regional Amazon store appear here through the browser connector. A store region does not guarantee edition language.'},amazonjp:{name:'Amazon Japan',browser:true,hint:'Results from this regional Amazon store appear here through the browser connector. A store region does not guarantee edition language.'}};
+ let searchPrefs={source:'kitapyurdu',lang:'tr'};try{let p=JSON.parse(localStorage.getItem('quiet-shelf-search-v1')||'null');if(p&&sources[p.source]&&['','tr','en','de','fr','ja','es','it','ru','ar','ko','zh','pt'].includes(p.lang))searchPrefs=p}catch{}
+ let lookupTimer,lookupController,lookupVersion=0,lookupResults=[],selectedEdition=null;
+-function sourceKey(){return sources[$('#lookupSource').value]?$('#lookupSource').value:'kitapyurdu'}function sourceInfo(){return sources[sourceKey()]}
+-function sourceControls(){$('#lookupLanguage').disabled=!!sourceInfo().series;$('#googleSettings').hidden=sourceKey()!=='google';$('#sourceHint').textContent=sourceInfo().hint;$('#lookupResults').setAttribute('aria-label',sourceInfo().name+' results')}
++function sourceKey(){return sources[$('#lookupSource').value]?$('#lookupSource').value:'kitapyurdu'}function sourceInfo(){return sources[sourceKey()]}function sourceLink(q){return sourceKey()==='openlibrary'?'https://openlibrary.org/search?q='+encodeURIComponent(q):sourceKey()==='bkm'?'https://www.bkmkitap.com/arama?q='+encodeURIComponent(q):'https://www.kitapyurdu.com/index.php?route=product/list&filter_name='+encodeURIComponent(q)}
++function sourceControls(){$('#lookupLanguage').disabled=!!(sourceInfo().series||sourceInfo().browser);$('#googleSettings').hidden=sourceKey()!=='google';$('#connectorPanel').hidden=!(sourceInfo().browser||['google','anilist'].includes(sourceKey()));$('#sourceHint').textContent=sourceInfo().hint;$('#lookupResults').setAttribute('aria-label',sourceInfo().name+' results')}
+ function rememberSource(){searchPrefs={source:sourceKey(),lang:$('#lookupLanguage').value};try{localStorage.setItem('quiet-shelf-search-v1',JSON.stringify(searchPrefs))}catch{}}
+ $('#lookupSource').onchange=()=>{$('#lookupLanguage').value=sourceInfo().defaultLang||'';sourceControls();rememberSource();$('#lookup').oninput()};$('#lookupLanguage').onchange=()=>{rememberSource();$('#lookup').oninput()};
+ function resetLookup(){$('#lookupSource').value=searchPrefs.source;$('#lookupLanguage').value=searchPrefs.lang;sourceControls();clearTimeout(lookupTimer);lookupController?.abort();lookupVersion++;selectedEdition=null;lookupResults=[];$('#lookup').value='';$('#lookupResults').hidden=true;$('#lookup').setAttribute('aria-expanded','false');$('#editionPreview').hidden=true;$('#lookupStatus').textContent='Type at least 2 characters for suggestions.'}
+ function closeResults(){$('#lookupResults').hidden=true;$('#lookup').setAttribute('aria-expanded','false')}
+ $('#lookup').oninput=()=>{$('#addForm').querySelector('button.primary').disabled=false;clearTimeout(lookupTimer);lookupController?.abort();let version=++lookupVersion;let q=$('#lookup').value.trim();closeResults();selectedEdition=null;$('#editionPreview').hidden=true;if(q.length<2){$('#lookupStatus').textContent='Type at least 2 characters for suggestions.';return}$('#lookupStatus').textContent='Searching '+sourceInfo().name+'…';lookupTimer=setTimeout(()=>searchOnline(q,version),500)};
+-async function searchOnline(q,version){lookupController=new AbortController();try{let r=await fetch('/api/books?q='+encodeURIComponent(q)+'&source='+encodeURIComponent(sourceKey())+'&lang='+encodeURIComponent($('#lookupLanguage').value),{signal:lookupController.signal,headers:sourceKey()==='google'&&$('#googleApiKey').value?{'X-Google-Api-Key':$('#googleApiKey').value}: {}});let data=await r.json();if(version!==lookupVersion)return;if(!r.ok)throw Error(data.error);showResults(data.results);}catch(e){if(e.name==='AbortError'||version!==lookupVersion)return;$('#lookupStatus').textContent=e.message||'Search unavailable. You can still add a title manually.';}}
++async function searchOnline(q,version){lookupController=new AbortController();try{if(sourceInfo().browser){if(!connectorConnected)throw Error('Install the browser connector above and refresh Quiet Shelf. This source needs it to return results here.');$('#lookupStatus').textContent='Reading '+sourceInfo().name+' results through your browser…';let data=await browserSearch(sourceKey(),q);if(version!==lookupVersion)return;showResults(data.results);return}let r=await fetch('/api/books?q='+encodeURIComponent(q)+'&source='+encodeURIComponent(sourceKey())+'&lang='+encodeURIComponent($('#lookupLanguage').value),{signal:lookupController.signal,headers:sourceKey()==='google'&&$('#googleApiKey').value?{'X-Google-Api-Key':$('#googleApiKey').value}: {}});let data=await r.json();if(version!==lookupVersion)return;if(!r.ok){if(connectorConnected&&['google','anilist'].includes(sourceKey())){$('#lookupStatus').textContent='Direct API unavailable. Reading results through your browser…';let bridged=await browserSearch(sourceKey(),q);if(version!==lookupVersion)return;showResults(bridged.results);return}throw Error(data.error+(['google','anilist'].includes(sourceKey())?' You can also install the browser connector above to try its browser search.':''))}showResults(data.results);}catch(e){if(e.name==='AbortError'||version!==lookupVersion)return;$('#lookupStatus').textContent=e.message||'Search unavailable. You can still add a title manually.';}}
+ function showResults(results){lookupResults=results;$('#lookupResults').innerHTML=lookupResults.map((b,i)=>`<button type="button" class="suggestion" role="option" aria-selected="false" data-result="${i}">${safeCover(b.cover)?`<img src="${esc(b.cover)}" alt="" referrerpolicy="no-referrer">`:''}<span><strong>${esc(b.title)}</strong><span class="muted">${esc([b.author,b.publisher,b.language,b.isbn].filter(Boolean).join(' · '))}</span></span></button>`).join('');$('#lookupResults').hidden=!lookupResults.length;$('#lookup').setAttribute('aria-expanded',String(!!lookupResults.length));$('#lookupStatus').textContent=lookupResults.length?(sourceInfo().series?'Choose a manga series (not a print edition).':'Choose your edition. Check publisher, language and ISBN.'):'No results found. Try another spelling, or add it manually.'}
+-$('#lookupResults').onclick=async e=>{let option=e.target.closest('[data-result]');if(!option)return;let result=lookupResults[Number(option.dataset.result)];let version=++lookupVersion;lookupController?.abort();lookupController=new AbortController();closeResults();$('#lookupStatus').textContent='Loading edition details…';$('#addForm').querySelector('button.primary').disabled=true;try{let r=await fetch('/api/book?url='+encodeURIComponent(result.sourceUrl)+'&source='+encodeURIComponent(sourceKey()),{signal:lookupController.signal,headers:sourceKey()==='google'&&$('#googleApiKey').value?{'X-Google-Api-Key':$('#googleApiKey').value}:{}});let details=await r.json();if(version!==lookupVersion)return;if(!r.ok)throw Error(details.error);fillEdition({...result,...details,author:details.author||result.author,language:details.language||result.language});$('#lookupStatus').textContent='Edition selected. Check the details, then add it.'}catch(e){if(e.name==='AbortError'||version!==lookupVersion)return;fillEdition(result);$('#lookupStatus').textContent='Basic details loaded. Extra edition details unavailable right now.'}finally{if(version===lookupVersion)$('#addForm').querySelector('button.primary').disabled=false}};
++$('#lookupResults').onclick=async e=>{let option=e.target.closest('[data-result]');if(!option)return;let result=lookupResults[Number(option.dataset.result)];if(result.connector){closeResults();fillEdition(result);$('#lookupStatus').textContent='Bookstore result selected. Check the available details, then add it.';return}let version=++lookupVersion;lookupController?.abort();lookupController=new AbortController();closeResults();$('#lookupStatus').textContent='Loading edition details…';$('#addForm').querySelector('button.primary').disabled=true;try{let r=await fetch('/api/book?url='+encodeURIComponent(result.sourceUrl)+'&source='+encodeURIComponent(sourceKey()),{signal:lookupController.signal,headers:sourceKey()==='google'&&$('#googleApiKey').value?{'X-Google-Api-Key':$('#googleApiKey').value}:{}});let details=await r.json();if(version!==lookupVersion)return;if(!r.ok)throw Error(details.error);fillEdition({...result,...details,author:details.author||result.author,language:details.language||result.language});$('#lookupStatus').textContent='Edition selected. Check the details, then add it.'}catch(e){if(e.name==='AbortError'||version!==lookupVersion)return;fillEdition(result);$('#lookupStatus').textContent='Basic details loaded. Extra edition details unavailable right now.'}finally{if(version===lookupVersion)$('#addForm').querySelector('button.primary').disabled=false}};
+ function fillEdition(b){selectedEdition=b;$('#title').value=b.title;$('#author').value=b.author||'';$('#kind').value=b.format||'Book';$('#description').value='';$('#editionPreview').innerHTML='<strong>'+esc(b.title)+'</strong>'+metadata(b);$('#editionPreview').hidden=false}
+ $('#lookup').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!$('#lookupResults').hidden)$('#lookupResults').querySelector('button')?.focus();return}if(e.key==='ArrowDown'&&!$('#lookupResults').hidden){e.preventDefault();$('#lookupResults').querySelector('button')?.focus()}if(e.key==='Escape'&&!$('#lookupResults').hidden){e.preventDefault();e.stopPropagation();closeResults()}};
+ $('#lookupResults').onkeydown=e=>{let options=[...$('#lookupResults').querySelectorAll('button')],i=options.indexOf(document.activeElement);if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();options[(i+(e.key==='ArrowDown'?1:-1)+options.length)%options.length]?.focus()}if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeResults();$('#lookup').focus()}};
+ $('#addDialog').addEventListener('close',()=>{resetLookup();$('#addForm').querySelector('button.primary').disabled=false});
+ document.addEventListener('click',e=>{let trigger=e.target.closest('[data-menu-toggle]');if(trigger){toggleMenu(trigger);return}let menu=e.target.closest('.kebab');closeMenus(menu)});document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.kebab').forEach(menu=>{let trigger=menu.querySelector('[data-menu-toggle]');if(trigger.getAttribute('aria-expanded')==='true'){setMenu(menu,false);trigger.focus()}})}if(e.key==='ArrowDown'&&e.target.matches('[data-menu-toggle]')){e.preventDefault();let menu=e.target.closest('.kebab');closeMenus(menu);setMenu(menu,true);menu.querySelector('.kebabmenu button').focus()}});
++let connectorConnected=false;const browserPending=new Map();
++window.addEventListener('quiet-shelf-ready',()=>{connectorConnected=true;$('#connectorStatus').textContent='Browser connector connected'});
++window.addEventListener('quiet-shelf-response',e=>{let data;try{data=JSON.parse(e.detail)}catch{return}let entry=browserPending.get(data?.id);if(!entry)return;clearTimeout(entry.timeout);browserPending.delete(data.id);if(data.error)entry.reject(Error(data.error));else entry.resolve(data)});
++function browserSearch(source,q){return new Promise((resolve,reject)=>{let id=crypto.randomUUID();let timeout=setTimeout(()=>{browserPending.delete(id);reject(Error('Browser search timed out. Check the bookstore tab and retry.'))},40000);browserPending.set(id,{resolve,reject,timeout});window.dispatchEvent(new CustomEvent('quiet-shelf-request',{detail:JSON.stringify({id,source,q})}))})}
++window.dispatchEvent(new CustomEvent('quiet-shelf-hello'));
+ $('#lookupSource').value=searchPrefs.source;$('#lookupLanguage').value=searchPrefs.lang;sourceControls();
+ if(['127.0.0.1','localhost'].includes(location.hostname))$('#pcDownload').hidden=true;
+ render();
+diff --git b/tests/browser-import.cjs a/tests/browser-import.cjs
+new file mode 100644
+index 0000000..88948be
+--- /dev/null
++++ a/tests/browser-import.cjs
+@@ -0,0 +1,4 @@
++const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');let listeners={},elements={},timers=[];class Event{constructor(type,init={}){this.type=type;this.detail=init.detail}}
++const window={addEventListener:(name,fn)=>(listeners[name]??=[]).push(fn),dispatchEvent:event=>(listeners[event.type]||[]).forEach(fn=>fn(event))};let sent;
++const ctx={window,CustomEvent:Event,URL,AbortController,console,location:{hostname:'localhost'},crypto:require('node:crypto').webcrypto,localStorage:{getItem:()=>null,setItem:()=>{}},setTimeout:fn=>{timers.push(fn);return timers.length},clearTimeout:()=>{},document:{querySelectorAll:()=>[],addEventListener:()=>{},querySelector:s=>elements[s]??={value:s==='#format'?'All formats':'',innerHTML:'',hidden:false,textContent:'',setAttribute:()=>{},addEventListener:()=>{},querySelector:()=>({disabled:false})}},fetch:()=>{throw Error('Browser-store results must not use server fetch')},chrome:{runtime:{lastError:null,sendMessage:(message,callback)=>{sent=message;callback({results:[{title:'A <Book>',author:'Author',source:'Amazon US',sourceUrl:'https://www.amazon.com/dp/B012345678',format:'Book',connector:true}]})}}}};vm.createContext(ctx);let source=fs.readFileSync('src/index.html','utf8').match(/<script>([\s\S]*)<\/script>/)[1];vm.runInContext(source,ctx);vm.runInContext(fs.readFileSync('connector/content.js','utf8'),ctx);assert.equal(elements['#connectorStatus'].textContent,'Browser connector connected');elements['#lookupSource'].value='amazonus';elements['#lookup'].value='A Book';elements['#lookupSource'].onchange();
++(async()=>{await timers.shift()();assert.equal(sent.source,'amazonus');assert.equal(sent.q,'A Book');assert.equal(elements['#lookupResults'].hidden,false);assert.match(elements['#lookupResults'].innerHTML,/A &lt;Book&gt;/);await elements['#lookupResults'].onclick({target:{closest:()=>({dataset:{result:'0'}})}});assert.equal(elements['#title'].value,'A <Book>');assert.equal(elements['#editionPreview'].hidden,false);assert.equal(vm.runInContext('selectedEdition.source',ctx),'Amazon US');console.log('PASS: connector handshake, string-based browser bridge, source-scoped request, real dropdown path, escaped result titles and import into Add title without another fetch')})().catch(e=>{console.error(e);process.exitCode=1});
+diff --git b/tests/connector.cjs a/tests/connector.cjs
+new file mode 100644
+index 0000000..32aeac6
+--- /dev/null
++++ a/tests/connector.cjs
+@@ -0,0 +1,2 @@
++const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');let callback,opened=[],closed=[];let title={innerText:'A Manga Volume'},img={src:'https://m.media-amazon.com/test.jpg'},card={getAttribute:()=> 'B012345678',querySelector:s=>s==='h2'?title:s==='img.s-image'?img:null};let mode='amazon';let ctx={URL,Map,Set,Promise,console,setTimeout:cb=>queueMicrotask(cb),document:{readyState:'complete',title:'Search results',querySelector:()=>null,querySelectorAll:s=>mode==='amazon'&&s.includes('s-search-result')?[card]:s==='script[type="application/ld+json"]'&&['dr','idefix'].includes(mode)?[{textContent:JSON.stringify({'@type':'ItemList',itemListElement:[{item:{'@type':'Book',name:'A Book',isbn:'9781234567897',url:mode==='dr'?'https://www.dr.com.tr/Kitap/a-book/a/1':'https://www.idefix.com/a-book-p-123'}}]})}]:[]},chrome:{runtime:{onMessage:{addListener:fn=>callback=fn}},tabs:{create:async o=>{opened.push(o);return{id:20}},get:async()=>({status:'complete'}),remove:async id=>closed.push(id),update:async()=>{}},scripting:{executeScript:async args=>[{result:args.func(...args.args)}]}}};vm.createContext(ctx);vm.runInContext(fs.readFileSync('connector/background.js','utf8'),ctx);const search=(source,url='http://127.0.0.1:8765/')=>new Promise(resolve=>callback({type:'search',source,q:'manga'},{tab:{id:5},url},resolve));
++(async()=>{assert.match((await search('amazonus','https://evil.com/')).error,/Invalid/);assert.equal(opened.length,0);let result=await search('amazonus');assert.equal(result.results[0].title,'A Manga Volume');assert.equal(result.results[0].source,'Amazon US');assert.equal(result.results[0].sourceUrl,'https://www.amazon.com/dp/B012345678');assert.equal(result.results[0].connector,true);assert.match(opened[0].url,/i=stripbooks/);await new Promise(r=>setImmediate(r));assert.equal(closed.length,1);mode='dr';result=await search('dr');assert.equal(result.results[0].title,'A Book');assert.equal(result.results[0].source,'D&R');assert.equal(result.results[0].isbn,'9781234567897');mode='idefix';result=await search('idefix');assert.equal(result.results[0].source,'İdefix');for(let source of ['amazontr','amazonuk','amazonde','amazonjp']){mode='amazon';result=await search(source);assert(result.results[0].sourceUrl.includes('/dp/B012345678'));}for(let source of ['google','anilist']){mode=source;ctx.document.querySelectorAll=selector=>selector==='a[href]'?[{href:source==='google'?'https://books.google.com/books?id=Volume123':'https://anilist.co/manga/123/Test',querySelector:()=>null,getAttribute:()=> 'A Catalog Title',textContent:'A Catalog Title'}]:[];result=await search(source);assert.equal(result.results[0].title,'A Catalog Title');assert.equal(result.results[0].recordKind,source==='google'?'edition':'series');}for(let browser of ['chrome','firefox']){let m=JSON.parse(fs.readFileSync('connector/manifest-'+browser+'.json'));assert.equal(m.host_permissions.length,10);assert(!m.permissions.includes('cookies'));assert(!JSON.stringify(m).includes('<all_urls>'));}console.log('PASS: connector sender restriction, region-specific search, rendered Amazon results, bookstore structured metadata, source attribution, temporary tab cleanup, bounded extension permissions')})().catch(e=>{console.error(e);process.exitCode=1});
+diff --git b/tests/menus.cjs a/tests/menus.cjs
+index 8caa875..0f4b259 100644
+--- b/tests/menus.cjs
++++ a/tests/menus.cjs
+@@ -1,5 +1,5 @@
+ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+-const html=fs.readFileSync('src/index.html','utf8');assert(!html.includes('<summary'));assert(!html.includes('<details'));assert(html.includes('class="kebab-trigger"'));assert(html.includes('.kebab-trigger>span'));assert(html.includes('v0.6.2'));
++const html=fs.readFileSync('src/index.html','utf8');assert(!html.includes('<summary'));assert(!html.includes('<details'));assert(html.includes('class="kebab-trigger"'));assert(html.includes('.kebab-trigger>span'));assert(html.includes('v0.6.1'));
+ let menus=[],listeners={},elements={};function menu(){const attrs={'aria-expanded':'false'},panel={hidden:true,querySelector:()=>action},action={focus:()=>{action.focused=true}},button={getAttribute:k=>attrs[k],setAttribute:(k,v)=>attrs[k]=v,closest:s=>s==='[data-menu-toggle]'?button:s==='.kebab'?wrapper:null,focus:()=>{button.focused=true},matches:s=>s==='[data-menu-toggle]'},wrapper={querySelector:s=>s==='.kebabmenu'?panel:s==='.kebabmenu button'?action:button};menus.push(wrapper);return{wrapper,button,panel,action}}
+ const ctx={console,window:{addEventListener:()=>{},dispatchEvent:()=>{}},CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail}},location:{hostname:'localhost'},crypto:require('node:crypto').webcrypto,confirm:()=>true,localStorage:{getItem:()=>null,setItem:()=>{}},document:{querySelector:s=>elements[s]??={value:s==='#format'?'All formats':'',innerHTML:'',textContent:'',setAttribute:()=>{},addEventListener:()=>{}},querySelectorAll:()=>menus,addEventListener:(name,cb)=>listeners[name]=cb}};vm.createContext(ctx);vm.runInContext(html.match(/<script>([\s\S]*)<\/script>/)[1],ctx);
+ let first=menu(),second=menu();listeners.click({target:first.button});assert.equal(first.panel.hidden,false);assert.equal(first.button.getAttribute('aria-expanded'),'true');listeners.click({target:second.button});assert.equal(first.panel.hidden,true);assert.equal(second.panel.hidden,false);listeners.click({target:{closest:()=>null}});assert.equal(second.panel.hidden,true);listeners.click({target:first.button});listeners.keydown({key:'Escape',target:first.button});assert.equal(first.panel.hidden,true);assert(first.button.focused);listeners.keydown({key:'ArrowDown',target:second.button,preventDefault:()=>{}});assert.equal(second.panel.hidden,false);assert(second.action.focused);vm.runInContext("deleteTitle('sample-0')",ctx);assert.equal(second.panel.hidden,true);assert.equal(vm.runInContext('books.length',ctx),5);
+diff --git b/tests/source-controls.cjs a/tests/source-controls.cjs
+index 6471365..b594689 100644
+--- b/tests/source-controls.cjs
++++ a/tests/source-controls.cjs
+@@ -1,2 +1,2 @@
+ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');const source=fs.readFileSync('src/index.html','utf8').match(/<script>([\s\S]*)<\/script>/)[1];let elements={},storage={},scheduled=[],fetches=[];const ctx={URL,console,window:{addEventListener:()=>{},dispatchEvent:()=>{}},CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail}},location:{hostname:'localhost'},crypto:require('node:crypto').webcrypto,AbortController,setTimeout:cb=>{scheduled.push(cb);return scheduled.length},clearTimeout:()=>{},localStorage:{getItem:k=>storage[k],setItem:(k,v)=>storage[k]=v},document:{querySelectorAll:()=>[],addEventListener:()=>{},querySelector:s=>elements[s]??={value:s==='#format'?'All formats':'',textContent:'',innerHTML:'',hidden:false,setAttribute:()=>{},addEventListener:()=>{},querySelector:()=>({disabled:false})}},fetch:async url=>{fetches.push(url);return {ok:true,json:async()=>({results:[]})}}};vm.createContext(ctx);vm.runInContext(source,ctx);
+-(async()=>{assert.equal(elements['#lookupSource'].value,'kitapyurdu');assert.equal(elements['#lookupLanguage'].value,'tr');elements['#lookup'].value='Gachiakuta';elements['#lookupSource'].value='openlibrary';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'en');await scheduled.pop()();assert(fetches.at(-1).includes('source=openlibrary&lang=en'));elements['#lookupLanguage'].value='fr';elements['#lookupLanguage'].onchange();await scheduled.pop()();assert(fetches.at(-1).includes('lang=fr'));assert.equal(JSON.parse(storage['quiet-shelf-search-v1']).lang,'fr');elements['#lookupSource'].value='google';elements['#lookupSource'].onchange();await scheduled.pop()();assert(fetches.at(-1).includes('source=google&lang=en'));elements['#lookupSource'].value='bkm';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'tr');assert.equal(elements['#lookupLanguage'].disabled,false);await scheduled.pop()();assert(fetches.at(-1).includes('source=bkm&lang=tr'));console.log('PASS: provider selection, default languages, remembered preference, selected-source requests, direct source selection, source changes restore controls')})().catch(e=>{console.error(e);process.exitCode=1});
++(async()=>{assert.equal(elements['#lookupSource'].value,'kitapyurdu');assert.equal(elements['#lookupLanguage'].value,'tr');elements['#lookup'].value='Gachiakuta';elements['#lookupSource'].value='openlibrary';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'en');await scheduled.pop()();assert(fetches.at(-1).includes('source=openlibrary&lang=en'));elements['#lookupLanguage'].value='fr';elements['#lookupLanguage'].onchange();await scheduled.pop()();assert(fetches.at(-1).includes('lang=fr'));assert.equal(JSON.parse(storage['quiet-shelf-search-v1']).lang,'fr');let count=fetches.length;elements['#lookupSource'].value='amazontr';elements['#lookupSource'].onchange();await scheduled.pop()();assert.equal(fetches.length,count);assert.match(elements['#lookupStatus'].textContent,/Install the browser connector/);assert.equal(elements['#lookupLanguage'].disabled,true);assert.equal(elements['#connectorPanel'].hidden,false);elements['#lookupSource'].value='bkm';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'tr');assert.equal(elements['#lookupLanguage'].disabled,false);assert.equal(elements['#connectorPanel'].hidden,true);await scheduled.pop()();assert(fetches.at(-1).includes('source=bkm&lang=tr'));console.log('PASS: provider selection, default languages, remembered preference, selected-source requests, browser-only sources request connector, not API, source changes restore controls')})().catch(e=>{console.error(e);process.exitCode=1});
