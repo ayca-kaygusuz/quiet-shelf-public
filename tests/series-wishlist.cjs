@@ -32,3 +32,28 @@ let newRecords=[...chainsawRecords,record('new1','New series Cilt 1'),record('ne
 let withNew=app(newRecords,{'quiet-shelf-series-state-v1':remembered.storage['quiet-shelf-series-state-v1']});assert(withNew.element('#list').innerHTML.includes('New series Cilt 1'));assert(!withNew.element('#list').innerHTML.includes('Chainsaw Man 1. Cilt / Testere Adam'));
 for(let invalid of ['{bad json','[]','null','false'])assert(app(chainsawRecords,{'quiet-shelf-series-state-v1':invalid}).element('#list').innerHTML.includes('Chainsaw Man 1. Cilt / Testere Adam'));
 console.log('PASS: individual/bulk series state survives reload and search; new/corrupt/missing preferences default open');
+
+// Existing-series selection is usable directly; merely opening it does not change the mode.
+let direct=app([record('auto1','ReLIFE Cilt 1'),record('auto2','ReLIFE Cilt 2'),record('other','Another title')]);
+direct.run("selected='auto2';render()");
+assert.match(direct.element('#detail').innerHTML,/<select id="existingSeries">/);
+assert(!direct.element('#detail').innerHTML.match(/<select id="existingSeries">([^]*?)<\/select>/)[1].includes('selected'));
+let directId=direct.run('seriesInfo(books[0]).key'),unchanged=direct.storage['quiet-shelf-v1'];
+for(let mode of ['auto','none']){
+ direct.element('#seriesMode').value=mode;direct.element('#detail').onchange({target:{id:'seriesMode',value:mode}});
+ assert.equal(direct.element('#existingSeries').disabled,false);assert.equal(direct.element('#existingSeries').value,'');assert.equal(direct.element('#seriesName').disabled,true);
+ let beforeOpening=direct.element('#detail').innerHTML;
+ direct.element('#detail').onpointerdown?.({target:{id:'existingSeries'}});direct.element('#detail').onfocusin?.({target:{id:'existingSeries'}});
+ direct.element('#detail').onclick({target:{id:'existingSeries',dataset:{},closest:()=>null}});
+ assert.equal(direct.element('#seriesMode').value,mode);assert.equal(direct.element('#seriesName').disabled,true);
+ direct.element('#detail').onchange({target:{id:'existingSeries',value:''}});assert.equal(direct.element('#seriesMode').value,mode,'placeholder is not a series choice');
+ assert.equal(direct.element('#detail').innerHTML,beforeOpening,'native dropdown is not replaced');
+ assert.equal(direct.storage['quiet-shelf-v1'],unchanged,'opening/cancelling the picker leaves saved records intact');
+ direct.element('#existingSeries').value=directId;direct.element('#detail').onchange({target:{id:'existingSeries',value:directId}});
+ assert.equal(direct.element('#seriesMode').value,'manual');assert.equal(direct.element('#seriesName').value,'ReLIFE');assert.equal(direct.element('#seriesName').disabled,false);assert.equal(direct.element('#seriesVolume').disabled,false);
+ assert.equal(direct.storage['quiet-shelf-v1'],unchanged,'choosing a name edits the draft until Save series');
+}
+direct.element('#seriesVolume').value='2';direct.element('#detail').onclick({target:{id:'saveSeries'}});
+assert.equal(direct.run('current().seriesMode'),'manual');assert.equal(direct.run('current().seriesId'),directId);assert.equal(direct.run('knownSeries().size'),1);
+assert.equal(app(JSON.parse(direct.storage['quiet-shelf-v1'])).run("books.find(b=>b.id==='auto2').seriesId"),directId);
+console.log('PASS: existing-series picker stays usable in automatic/standalone; opening/cancelling leaves mode intact; selecting a name activates manual mode and Save preserves group identity');

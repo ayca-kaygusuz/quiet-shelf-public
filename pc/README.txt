@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.8.9
+QUIET SHELF — PC VERSION 0.8.10
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -32,7 +32,10 @@ open/closed state in this browser and default open without a saved preference.
 Volumes stay in numerical order; click the group header to collapse. The Collapse
 all series / Expand all series button toggles groups in the current view. Correct the series
 name/volume or mark a title standalone in its Overview. Existing-series dropdowns
-in the add form and manual series editor let you reuse names without retyping. Each volume keeps its
+in the add form and manual series editor let you reuse names without retyping.
+Choosing a name in Existing series switches grouping to Set series myself,
+even from automatic or standalone mode. Opening/cancelling the dropdown leaves
+the mode unchanged. Use Save series to apply your choice. Each volume keeps its
 own reading history and collection. Same-name custom series use a shared group
 identity; existing split custom groups combine automatically on load/restore,
 preserving records and reading history.

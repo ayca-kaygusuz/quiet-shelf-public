@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.9.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.10.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -90,7 +90,10 @@ Overview, **Series grouping** lets you keep automatic detection, set a custom
 series, or mark a title standalone. Both the add form and manual series editor
 include an **Existing series** dropdown and name suggestions, populated from
 automatic and custom series across all collections. Choose a saved name instead
-of retyping it, or enter a new one. Click **Save series** to apply corrections.
+of retyping it, or enter a new one. The existing-series dropdown remains usable
+in automatic and standalone modes. Choosing a series name switches the editor
+to **Set series myself**, fills its name and enables the name/volume fields.
+Opening or cancelling the dropdown leaves the current mode unchanged. Click **Save series** to apply corrections.
 
 The list's sort selector offers date added (oldest/newest), title (A–Z/Z–A),
 author, reading status, and most recently finished. The last choice is remembered
