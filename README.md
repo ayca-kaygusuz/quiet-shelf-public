@@ -25,7 +25,8 @@ so keep backups. Git contains the application, not your personal reading data.
 ## Features
 
 - Dashboard, searchable library, and title details with reading-history tabs.
-- Unread / In progress / Done; no page or chapter tracking.
+- Unread / In progress / Done; new titles default to Unread. You can add a title
+  in progress or done; Done starts with an editable completion date (today by default).
 - Starting a reread preserves prior completion dates. Finishing appends a date.
 - Editable completion dates, title deletion through overflow menus, sample cleanup.
 - Manual entry, source selection, edition-language filters and metadata import.
