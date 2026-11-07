@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Quiet Shelf Bookstore Connector",
+  "version": "0.6.0",
+  "description": "Returns bookstore search results to your local Quiet Shelf.",
+  "permissions": [
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*",
+    "https://www.dr.com.tr/*",
+    "https://www.idefix.com/*",
+    "https://www.amazon.com.tr/*",
+    "https://www.amazon.com/*",
+    "https://www.amazon.co.uk/*",
+    "https://www.amazon.de/*",
+    "https://www.amazon.co.jp/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://127.0.0.1:8765/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "quiet-shelf-local@example.invalid",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}
