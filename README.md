@@ -25,6 +25,9 @@ so keep backups. Git contains the application, not your personal reading data.
 ## Features
 
 - Dashboard, searchable library, and title details with reading-history tabs.
+- Separate Reading archive for titles not currently owned; excluded from the
+  default library list and counts. Titles can be moved between collections
+  without changing their completion dates. Backups include both collections.
 - Unread / In progress / Done; new titles default to Unread. You can add a title
   in progress or done; Done starts with an editable completion date (today by default).
 - Starting a reread preserves prior completion dates. Finishing appends a date.
