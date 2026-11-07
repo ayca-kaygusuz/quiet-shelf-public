@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.4.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.5.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -77,7 +77,10 @@ Search expands matching groups so individual results remain visible.
 
 Optional series-name and volume fields are available when adding titles. In
 Overview, **Series grouping** lets you keep automatic detection, set a custom
-series, or mark a title standalone. Click **Save series** to apply corrections.
+series, or mark a title standalone. Both the add form and manual series editor
+include an **Existing series** dropdown and name suggestions, populated from
+automatic and custom series across all collections. Choose a saved name instead
+of retyping it, or enter a new one. Click **Save series** to apply corrections.
 
 The list's sort selector offers date added (oldest/newest), title (A–Z/Z–A),
 author, reading status, and most recently finished. The last choice is remembered
@@ -112,7 +115,15 @@ from the library's **⋮** menu.
 Choose one **Search source** at a time. The app remembers the last source and
 language selection. Where supported, **Edition language** narrows results;
 suggestions display available author, publisher, language and ISBN details.
-Select a result, review its details, then add it to either collection.
+Select a result, review its details, then add it to the chosen collection.
+
+Search accepts full titles up to 300 characters. Queries are normalized for
+punctuation and Turkish diacritics; candidates are ranked against the original
+title, author or ISBN, with volume numbers preserved. If a long-title query has
+weak results, the app tries a shorter main-title query on the same source and
+with the same language filter (up to three query variants). Results are
+deduplicated, and wrong known volume numbers are excluded. Source access blocks
+and quota errors are still reported; the app does not switch databases silently.
 
 | Source | Current behavior and observed access limits |
 | --- | --- |
