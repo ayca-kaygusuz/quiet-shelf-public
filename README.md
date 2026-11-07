@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.8.2.**
+A personal reading tracker for books, manga and comics. **Current version: 0.8.3.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -66,7 +66,9 @@ numbers. Titles such as **Chainsaw Man 1. Cilt / Testere Adam** are detected
 even when the volume marker is followed by a translated subtitle. Standalone years and titles made entirely of digits are not treated
 as numbered series. Entries with different known languages remain separate.
 
-Series groups start expanded by default. Click the arrow beside a series to
+Series and standalone titles appear in separate sections. Series use distinct
+headers and indented volume rows so their boundaries stay clear. Series groups
+start expanded by default. Click the arrow beside a series to
 collapse or reopen it. Volumes are ordered
 numerically (1, 2, 10), and each retains its own status, collection and history.
 A series can span collections, while each view only shows its own titles.
@@ -78,7 +80,8 @@ series, or mark a title standalone. Click **Save series** to apply corrections.
 
 The list's sort selector offers date added (oldest/newest), title (A–Z/Z–A),
 author, reading status, and most recently finished. The last choice is remembered
-across collections and reloads. Series groups follow the selected sort; volumes
+across collections and reloads. Each section follows the selected sort; series groups follow their first
+matching sorted entry, while volumes
 inside a group stay in numerical order. New records save an added timestamp.
 Older records without timestamps use their saved order as a fallback; historical
 added dates are not invented.

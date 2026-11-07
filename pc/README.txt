@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.8.2
+QUIET SHELF — PC VERSION 0.8.3
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -24,7 +24,8 @@ The Reading history tab lets you edit dates or add past readings.
 
 SERIES AND SORTING
 Numbered titles such as ReLIFE Cilt 1 and ReLIFE Cilt 2 group automatically.
-Series start expanded, with volumes in numerical order; click to collapse. Correct the series
+Series and standalones have separate sections. Series start expanded, with
+volumes in numerical order; click the group header to collapse. Correct the series
 name/volume or mark a title standalone in its Overview. Each volume keeps its
 own reading history and collection.
 Sort by date added, title, author, status or most recently finished. Older
