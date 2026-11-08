@@ -140,7 +140,36 @@ export function searchVariants(query){
   return [...new Set(variants)].filter(v=>v.length>=2&&/\p{L}/u.test(v)).slice(0,4);
 }
 const unimportant=new Set(['cilt','vol','volume','tome','the','a','an','and','of','ve','book','kitap']);
-function searchScore(book,query){let q=normalizeSearch(query),title=normalizeSearch(book.title),author=normalizeSearch(book.author),core=normalizeSearch(mainTitle(query));let isbn=q.replace(/\s/g,'');if(/^\d{9}[\dx]$|^\d{13}$/i.test(isbn))return String(book.isbn||'').replace(/[^\dx]/gi,'')===isbn?2000:100;let volume=searchVolume(query),candidateVolume=searchVolume(book.title);if(volume!==null&&candidateVolume!==null&&volume!==candidateVolume)return -1;let words=[...new Set(q.split(' ').filter(w=>!unimportant.has(w)))],coreWords=[...new Set(core.split(' ').filter(w=>!unimportant.has(w)))];let titleWords=new Set(title.split(' ')),authorWords=new Set(author.split(' '));let wordMatch=(set,word)=>set.has(word)||word.length>=2&&[...set].some(candidate=>candidate.startsWith(word));let coverage=words.length?words.filter(w=>wordMatch(titleWords,w)).length/words.length:0,coreCoverage=coreWords.length?coreWords.filter(w=>wordMatch(titleWords,w)).length/coreWords.length:0,authorCoverage=words.length?words.filter(w=>wordMatch(authorWords,w)).length/words.length:0;if(Math.max(coverage,coreCoverage,authorCoverage)<0.75&&title!==q&&!title.startsWith(q)&&author!==q)return -1;let score=coverage*200+coreCoverage*180+authorCoverage*120;if(title===q)score+=1000;else if(title.startsWith(q))score+=700;else if(q.startsWith(title+' '))score+=300;if(core&&title.includes(core))score+=250;if(author&&author===q)score+=900;if(volume!==null&&candidateVolume===volume)score+=200;else if(volume!==null)score-=100;return score}
+function matchingSearchWords(words,value){
+  let parts=value.split(' ').filter(Boolean),single=new Set(parts),joined=new Set(parts),matched=new Set();
+  // Adjacent alphabetic words may be written joined or spaced. Do not join
+  // across fields, intervening words, or numbers (which can identify volumes).
+  for(let i=0;i<parts.length;i++)for(let n=2;n<=3&&i+n<=parts.length;n++){
+    let span=parts.slice(i,i+n);if(span.every(word=>/^\p{L}+$/u.test(word)))joined.add(span.join(''));
+  }
+  for(let i=0;i<words.length;i++){
+    if(joined.has(words[i])||words[i].length>=2&&[...single].some(candidate=>candidate.startsWith(words[i])))matched.add(words[i]);
+    for(let n=2;n<=3&&i+n<=words.length;n++){
+      let span=words.slice(i,i+n);
+      if(span.every(word=>/^\p{L}+$/u.test(word))&&joined.has(span.join('')))for(let word of span)matched.add(word);
+    }
+  }
+  return matched;
+}
+function searchScore(book,query){
+  let q=normalizeSearch(query),title=normalizeSearch(book.title),author=normalizeSearch(book.author),core=normalizeSearch(mainTitle(query));
+  let isbn=q.replace(/\s/g,'');if(/^\d{9}[\dx]$|^\d{13}$/i.test(isbn))return String(book.isbn||'').replace(/[^\dx]/gi,'')===isbn?2000:100;
+  let volume=searchVolume(query),candidateVolume=searchVolume(book.title);if(volume!==null&&candidateVolume!==null&&volume!==candidateVolume)return -1;
+  let words=[...new Set(q.split(' ').filter(w=>!unimportant.has(w)))],coreWords=[...new Set(core.split(' ').filter(w=>!unimportant.has(w)))];
+  let titleMatches=matchingSearchWords(words,title),authorMatches=matchingSearchWords(words,author);
+  let coverage=words.length?titleMatches.size/words.length:0,coreCoverage=coreWords.length?matchingSearchWords(coreWords,title).size/coreWords.length:0,authorCoverage=words.length?authorMatches.size/words.length:0;
+  let combinedCoverage=words.length?new Set([...titleMatches,...authorMatches]).size/words.length:0;
+  if(Math.max(coverage,coreCoverage,authorCoverage,combinedCoverage)<0.75&&title!==q&&!title.startsWith(q)&&author!==q)return -1;
+  let score=coverage*200+coreCoverage*180+authorCoverage*120+combinedCoverage*180;
+  if(title===q)score+=1000;else if(title.startsWith(q))score+=700;else if(q.startsWith(title+' '))score+=300;
+  if(core&&title.includes(core))score+=250;if(author&&author===q)score+=900;
+  if(volume!==null&&candidateVolume===volume)score+=200;else if(volume!==null)score-=100;return score;
+}
 export function rankSearchResults(results,query,limit=12){let unique=new Map();for(let result of results){let identity=result.sourceUrl||[result.source,result.isbn,result.title,result.author].join('|');if(!unique.has(identity))unique.set(identity,result)}let scored=[...unique.values()].map((book,index)=>({book,index,score:searchScore(book,query)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score||a.index-b.index);let cutoff=scored.length?Math.max(0,scored[0].score-450):0;return scored.filter(x=>x.score>=cutoff).slice(0,limit).map(x=>x.book)}
 function strongSearchMatch(results,query){if(!results.length)return false;let q=normalizeSearch(query),title=normalizeSearch(results[0].title),author=normalizeSearch(results[0].author);return title===q||title.startsWith(q)||author===q||searchScore(results[0],query)>=700}
 export async function catalog(request){let u=new URL(request.url);if(request.method!=='GET'||u.pathname!=='/api/books')return catalogOnce(request);let query=(u.searchParams.get('q')||'').trim();if(query.length<2||query.length>300)return Response.json({error:'Use 2–300 characters.'},{status:400});let isbn=parseISBN(query);if(isbn)return isbnSearch(request,isbn);let variants=searchVariants(query);if(!variants.length)return catalogOnce(request);let candidates=[],lastData={results:[]},lastSuccess;for(let variant of variants){let url=new URL(u);url.searchParams.set('q',variant);let r=await catalogOnce(new Request(url,{headers:request.headers,signal:request.signal}));if(!r.ok){if(lastSuccess)break;return r}let data=await r.json();candidates.push(...(data.results||[]));lastData={...data,results:rankSearchResults(u.searchParams.get('source')==='nadir'?dedupeNadir(candidates):candidates,query)};lastSuccess=r;if(strongSearchMatch(lastData.results,query))break}return Response.json(lastData,{headers:{'Cache-Control':'private, max-age=60'}})}

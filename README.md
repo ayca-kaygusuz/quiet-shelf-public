@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.11.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.11.1.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads.
@@ -261,7 +261,9 @@ consistently; internal apostrophes stay inside the word when normalizing
 (e.g. DEHB'li becomes dehbli, not two separate search terms).
 Candidates are ranked using punctuation- and Turkish-diacritic-insensitive
 matching against the original title, author or ISBN, with volume numbers
-preserved. If results are weak, the app tries normalized and shorter main-title
+preserved. A query can combine title and author words. Adjacent alphabetic words
+also match joined/spaced spellings (for example, `dil bilgisi` and `dilbilgisi`)
+without joining numbers or skipping intervening words. If results are weak, the app tries normalized and shorter main-title
 queries on the same source and with the same language filter (up to four
 query variants). Results are
 deduplicated, and wrong known volume numbers are excluded. Source access blocks

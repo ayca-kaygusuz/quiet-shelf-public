@@ -33,6 +33,11 @@ The updater waits for the existing process to exit and reopens the installed
 app without replacing its app-data profile. The Windows workflow checks a silent
 installation/update/restart and preserved app-data sentinel before publishing.
 
+Version 0.11.1 fixes mixed title/author queries and joined/spaced compound words.
+The reported `italyanca dil bilgisi ela` / `italyanca dilbilgisi ela` searches
+are covered by regression tests using public listing metadata, with Turkish and
+Any language selected. Existing wrong-volume checks remain in place.
+
 ## Local development and future Windows verification
 
 Follow the user's filesystem restrictions. Use an existing fresh checkout of
@@ -50,7 +55,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.11.0-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.11.1-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
