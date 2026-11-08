@@ -48,7 +48,7 @@ jobs:
           } finally {
             if (-not $appProcess.HasExited) { Stop-Process -Id $appProcess.Id -Force }
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: quiet-shelf-windows
           if-no-files-found: error
@@ -63,7 +63,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8.0.2
         with:
           name: quiet-shelf-windows
           path: release

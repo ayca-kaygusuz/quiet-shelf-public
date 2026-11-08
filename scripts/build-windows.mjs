@@ -1,7 +1,7 @@
 import {createRequire} from 'node:module';
 import {readFileSync,mkdirSync,writeFileSync,readdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {resolve,join} from 'node:path';
+import {resolve,join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
 const require=createRequire(import.meta.url);
 const {build,Platform,Arch}=require('electron-builder');
@@ -19,7 +19,10 @@ const uninstallFile=join(output,'uninstall-files.nsh');
 writeFileSync(uninstallFile,[...files.map(file=>`Delete "$INSTDIR\\${quote(file)}"`),...directories.sort((a,b)=>b.split('/').length-a.split('/').length).map(dir=>`RMDir "$INSTDIR\\${quote(dir)}"`)].join('\n')+'\n');
 const artifact=join(output,`Quiet-Shelf-Setup-${version}-x64.exe`);
 mkdirSync(output,{recursive:true});
-execFileSync(nsis.path,['-V2',`-DAPP_DIR=${appDir}`,`-DUNINSTALL_FILES=${uninstallFile}`,`-DAPP_VERSION=${version}`,`-DAPP_ICON=${resolve('desktop/assets/icon.ico')}`,`-DOUTPUT_FILE=${artifact}`,resolve('desktop/installer.nsi')],{stdio:'inherit',env:{...process.env,...nsis.env}});
+let compiler=nsis.path,toolEnv={...process.env,...nsis.env};
+if(process.platform==='win32'&&compiler.toLowerCase().endsWith('.cmd')){toolEnv.NSISDIR=join(dirname(compiler),'windows');compiler=join(toolEnv.NSISDIR,'makensis.exe')}
+const prefix=process.platform==='win32'?'/':'-';
+execFileSync(compiler,[prefix+'V2',`${prefix}DAPP_DIR=${appDir}`,`${prefix}DUNINSTALL_FILES=${uninstallFile}`,`${prefix}DAPP_VERSION=${version}`,`${prefix}DAPP_ICON=${resolve('desktop/assets/icon.ico')}`,`${prefix}DOUTPUT_FILE=${artifact}`,resolve('desktop/installer.nsi')],{stdio:'inherit',env:toolEnv});
 const bytes=readFileSync(artifact);if(bytes.subarray(0,2).toString()!=='MZ')throw Error('The installer is not a Windows executable.');
 const digest=createHash('sha256').update(bytes).digest('hex');writeFileSync(join(output,'SHA256SUMS.txt'),`${digest}  ${artifact.split(/[\\/]/).at(-1)}\n`);
 console.log(`Windows installer ready: ${artifact}`);
