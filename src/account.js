@@ -64,12 +64,14 @@
   $('#libraryPage').inert=false;$('#add').disabled=false;
  }
  async function sync(manual=false){
+  if(App.hasDraft?.()){notice='Save your series changes or close the Add title form before syncing.';renderAccount();return}
   if(!account||syncing){if(syncing)queued=true;return}if(!online()||!manual&&!canAuto()){renderAccount();return}clearTimeout(syncTimer);syncing=true;failed=false;notice='';const identity=account.id,sent=state;renderAccount();
   try{
    const response=await request('sync',{accountId:identity,state:sent,manual,meteredOverride:settings.meteredOverride});if(response.paused){connection.network=response.network;notice='Automatic sync paused because Windows reports a metered connection.';return}if(account?.id!==identity||response.account?.id!==identity)throw Error('The sync response belongs to a different account.');
    const returned=S.validate(response.state),merged=S.merge(state,returned),document=S.project(merged);
    // Validate every book before replacing the live workspace or durable queue.
    App.readBackup({format:'quiet-shelf-backup',version:2,library:document.library,preferences:document.preferences});
+   if(App.hasDraft?.()){notice='Drive was checked. Incoming changes will load after you finish editing.';return}
    state=merged;dirty=!S.covers(returned,merged);lastSync=new Date().toISOString();firstPull=true;persist();apply(document);authRequired=false;notice=document.conflicts.length?'Sync completed. Review the conflicting changes below.':'Sync completed.';
   }catch(e){failed=true;notice=e.message;if(e.code==='SIGN_IN_REQUIRED')authRequired=true;try{persist()}catch{notice+=' Download a backup before closing.'}}
   finally{syncing=false;renderAccount();if(queued||dirty&&!failed){queued=false;schedule(2000)}}
