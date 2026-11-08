@@ -37,6 +37,11 @@ Keep the browser version and standalone desktop version available, sharing
 profile, with optional Google Drive sync now explicitly requested. Hosted browser
 OAuth and phone support are deferred. Keep guest and Google-account workspaces
 separate, credentials out of the renderer, and Google Books keys device-local.
+Keep browser and Windows development aligned: implement common features,
+preferences, backup migrations and sync data formats in shared code, and check
+both platform adapters. Deferring hosted browser OAuth and hosting does not
+freeze the browser app or authorize a separate feature fork. Future web and
+phone clients must be able to use the current shared data format.
 Keep Node integration disabled in the renderer and use the narrow app protocol
 for catalog calls. Do not expose filesystem access to page scripts.
 Build an installer and attach it to matching releases when shipping desktop
