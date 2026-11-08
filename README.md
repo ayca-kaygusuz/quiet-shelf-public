@@ -281,9 +281,10 @@ for **Public data**. Restrict the key to **Books API**. Quiet Shelf makes the
 request through its server, so website/referrer restrictions do not match the
 current request path.
 
-In **Add title**, select Google Books and paste the key into its API-key field,
-then enter or change your search term. The key is sent through the app server
-to Google. It is not saved in your library, source preferences, backups or Git.
+In **Add title**, select Google Books and paste the key into its API-key field.
+If a search term is already entered, pasting or changing the key retries that
+search automatically. The key is sent through the app server to Google. It is
+not saved in your library, source preferences, backups or Git.
 The form resets when reopened, so the key must currently be entered again for
 each Add title session. Your project's Google quota still applies.
 
