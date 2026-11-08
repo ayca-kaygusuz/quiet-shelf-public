@@ -31,8 +31,8 @@ else{
     // A stable profile keeps this app's records separate from every browser profile.
     app.setAppUserModelId('com.quietshelf.desktop');
     const html=readFileSync(join(here,'..','src','index.html'),'utf8');
-    protocol.handle('quiet-shelf',createAppHandler({html,catalog}));
-    updates=createUpdateController({app,dialog,shell,getWindow:()=>window});
+    updates=createUpdateController({app,dialog,shell,getWindow:()=>window,enabled:process.platform==='win32'&&app.isPackaged});
+    protocol.handle('quiet-shelf',createAppHandler({html,catalog,updates}));
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'File',submenu:[{role:'quit'}]},
       {label:'Edit',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},

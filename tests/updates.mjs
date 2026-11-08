@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,readFile,writeFile,rm,readdir} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {EventEmitter} from 'node:events';
 import {latestUpdate,newerVersion,downloadUpdate,createUpdateController} from '../desktop/updates.mjs';
+import {APP_ORIGIN,createAppHandler} from '../desktop/app-protocol.mjs';
 
 await mkdir('work',{recursive:true});const root=await mkdtemp(join('work','update-test-'));
 const bytes=Buffer.from('MZ synthetic installer for tests'),sha=createHash('sha256').update(bytes).digest('hex');
@@ -52,5 +54,28 @@ try{
  await offline.check();assert.equal(prompts.length,0,'offline startup is quiet');await offline.check({manual:true});assert.equal(prompts.length,1);assert.equal(spawned.length,1);offline.dispose();
  prompts=[];answers=[0,1];badBytes=true;
  const damaged=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'damaged')}});await damaged.check({manual:true});assert.equal(spawned.length,1,'unverified installers never execute');assert.equal(quits,1);assert(prompts.some(p=>p.message==='The update could not be completed.'));damaged.dispose();
+ // A paused stream lets the renderer read real download state before completion.
+ badBytes=false;answers=[0,1];let stream,visible,downloadStarted,phases=[];
+ const started=new Promise(resolve=>downloadStarted=resolve);
+ visible=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'visible')},fetcher:async(u,o)=>u.endsWith('.exe')?new Response(new ReadableStream({start(controller){stream=controller;controller.enqueue(bytes.subarray(0,4))}})):fetcher(u,o),getWindow:()=>({setProgressBar(progress){phases.push(visible.getStatus().phase);if(progress>0&&progress<1)downloadStarted()}})});
+ const flow=visible.check({manual:true});await started;
+ const state=visible.getStatus();assert.equal(state.phase,'downloading');assert.equal(state.downloaded,4);assert.equal(state.total,bytes.length);assert.equal(state.progress,4/bytes.length);
+ state.phase='tampered';assert.equal(visible.getStatus().phase,'downloading','state snapshots are read-only copies');
+ const indicator=createAppHandler({html:readFileSync('src/index.html','utf8'),catalog:()=>{throw Error('Updates must not call a book source')},updates:visible});
+ const statusURL=APP_ORIGIN+'/api/update-status',actionURL=APP_ORIGIN+'/api/update-action';
+ let response=await indicator(new Request(statusURL));assert.equal(response.status,200);assert.equal(response.headers.get('Cache-Control'),'no-store');
+ const payload=await response.json();assert.equal(payload.downloaded,4);assert(!JSON.stringify(payload).includes(root));assert(!JSON.stringify(payload).includes('test-only-key'));
+ const headers={'X-Quiet-Shelf-Update':'1',Origin:APP_ORIGIN};
+ assert.equal((await indicator(new Request(actionURL+'?action=install',{method:'POST',headers}))).status,409);
+ assert.equal((await indicator(new Request(actionURL+'?action=check',{method:'POST'}))).status,403);
+ assert.equal((await indicator(new Request(actionURL+'?action=check',{method:'POST',headers:{...headers,Origin:'https://evil.com'}}))).status,403);
+ assert.equal((await indicator(new Request(statusURL,{headers:{Origin:'https://evil.com'}}))).status,403);
+ assert.equal((await indicator(new Request(actionURL+'?action=check'))).status,405);
+ assert.equal((await indicator(new Request(actionURL,{method:'OPTIONS'}))).status,405);
+ assert.equal((await indicator(new Request(actionURL+'?action=execute-file',{method:'POST',headers}))).status,400);
+ stream.enqueue(bytes.subarray(4));stream.close();await flow;
+ assert(phases.includes('verifying'));assert.equal(visible.getStatus().phase,'ready');assert.equal(spawned.length,1,'Later keeps the verified update ready without installation');
+ const beforeRestart=calls.length;answers=[0];response=await indicator(new Request(actionURL+'?action=install',{method:'POST',headers}));assert.equal(response.status,202);await visible.install();
+ assert.equal(spawned.length,2);assert.equal(calls.length,beforeRestart,'ready updates install without another download');assert.equal(visible.getStatus().phase,'installing');visible.dispose();
  console.log('PASS: stable GitHub versions/assets, trusted URLs/redirects, bounded verified downloads, tampered cache recovery, no unverified execution, restart consent, daily/overlapping checks, offline behavior and preserved local data');
 }finally{await rm(root,{recursive:true,force:true})}

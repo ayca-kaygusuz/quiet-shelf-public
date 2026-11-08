@@ -6,7 +6,7 @@ export function isAppURL(value){try{let u=new URL(value);return u.protocol==='qu
 export function isExternalBookURL(value){try{let u=new URL(value);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&externalHosts.has(u.hostname)}catch{return false}}
 export function isBackupURL(value){return typeof value==='string'&&value.startsWith('blob:'+APP_ORIGIN+'/')}
 
-export function createAppHandler({html,catalog}){
+export function createAppHandler({html,catalog,updates}){
   const script=html.match(/<script>([\s\S]*)<\/script>/)?.[1];
   if(!script)throw Error('The packaged interface is missing its application script.');
   const hash=createHash('sha256').update(script.replace(/\r\n?/g,'\n')).digest('base64');
@@ -14,6 +14,20 @@ export function createAppHandler({html,catalog}){
   return async request=>{
     let u;try{u=new URL(request.url)}catch{return new Response('Invalid app address',{status:400})}
     if(u.protocol!=='quiet-shelf:'||u.hostname!=='app'||u.port||u.username||u.password)return new Response('Invalid app origin',{status:403});
+    if(updates&&(u.pathname==='/api/update-status'||u.pathname==='/api/update-action')){
+      const origin=request.headers.get('Origin');
+      if(origin&&origin!==APP_ORIGIN&&origin!=='null')return new Response('Invalid origin',{status:403});
+      if(u.pathname==='/api/update-status'&&request.method==='GET')return Response.json(updates.getStatus(),{headers:{'Cache-Control':'no-store'}});
+      if(u.pathname==='/api/update-action'&&request.method==='POST'){
+        if(updates.getStatus().enabled===false||request.headers.get('X-Quiet-Shelf-Update')!=='1')return new Response('Invalid update request',{status:403});
+        const action=u.searchParams.get('action');
+        if(!['check','install'].includes(action))return new Response('Invalid update action',{status:400});
+        if(action==='install'&&updates.getStatus().phase!=='ready')return new Response('The update is not ready',{status:409});
+        void (action==='install'?updates.install():updates.check({manual:true})).catch(()=>{});
+        return Response.json(updates.getStatus(),{status:202,headers:{'Cache-Control':'no-store'}});
+      }
+      return new Response('Method not allowed',{status:405});
+    }
     if(request.method!=='GET')return new Response('Method not allowed',{status:405,headers:{Allow:'GET'}});
     if(u.pathname==='/')return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':policy,'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}});
     if(u.pathname==='/api/books'||u.pathname==='/api/book'){

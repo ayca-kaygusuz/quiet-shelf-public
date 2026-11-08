@@ -38,51 +38,71 @@ export async function latestUpdate(current,{fetcher=fetch,signal}={}){
   return {version,filename,url:asset.browser_download_url,size:asset.size,sha256};
 }
 async function validFile(path,update){try{let hash=createHash('sha256'),size=0,header=Buffer.alloc(0);for await(let chunk of createReadStream(path)){size+=chunk.length;if(size>update.size)return false;if(header.length<2)header=Buffer.concat([header,chunk]).subarray(0,2);hash.update(chunk)}return size===update.size&&header.toString()==='MZ'&&hash.digest('hex')===update.sha256}catch{return false}}
-export async function downloadUpdate(update,directory,{fetcher=fetch,signal,onProgress=()=>{}}={}){
+export async function downloadUpdate(update,directory,{fetcher=fetch,signal,onProgress=()=>{},onVerifying=()=>{}}={}){
   if(!versionParts(update.version)||update.filename!==`Quiet-Shelf-Setup-${update.version}-x64.exe`||!safeDownload(update.url)||!/^[a-f0-9]{64}$/.test(update.sha256)||!Number.isSafeInteger(update.size)||update.size<2||update.size>maxInstaller)throw Error('Invalid update');
   let folder=join(directory,update.version),destination=join(folder,update.filename),partial=destination+'.partial';
   await mkdir(folder,{recursive:true,mode:0o700});
-  if(await validFile(destination,update))return destination;
+  if(await validFile(destination,update)){onVerifying();return destination}
   await rm(partial,{force:true});
   try{
     let response=await get(update.url,fetcher,signal,true),downloaded=0;
-    await pipeline(Readable.fromWeb(response.body),async function*(source){for await(let chunk of source){downloaded+=chunk.length;if(downloaded>update.size)throw Error('Installer size mismatch');onProgress(downloaded/update.size);yield chunk}},createWriteStream(partial,{flags:'wx',mode:0o600}));
+    await pipeline(Readable.fromWeb(response.body),async function*(source){for await(let chunk of source){downloaded+=chunk.length;if(downloaded>update.size)throw Error('Installer size mismatch');onProgress(downloaded/update.size,{downloaded,total:update.size});yield chunk}},createWriteStream(partial,{flags:'wx',mode:0o600}));
+    onVerifying();
     if(!await validFile(partial,update))throw Error('Installer verification failed');
     await rm(destination,{force:true});await rename(partial,destination);return destination;
   }finally{await rm(partial,{force:true})}
 }
 
-export function createUpdateController({app,dialog,shell,getWindow,fetcher=fetch,spawnInstaller=spawn,clock=Date.now}){
+export function createUpdateController({app,dialog,shell,getWindow,fetcher=fetch,spawnInstaller=spawn,clock=Date.now,enabled=true}){
   const folder=join(app.getPath('userData'),'updates'),stateFile=join(folder,'check.json');
-  const abort=new AbortController();let running=null;
+  const abort=new AbortController();let running=null,pendingInstall=null;
+  let status={phase:'idle',version:'',progress:null,downloaded:0,total:0,visible:false};
+  function report(phase,values={}){status={phase,version:'',progress:null,downloaded:0,total:0,visible:true,...values}}
   async function message(options){const window=getWindow();if(!window)return {response:1};return dialog.showMessageBox(window,{title:'Quiet Shelf updates',...options})}
+  async function confirmInstall(){
+    if(!pendingInstall||status.phase!=='ready')return;
+    const restart=await message({message:'Your update is ready.',detail:'Restart Quiet Shelf to install it. Finish any unsaved title entry first.',buttons:['Restart and update','Later'],defaultId:0,cancelId:1});
+    if(restart.response!==0)return;
+    const {installer,update}=pendingInstall;
+    report('installing',{version:update.version,progress:1,downloaded:update.size,total:update.size});
+    if(!await validFile(installer,update))throw Error('Installer verification failed');
+    const child=spawnInstaller(installer,['/S',`/UPDATEPID=${process.pid}`,'/RESTARTAPP'],{detached:true,stdio:'ignore',windowsHide:true});
+    await new Promise((resolve,reject)=>{child.once('error',reject);child.once('spawn',resolve)});
+    child.unref();app.quit();
+  }
+  async function failed(interactive){
+    getWindow()?.setProgressBar(-1);
+    if(abort.signal.aborted)return;
+    report(interactive?'error':'idle',{visible:interactive});
+    if(interactive){
+      const answer=await message({message:'The update could not be completed.',detail:'Your current installation is unchanged. Try again later or download the installer from GitHub.',buttons:['Open downloads','Close'],defaultId:1,cancelId:1});
+      if(answer.response===0)await shell.openExternal(RELEASES_URL);
+    }
+  }
   async function run(manual){
     let interactive=manual;
+    if(manual)report('checking');
     let last=0;try{last=JSON.parse(await readFile(stateFile,'utf8')).checkedAt}catch{}
     if(!manual&&last>0&&Number.isFinite(last)&&clock()>=last&&clock()-last<24*60*60*1000)return;
     try{
+      report('checking',{visible:manual});
       let update=await latestUpdate(app.getVersion(),{fetcher,signal:abort.signal});
       await mkdir(folder,{recursive:true,mode:0o700});await writeFile(stateFile,JSON.stringify({checkedAt:clock()}),{mode:0o600});
-      if(!update){if(manual)await message({message:'Quiet Shelf is up to date.',buttons:['OK']});return}
+      if(!update){report(manual?'up-to-date':'idle',{visible:manual});if(manual)await message({message:'Quiet Shelf is up to date.',buttons:['OK']});return}
+      report('available',{version:update.version,total:update.size});
       const choice=await message({message:`Quiet Shelf ${update.version} is available.`,detail:'Download the update now? Your library and saved settings will stay on this computer.',buttons:['Download update','Later'],defaultId:0,cancelId:1});
       if(choice.response!==0)return;interactive=true;
-      const installer=await downloadUpdate(update,folder,{fetcher,signal:abort.signal,onProgress:progress=>getWindow()?.setProgressBar(progress)});
+      report('downloading',{version:update.version,progress:0,total:update.size});
+      const installer=await downloadUpdate(update,folder,{fetcher,signal:abort.signal,onProgress:(progress,bytes)=>{report('downloading',{version:update.version,progress,...bytes});getWindow()?.setProgressBar(progress)},onVerifying:()=>report('verifying',{version:update.version,progress:1,downloaded:update.size,total:update.size})});
       getWindow()?.setProgressBar(-1);
-      const restart=await message({message:'Your update is ready.',detail:'Restart Quiet Shelf to install it. Finish any unsaved title entry first.',buttons:['Restart and update','Later'],defaultId:0,cancelId:1});
-      if(restart.response!==0)return;
-      if(!await validFile(installer,update))throw Error('Installer verification failed');
-      const child=spawnInstaller(installer,['/S',`/UPDATEPID=${process.pid}`,'/RESTARTAPP'],{detached:true,stdio:'ignore',windowsHide:true});
-      await new Promise((resolve,reject)=>{child.once('error',reject);child.once('spawn',resolve)});
-      child.unref();app.quit();
+      pendingInstall={installer,update};
+      report('ready',{version:update.version,progress:1,downloaded:update.size,total:update.size});
+      await confirmInstall();
     }catch(error){
-      getWindow()?.setProgressBar(-1);
-      if(abort.signal.aborted)return;
       // Startup checks remain quiet when offline. An explicitly requested update gets feedback.
-      if(interactive){
-        const answer=await message({message:'The update could not be completed.',detail:'Your current installation is unchanged. Try again later or download the installer from GitHub.',buttons:['Open downloads','Close'],defaultId:1,cancelId:1});
-        if(answer.response===0)await shell.openExternal(RELEASES_URL);
-      }
+      await failed(interactive);
     }
   }
-  return {check({manual=false}={}){if(!running)running=run(manual).finally(()=>{running=null});return running},dispose(){abort.abort()}};
+  function enqueue(work){if(!running)running=work().finally(()=>{running=null});return running}
+  return {getStatus(){return {...status,enabled}},check({manual=false}={}){return enabled?enqueue(()=>run(manual)):Promise.resolve()},install(){return enabled?enqueue(()=>confirmInstall().catch(()=>failed(true))):Promise.resolve()},dispose(){abort.abort()}};
 }

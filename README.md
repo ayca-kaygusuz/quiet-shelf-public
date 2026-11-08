@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.11.1.**
+A personal reading tracker for books, manga and comics. **Current version: 0.11.2.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads.
@@ -46,6 +46,13 @@ can also press **Alt**, then choose **Help → Check for updates…**.
 
 Choose **Download update** and, when ready, **Restart and update**. The app
 verifies the installer checksum, closes, installs the update and reopens.
+An **Updates** button and a small in-app card show the percentage and amount
+downloaded, verification, and when the update is ready to install. The card stays
+visible while scrolling; hide it and reopen it from the header without stopping
+the download. A ready update can be installed from the card without downloading
+it again. The indicator follows Dark Ink or Paper Grove and complements the
+Windows taskbar progress bar.
+
 Choosing **Later** leaves the current version running. Updates keep library
 records, reading history, theme preferences and the separately saved Google key.
 Offline startup stays quiet. Checks send no library records or Google key to GitHub.

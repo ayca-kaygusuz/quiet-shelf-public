@@ -38,6 +38,15 @@ The reported `italyanca dil bilgisi ela` / `italyanca dilbilgisi ela` searches
 are covered by regression tests using public listing metadata, with Turkish and
 Any language selected. Existing wrong-volume checks remain in place.
 
+Version 0.11.2 adds a native-only Updates header button and a themed status card
+for checking, download percentage/bytes, verification, ready/restart, and errors.
+The card stays visible during scrolling and can be hidden/reopened. The app
+protocol exposes only an updater status snapshot and guarded check/install
+actions; no file paths, Google key, or library records are exposed. Node
+integration remains disabled. The Windows UI check tests the real protocol
+bridge and captures the indicator in both themes through a loopback debugger
+port enabled only by the CI launch arguments. Production launches open no port.
+
 ## Local development and future Windows verification
 
 Follow the user's filesystem restrictions. Use an existing fresh checkout of
@@ -55,7 +64,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.11.1-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.11.2-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording

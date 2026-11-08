@@ -74,16 +74,25 @@ jobs:
       - name: Check native Windows startup
         shell: pwsh
         run: |
-          $appProcess = Start-Process -FilePath 'work/windows/win-unpacked/Quiet Shelf.exe' -ArgumentList '--disable-gpu' -PassThru
+          $appProcess = Start-Process -FilePath 'work/windows/win-unpacked/Quiet Shelf.exe' -ArgumentList @('--disable-gpu', '--remote-debugging-port=9222') -PassThru
           try {
             Start-Sleep -Seconds 12
             $appProcess.Refresh()
             if ($appProcess.HasExited) { throw 'Quiet Shelf exited during startup.' }
             if ($appProcess.MainWindowHandle -eq 0) { throw 'Quiet Shelf did not create its native window.' }
             if ($appProcess.MainWindowTitle -ne 'Quiet Shelf') { throw 'Unexpected application window title.' }
+            node scripts/check-native-ui.mjs
+            if ($LASTEXITCODE -ne 0) { throw 'The native update indicator check failed.' }
           } finally {
             if (-not $appProcess.HasExited) { Stop-Process -Id $appProcess.Id -Force }
           }
+      - name: Keep update indicator previews briefly
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: quiet-shelf-update-previews
+          retention-days: 1
+          if-no-files-found: error
+          path: work/windows/update-preview-*.png
       - name: Check installed update and restart
         shell: pwsh
         run: ./scripts/check-windows-update.ps1
