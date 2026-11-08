@@ -6,8 +6,11 @@ JSON. Internet access is used for catalog searches and cover images.
 
 ## Windows application
 
-Download the `.exe` installer from the public repository's **Releases** page,
-run it, and open **Quiet Shelf** from Start or its desktop shortcut. The installer
+The first Windows release is pending local Windows verification and installer
+upload. See [`desktop/HANDOVER.md`](desktop/HANDOVER.md) for the exact remaining
+steps. The source can already build an installer with the commands below.
+When an installer is published, run the `.exe` and open **Quiet Shelf** from
+Start or its desktop shortcut. The installer
 targets Windows 11 (64-bit Intel/AMD), installs for the current user,
 and includes its own runtime. Node.js, a terminal window and the browser server
 are not needed. The installer is unsigned; Windows may show an unknown-publisher
@@ -54,8 +57,9 @@ on the first build. Build dependencies, generated installers and personal data
 are not committed. `scripts/generate-desktop-icon.mjs` regenerates the app icons.
 The browser build command below remains separate and does not require Electron.
 
-The Windows release workflow runs only on the public repository's standard free
-runners; the private mirror skips the jobs. It builds and checks native startup
+The Windows release workflow is manual-only; do not start it without user
+approval. It runs only on the public repository's standard free runners; the
+private mirror skips the jobs. It builds and checks native startup
 on Windows, then publishes the installer. Temporary build artifacts are deleted
 after publishing (or expire after one day if publication fails), keeping storage
 use low. Bump the application version before publishing a changed installer.
