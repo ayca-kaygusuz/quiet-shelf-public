@@ -6,11 +6,13 @@ JSON. Internet access is used for catalog searches and cover images.
 
 ## Windows application
 
-The first Windows release is pending local Windows verification and installer
-upload. See [`desktop/HANDOVER.md`](desktop/HANDOVER.md) for the exact remaining
-steps. The source can already build an installer with the commands below.
-When an installer is published, run the `.exe` and open **Quiet Shelf** from
-Start or its desktop shortcut. The installer
+[Download Quiet Shelf for Windows](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
+Choose the x64 `.exe` installer, run it, and open **Quiet Shelf** from Start or
+its desktop shortcut. The release also includes `SHA256SUMS.txt`.
+
+Version 0.10.0 passed local Windows runtime checks in an isolated profile:
+startup, adding a title, start/finish dates, rereads, theme persistence, JSON
+backup/restore, and separate browser storage. The installer
 targets Windows 11 (64-bit Intel/AMD), installs for the current user,
 and includes its own runtime. Node.js, a terminal window and the browser server
 are not needed. The installer is unsigned; Windows may show an unknown-publisher

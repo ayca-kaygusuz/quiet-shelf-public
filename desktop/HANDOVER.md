@@ -11,12 +11,14 @@ The desktop app loads `quiet-shelf://app/` through an in-process protocol handle
 it does not start the browser HTTP server. Its local profile is separate, in
 `%APPDATA%\Quiet Shelf`. Back up / Restore use the existing JSON format.
 
-The active tests pass in the cloud. A Windows x64 installer was cross-built and
-its archive integrity, identity, checksum and packaged source were verified.
-**It has not yet been verified by launching on a Windows PC.** The queued Paper
-Grove rename, clearer status colors, and chart separators are included.
+Version 0.10.0 passed local Windows runtime checks in an isolated profile:
+startup, adding a title, recording start and finish dates, rereads, theme
+persistence, JSON backup/restore, and separate browser storage. Subsequent
+Google Books API-key changes passed automated regression tests
+and Windows build/startup checks. Paper Grove, clearer status colors, and chart
+separators are included.
 
-## Remaining work on Windows
+## Local development and future Windows verification
 
 Follow the user's filesystem restrictions. Use an existing fresh checkout of
 the sanitized repository, or clone into their authorized repository folder.
@@ -49,23 +51,21 @@ uninstall deletes only its own packaged files while preserving app data.
 
 ## Delivery and release status
 
-Both repositories have **unpublished draft releases** for `v0.10.0`. No installer
-has been uploaded to them. The cloud GitHub connection can push code and manage
-release metadata, but asset uploads to `uploads.github.com` failed authentication.
-Direct build-tool downloads also timed out in cloud/runner attempts. Do not
-claim that the installer is downloadable until an asset has actually been
-attached and the release published.
+Public Windows downloads live at
+[the latest release](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
+The public release contains the x64 installer and `SHA256SUMS.txt`; the private
+mirror's matching release can link to those same assets.
 
-A locally configured GitHub connection may be able to upload the installer and
-checksum after Windows verification. Use its existing authorized authentication;
-never paste or commit tokens. Alternatively, provide the locally built installer
-to the user directly from their authorized workspace.
+To publish an approved release, run the Windows workflow manually from main
+with Publish enabled. It builds the installer, runs automated tests and native
+startup checks, attaches the installer and checksum, then publishes. Keep the
+release target and tag aligned with the tested source commit. Verify the actual
+asset downloads and checksum before reporting delivery complete. Build artifacts
+expire after one day; release assets provide the lasting download.
 
-If publishing a release, set its target to the verified source commit, attach the
-installer and checksum, then publish it. Keep the private release current too;
-it can link to the public installer if duplicating assets is unnecessary.
-Once a public installer exists, update the browser's Windows-app link to the
-public latest-release page and update README's pending-verification notice.
+Bump the version before publishing changes to an already published installer.
+Keep both source repositories and their release notes current. Do not commit
+installers, credentials, personal profiles or library backups.
 Cloud Sites publication can be handled separately; its private manifest is not
 in the public repository and must not be recreated or committed here.
 
