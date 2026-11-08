@@ -54,6 +54,8 @@ try{
   assert.equal((await get('/api/books?source=google&q=test',{...headers,Origin:'https://evil.example'})).status,403);
   assert.equal(calls.length,before);
   assert.equal((await get('/')).status,200);
+  for(const asset of ['/account.js','/sync-core.js'])assert.equal((await get(asset)).status,200);
+  assert.equal(JSON.parse((await get('/api/account/status')).body).mode,'local');
   assert.equal((await get('/private')).status,404);
   console.log('PASS: local HTTP search/details forward the Google key, trim it, isolate it from other providers, and preserve host/origin checks');
 }finally{

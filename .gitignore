@@ -30,3 +30,6 @@ service-account*.json
 *.key
 *.p12
 *.pfx
+
+# Generated public OAuth configuration is supplied by the release environment.
+/desktop/google-client.generated.json

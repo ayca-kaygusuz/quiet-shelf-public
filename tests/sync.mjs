@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import '../src/sync-core.js';
+import {reconcileDrive,createDriveStore} from '../src/drive.mjs';
+const S=globalThis.QuietShelfSync;
+const book={id:'one',title:'An edition',author:'An author',status:'Unread',history:[],createdAt:'2026-01-01'};
+const doc=(library=[book],preferences={theme:'ink'})=>({library,preferences});
+const base=S.update(S.empty(),doc(),'seed');
+let a=S.update(base,doc([{...book,status:'Done',history:[{id:'read-a',date:'2026-01-02',startDate:'2026-01-01'}]}]),'a');
+let b=S.update(base,doc([{...book,description:'A note',history:[{id:'read-b',date:'2026-01-03'}]}],{theme:'sage'}),'b');
+let merged=S.merge(a,b),view=S.project(merged);
+assert.equal(view.library[0].status,'Done');assert.equal(view.library[0].description,'A note');assert.equal(view.library[0].history.length,2);assert.equal(view.preferences.theme,'sage');
+assert.deepEqual(S.merge(a,b),S.merge(b,a));assert.deepEqual(S.merge(merged,a),merged);assert.deepEqual(S.merge(merged,merged),merged);
+const changed=S.update(base,doc([{...book,title:'Different title'}]),'other');
+const deleted=S.update(base,doc([]),'delete');view=S.project(S.merge(changed,deleted));assert.equal(view.library.length,0);assert(view.conflicts.some(c=>c.parts[2]==='present'));
+const removalConflict=view.conflicts.find(c=>c.parts[2]==='present');merged=S.merge(changed,deleted);merged=S.resolve(merged,removalConflict.key,removalConflict.choices.indexOf(true),'resolve');assert.equal(S.project(merged).library[0].title,'Different title');
+const one=S.update(base,doc([{...book,title:'Choice A'}]),'first'),two=S.update(base,doc([{...book,title:'Choice B'}]),'second');
+merged=S.merge(one,two);const conflict=S.project(merged).conflicts.find(c=>c.parts[2]==='field');assert(conflict);merged=S.resolve(merged,conflict.key,0,'reviewer');assert.equal(S.project(merged).conflicts.length,0);assert.equal(S.project(S.merge(merged,two)).library[0].title,'Choice A');
+const secret=S.update(S.empty(),{...doc(),googleApiKey:'PRIVATE',access_token:'PRIVATE',preferences:{theme:'sage',googleApiKey:'PRIVATE'}},'clean');assert(!JSON.stringify(secret).includes('PRIVATE'));
+const removedHistory=S.update(a,doc([{...book,status:'Done',history:[]}]),'remove-history');assert.equal(S.project(S.merge(a,removedHistory)).library[0].history.length,0);
+assert(S.covers(merged,one));assert(S.covers(merged,two));assert(!S.covers(base,one));
+assert.throws(()=>S.validate({...base,registers:[...base.registers,base.registers[0]]}));assert.throws(()=>S.validate({...base,schema:2}));
+const corrupt=structuredClone(base);corrupt.registers.find(([k])=>k.includes('"title"'))[1][0].value={unsafe:'not a title'};assert.throws(()=>S.validate(corrupt));
+const legacyOrder=S.update(S.empty(),doc([{...book,id:'z',createdAt:undefined},{...book,id:'a',createdAt:undefined}]),'legacy');assert.deepEqual(S.project(legacyOrder).library.map(b=>b.id),['z','a'],'original date-added order survives migration without timestamps');
+// Drive interleaving: two offline devices upload after reading the same old list.
+const files=new Map([['seed',base]]);let serial=0,reads=0,uploads=0,failUpload=false;
+const store={async list(){return [...files.keys()].map(id=>({id,version:'1'}))},async read(f){reads++;return files.get(f.id)},async create(s){if(failUpload)throw Error('Offline');const id='file'+(++serial);files.set(id,structuredClone(s));uploads++;return {id,version:'1'}},async remove(f){files.delete(f.id)}};
+const r=await reconcileDrive({state:a,store});assert.equal(S.project(r.state).library[0].status,'Done');assert.equal(files.size,1);
+const r2=await reconcileDrive({state:b,store});assert.equal(S.project(r2.state).library[0].history.length,2);assert.equal(files.size,1);
+const beforeUploads=uploads,beforeReads=reads;await reconcileDrive({state:r2.state,store,cache:r2.cache});assert.equal(uploads,beforeUploads);assert.equal(reads,beforeReads);
+files.set('late-device',one);const r3=await reconcileDrive({state:r2.state,store});assert(S.covers(r3.state,one));assert.equal(files.size,1);
+const saved=[...files.entries()];failUpload=true;await assert.rejects(reconcileDrive({state:S.update(r3.state,doc([{...book,title:'Offline change'}]),'offline'),store}));assert.deepEqual([...files.entries()],saved,'a failed upload never deletes the old cloud copy');
+// Exact hosts, appData-only listing, refresh on 401, and no personal data in URLs.
+let requests=[],refreshes=[];const adapter=createDriveStore({accessToken:async refresh=>{refreshes.push(refresh);return 'test-token'},fetcher:async(url,options)=>{requests.push({url:String(url),options});if(requests.length===1)return new Response('',{status:401});return Response.json({files:[]})}});
+await adapter.list();assert.deepEqual(refreshes,[false,true]);assert(requests.every(r=>new URL(r.url).hostname==='www.googleapis.com'));assert.equal(new URL(requests.at(-1).url).searchParams.get('spaces'),'appDataFolder');assert.equal(requests.at(-1).options.headers.Authorization,'Bearer test-token');assert(!requests.some(r=>r.url.includes('test-token')));
+console.log('PASS: causal merges, independent offline edits/rereads, deletion conflicts, explicit resolution, secret exclusion, immutable Drive checkpoints, stale-device recovery, safe compaction, failed uploads and authenticated appData-only requests');

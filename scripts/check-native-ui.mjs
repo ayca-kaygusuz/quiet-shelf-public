@@ -11,14 +11,20 @@ socket.addEventListener('message',event=>{const message=JSON.parse(event.data),e
 function command(method,params={}){return new Promise((resolve,reject)=>{const id=++nextId,timer=setTimeout(()=>{pending.delete(id);reject(Error('Native UI check timed out: '+method))},20000);pending.set(id,{resolve,reject,timer});socket.send(JSON.stringify({id,method,params}))})}
 async function evaluate(expression){const result=await command('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});assert(!result.exceptionDetails,JSON.stringify(result.exceptionDetails));return result.result.value}
 try{
- const bridge=await evaluate(`(async()=>{const status=await fetch('/api/update-status');const state=await status.json();const action=await fetch('/api/update-action?action=check',{method:'POST',headers:{'X-Quiet-Shelf-Update':'1'}});return {status:status.status,action:action.status,enabled:state.enabled,visible:!document.querySelector('#desktopUpdates').hidden}})()`);
+ const bridge=await evaluate(`(async()=>{const status=await fetch('/api/update-status');const state=await status.json();const action=await fetch('/api/update-action?action=check',{method:'POST',headers:{'X-Quiet-Shelf-Update':'1'}});const accountResponse=await fetch('/api/account/status');const account=await accountResponse.json();document.querySelector('#accountButton').click();return {status:status.status,action:action.status,enabled:state.enabled,visible:!document.querySelector('#desktopUpdates').hidden&&!document.querySelector('#accountPage').hidden,accountStatus:accountResponse.status,accountMode:account.mode,configured:account.configured,accountLoaded:!!globalThis.QuietShelfAccount}})()`);
  assert.equal(bridge.status,200);assert.equal(bridge.action,202);assert.equal(bridge.enabled,true);assert.equal(bridge.visible,true);
+ assert.equal(bridge.accountStatus,200);assert.equal(bridge.accountMode,'desktop');assert.equal(bridge.accountLoaded,true);
+ if(process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID)assert.equal(bridge.configured,true);
  await evaluate(`(async()=>{while(updatePolling)await new Promise(resolve=>setTimeout(resolve,25));clearTimeout(updatePollTimer);updatePolling=true;return true})()`);
  for(const theme of ['ink','sage']){
+  await evaluate(`document.querySelector('#theme').value=${JSON.stringify(theme)};document.querySelector('#theme').dispatchEvent(new Event('change',{bubbles:true}));if(document.querySelector('#accountPage').hidden)document.querySelector('#accountButton').click();document.querySelector('#updateCard').hidden=true;window.scrollTo(0,0);true`);
+  const accountScreenshot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,width:1440,height:1200,scale:1}});
+  await writeFile(`work/windows/account-preview-${theme}.png`,Buffer.from(accountScreenshot.data,'base64'));
+  await evaluate(`document.querySelector('#backToLibrary').click();true`);
   const view=await evaluate(`(async()=>{clearTimeout(updatePollTimer);document.querySelector('#theme').value=${JSON.stringify(theme)};document.querySelector('#theme').dispatchEvent(new Event('change',{bubbles:true}));renderUpdateStatus({phase:'downloading',version:'0.12.0',progress:.42,downloaded:44040192,total:104857600,visible:true},true);const card=document.querySelector('#updateCard'),before=card.getBoundingClientRect();const spacer=document.createElement('div');spacer.style.height='1400px';document.body.append(spacer);window.scrollTo(0,document.body.scrollHeight);const stable=Math.abs(card.getBoundingClientRect().y-before.y)<1;window.scrollTo(0,0);spacer.remove();await new Promise(resolve=>setTimeout(resolve,250));const r=card.getBoundingClientRect();return {stable,hidden:document.querySelector('#updateCard').hidden,text:document.querySelector('#updatePercent').textContent,clip:{x:Math.max(0,r.x-8),y:Math.max(0,r.y-8),width:r.width+16,height:r.height+16,scale:1}}})()`);
   assert.equal(view.stable,true);assert.equal(view.hidden,false);assert.equal(view.text,'42%');
   const screenshot=await command('Page.captureScreenshot',{format:'png',clip:view.clip});
   await writeFile(`work/windows/update-preview-${theme}.png`,Buffer.from(screenshot.data,'base64'));
  }
- console.log('PASS: actual native update status/action bridge, visible download card and Dark Ink/Paper Grove screenshots');
+ console.log('PASS: actual native account/assets/update bridges, configured Desktop client, Account navigation, visible download card and both themes');
 }finally{socket.close();for(const entry of pending.values())clearTimeout(entry.timer)}

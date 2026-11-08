@@ -40,7 +40,7 @@ function launch(storage={},protocol='http:'){
 
  browser.element('#export').onclick();
  const backup=await browser.backups[0].text();
- assert(Array.isArray(JSON.parse(backup)));assert(!backup.includes('test-only-browser-key'));
+ assert.equal(JSON.parse(backup).format,'quiet-shelf-backup');assert(Array.isArray(JSON.parse(backup).library));assert(!backup.includes('test-only-browser-key'));
  for(const [name,value] of Object.entries(browserStore))if(name!==keyName)assert(!value.includes('test-only-browser-key'));
  browser.setKey('');assert.equal(browserStore[keyName],undefined);
  assert.equal(launch(browserStore).element('#googleApiKey').value,'');

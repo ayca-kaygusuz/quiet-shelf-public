@@ -1,9 +1,9 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.11.2.**
+A personal reading tracker for books, manga and comics. **Current version: 0.12.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
-update checks/downloads.
+update checks/downloads, and optional Google Drive sync in the Windows app.
 
 ## Windows application
 
@@ -22,9 +22,10 @@ or reputation warning. There is no paid service or account requirement.
 The Windows app and both browser versions remain available. The desktop app
 uses the same interface, reading features and catalog adapters, but has its
 **own separate local library and preferences**. It opens an internal app page,
-not a hosted website, and starts no HTTP server or listening port. It can run
-beside the browser app. **There is no synchronization, pairing, account or
-background upload in this version.**
+not a hosted website. It can run beside the browser app. Optional Google sign-in
+connects the Windows app directly to each user’s own Google Drive. A temporary
+loopback listener opens only during sign-in and closes afterwards; normal app
+use needs no browser server or hosted sync server.
 
 Reading records work locally without internet. New catalog searches and uncached
 cover images need an internet connection. Catalog source links open in your
@@ -46,9 +47,9 @@ can also press **Alt**, then choose **Help → Check for updates…**.
 
 Choose **Download update** and, when ready, **Restart and update**. The app
 verifies the installer checksum, closes, installs the update and reopens.
-An **Updates** button and a small in-app card show the percentage and amount
+**Account → App updates** and a small in-app card show the percentage and amount
 downloaded, verification, and when the update is ready to install. The card stays
-visible while scrolling; hide it and reopen it from the header without stopping
+visible while scrolling; hide it and reopen it from Account without stopping
 the download. A ready update can be installed from the card without downloading
 it again. The indicator follows Dark Ink or Paper Grove and complements the
 Windows taskbar progress bar.
@@ -169,9 +170,10 @@ collection, searching, or filtering the list does not change the chart scope.
 The status pills above the list filter the current collection; collection tabs
 show each collection's total count. Series retain their separate grouped rows.
 
-Theme and chart-scope preferences are remembered separately in this browser,
-using a versioned preferences object. They are not part of library backups and
-do not yet sync between devices. The details panel stays visible while scrolling
+Theme and chart-scope preferences are remembered separately from book records.
+Versioned JSON backups include them. When signed into the Windows app they also
+sync with Google Drive, together with sort order, series expansion, search
+source/language and collection/filter view. The details panel stays visible while scrolling
 on desktop, and the interface stacks on narrow screens.
 
 ## Series and sorting
@@ -335,21 +337,58 @@ profile and address each time. Local and hosted app storage is separate.
 Closing or updating the server does not erase browser records; clearing the
 browser's storage does.
 
-**Back up** exports all three collections, saved series settings, and all
-completion dates to JSON. Themes, chart scope, open/closed group preferences
-and sorting are local interface preferences and are not included in this backup.
-**Restore** imports that file and replaces the current records after
-confirmation. Back up the target library before restoring if you need to keep
-it. Backups from before the reading archive was added remain compatible.
+**Account → Back up** exports all three collections, series, reading start/finish
+history and view preferences in version-2 JSON. Google Books keys, Google tokens,
+connection settings and account identity are excluded. **Restore** accepts this
+format and legacy library-only JSON arrays. It replaces the current workspace
+after confirmation. When signed in, that replacement becomes a syncable change;
+export a backup before replacing anything you want to keep.
 
-Git contains application source, synthetic test records, and public catalog
-metadata fixtures. Your library records and completion dates stay in browser
-storage unless you export them. Never commit personal backups, API keys or
-account/session information. Local `private/`, `data/`, `backups/`, and `exports/`
-folders, environment files, database files and common key formats are ignored;
-ignore rules do not remove anything already present in Git history.
-Browser/desktop/phone syncing and Kitapyurdu account-list import/sync are not
-implemented.
+### Google Drive in the Windows app
+
+Open **Account** and choose **Sign in with Google**. Google opens in your system
+browser. Quiet Shelf requests basic account identity and only its own hidden
+Drive app-data folder (`drive.appdata`), not access to your other Drive files.
+No PC or server has to stay on for Drive to retain the saved copy. Sync runs
+while the app is open; an offline device catches up after it reconnects.
+
+Each Google account has a separate device workspace. Your original signed-out
+library is kept separately. Signing in first loads that account’s Drive data.
+Use **Copy local library to this account** if you want to add your original
+local titles; sample titles are excluded and existing account titles remain.
+Signing out returns to the signed-out library. Unsynced account edits remain
+cached for that account on this device. These device caches are not a password
+vault: use separate Windows user accounts when sharing a computer.
+
+Automatic sync is on by default, with a short delay after changes and a periodic
+check while the app is visible. Windows metered/data-limit/roaming detection
+pauses automatic sync. A device-local override and **Sync now** are available;
+manual sync is allowed on metered connections. Turning automatic sync off does
+not discard the local queue. Google Books API keys always stay device-local.
+
+Sync preserves independent field changes, separate rereads and deletion markers.
+Drive copies are immutable checkpoints: a new copy must save successfully before
+observed older copies can be cleaned up. Concurrent changes to the same field
+remain available under **Review sync changes** until a user chooses a value.
+Deleted titles win a concurrent delete/edit conflict until explicitly recovered.
+Invalid or oversized cloud copies stop the sync without replacing the local
+workspace. Keep manual exports as an additional backup.
+
+Windows refresh tokens are encrypted with Electron safeStorage/Windows DPAPI in
+`%APPDATA%\Quiet Shelf`; they never reach the renderer, catalog providers, Git,
+backup JSON or release assets. Sign-out forgets this installation’s connection;
+it does not delete Drive data or sign other devices out. Google can revoke or
+expire authorization, in which case the app requests sign-in again.
+
+The browser version stays available with local storage and manual backup/restore.
+Hosted browser Drive authorization and phone apps are deferred. A Web client
+secret is not needed for the Windows PKCE flow. Kitapyurdu account-list sync is
+not implemented. See [Google Drive setup](docs/google-drive.md) for maintainer
+configuration and the real-account verification checklist.
+
+Git contains application source, synthetic tests and public catalog fixtures.
+Never commit personal exports, keys, OAuth credentials or account/session files.
+Ignored local folders and file types do not remove data already in Git history.
 
 ## Keeping the development mirrors synchronized
 

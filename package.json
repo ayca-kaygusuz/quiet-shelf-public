@@ -1,6 +1,6 @@
 {
   "name": "quiet-shelf",
-  "version": "0.11.2",
+  "version": "0.12.0",
   "private": true,
   "description": "A personal book, manga and comic reading library",
   "engines": {
@@ -34,9 +34,11 @@
       "desktop/assets/icon.ico",
       "desktop/assets/icon.png",
       "src/index.html",
-      "src/catalog.mjs",
       "assets/Manrope-OFL.txt",
-      "package.json"
+      "package.json",
+      "src/*.js",
+      "src/*.mjs",
+      "desktop/google-client.generated.json"
     ],
     "win": {
       "target": [

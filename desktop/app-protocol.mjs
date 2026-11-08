@@ -6,7 +6,7 @@ export function isAppURL(value){try{let u=new URL(value);return u.protocol==='qu
 export function isExternalBookURL(value){try{let u=new URL(value);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&externalHosts.has(u.hostname)}catch{return false}}
 export function isBackupURL(value){return typeof value==='string'&&value.startsWith('blob:'+APP_ORIGIN+'/')}
 
-export function createAppHandler({html,catalog,updates}){
+export function createAppHandler({html,catalog,updates,assets={},account}){
   const script=html.match(/<script>([\s\S]*)<\/script>/)?.[1];
   if(!script)throw Error('The packaged interface is missing its application script.');
   const hash=createHash('sha256').update(script.replace(/\r\n?/g,'\n')).digest('base64');
@@ -14,6 +14,12 @@ export function createAppHandler({html,catalog,updates}){
   return async request=>{
     let u;try{u=new URL(request.url)}catch{return new Response('Invalid app address',{status:400})}
     if(u.protocol!=='quiet-shelf:'||u.hostname!=='app'||u.port||u.username||u.password)return new Response('Invalid app origin',{status:403});
+    if(account&&u.pathname.startsWith('/api/account/')){
+      const origin=request.headers.get('Origin');
+      if(origin&&origin!==APP_ORIGIN&&origin!=='null'||request.method==='POST'&&request.headers.get('X-Quiet-Shelf-Account')!=='1')return new Response('Invalid account request',{status:403});
+      if(!['GET','POST'].includes(request.method))return new Response('Method not allowed',{status:405});
+      const response=await account.handle(request);response.headers.set('Cache-Control','no-store');return response;
+    }
     if(updates&&(u.pathname==='/api/update-status'||u.pathname==='/api/update-action')){
       const origin=request.headers.get('Origin');
       if(origin&&origin!==APP_ORIGIN&&origin!=='null')return new Response('Invalid origin',{status:403});
@@ -29,6 +35,7 @@ export function createAppHandler({html,catalog,updates}){
       return new Response('Method not allowed',{status:405});
     }
     if(request.method!=='GET')return new Response('Method not allowed',{status:405,headers:{Allow:'GET'}});
+    if(['/sync-core.js','/account.js'].includes(u.pathname)&&typeof assets[u.pathname]==='string')return new Response(assets[u.pathname],{headers:{'Content-Type':'application/javascript; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'no-cache'}});
     if(u.pathname==='/')return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':policy,'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}});
     if(u.pathname==='/api/books'||u.pathname==='/api/book'){
       const headers=new Headers(),key=request.headers.get('X-Google-Api-Key');if(key&&u.searchParams.get('source')==='google')headers.set('X-Google-Api-Key',key);

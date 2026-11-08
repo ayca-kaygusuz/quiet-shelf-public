@@ -19,6 +19,10 @@ on:
         description: Publish the installer as a GitHub release
         type: boolean
         default: false
+      googleDesktopClientId:
+        description: Public Desktop OAuth client ID (optional; otherwise use repository variable)
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -32,6 +36,8 @@ jobs:
     # Standard public-repository runners are free; never start a private-repo VM.
     if: github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false
     runs-on: windows-latest
+    env:
+      QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID: ${{ inputs.googleDesktopClientId || vars.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID }}
     timeout-minutes: 25
     outputs:
       artifact-id: ${{ steps.installer.outputs.artifact-id }}
@@ -92,7 +98,9 @@ jobs:
           name: quiet-shelf-update-previews
           retention-days: 1
           if-no-files-found: error
-          path: work/windows/update-preview-*.png
+          path: |
+            work/windows/update-preview-*.png
+            work/windows/account-preview-*.png
       - name: Check installed update and restart
         shell: pwsh
         run: ./scripts/check-windows-update.ps1

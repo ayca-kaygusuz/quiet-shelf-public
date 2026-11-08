@@ -1,10 +1,11 @@
-import {app,BrowserWindow,Menu,protocol,shell,dialog} from 'electron';
+import {app,BrowserWindow,Menu,protocol,shell,dialog,safeStorage} from 'electron';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {catalog} from '../src/catalog.mjs';
 import {APP_ORIGIN,createAppHandler,isAppURL,isExternalBookURL,isBackupURL} from './app-protocol.mjs';
 import {createUpdateController} from './updates.mjs';
+import {createGoogleAccount} from './google-account.mjs';
 
 const here=dirname(fileURLToPath(import.meta.url));
 app.setName('Quiet Shelf');
@@ -12,7 +13,7 @@ const profile=join(app.getPath('appData'),'Quiet Shelf');
 mkdirSync(profile,{recursive:true});
 app.setPath('userData',profile);
 protocol.registerSchemesAsPrivileged([{scheme:'quiet-shelf',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,stream:true,codeCache:true}}]);
-let window,updates,updateTimer,updateInterval;
+let window,updates,googleAccount,updateTimer,updateInterval;
 function openExternalBook(url){if(isExternalBookURL(url))void shell.openExternal(url).catch(()=>{})}
 function createWindow(){
   window=new BrowserWindow({title:'Quiet Shelf',width:1440,height:960,minWidth:760,minHeight:560,show:false,backgroundColor:'#17181d',icon:join(here,'assets','icon.ico'),autoHideMenuBar:true,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,webviewTag:false,spellcheck:false}});
@@ -31,8 +32,10 @@ else{
     // A stable profile keeps this app's records separate from every browser profile.
     app.setAppUserModelId('com.quietshelf.desktop');
     const html=readFileSync(join(here,'..','src','index.html'),'utf8');
+    const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync(join(here,'..','src',name),'utf8')]));
     updates=createUpdateController({app,dialog,shell,getWindow:()=>window,enabled:process.platform==='win32'&&app.isPackaged});
-    protocol.handle('quiet-shelf',createAppHandler({html,catalog,updates}));
+    googleAccount=createGoogleAccount({profile,safeStorage,openExternal:url=>shell.openExternal(url)});
+    protocol.handle('quiet-shelf',createAppHandler({html,catalog,updates,assets,account:googleAccount}));
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'File',submenu:[{role:'quit'}]},
       {label:'Edit',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},
@@ -41,7 +44,7 @@ else{
     ]));
     createWindow();
     if(process.platform==='win32'&&app.isPackaged){updateTimer=setTimeout(()=>void updates.check().catch(()=>{}),15000);updateTimer.unref?.();updateInterval=setInterval(()=>void updates.check().catch(()=>{}),24*60*60*1000);updateInterval.unref?.()}
-    app.on('before-quit',()=>{clearTimeout(updateTimer);clearInterval(updateInterval);updates.dispose()});
+    app.on('before-quit',()=>{clearTimeout(updateTimer);clearInterval(updateInterval);updates.dispose();googleAccount.dispose()});
     const session=window.webContents.session;
     session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
     session.setPermissionCheckHandler(()=>false);

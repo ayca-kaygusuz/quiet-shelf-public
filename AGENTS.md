@@ -27,14 +27,16 @@ explicitly requested. Run the active checks with `npm test`.
 Preserve the approved rounded, flat design in both Dark Ink and Paper Grove.
 Use solid color tokens, without gradients, bevels or shadows. Themes share the
 same functions and charts. Keep appearance/chart-scope preferences separate
-from book records; they are browser-local until device syncing is implemented.
+from book records; they are included in versioned backups and optional native Drive sync.
 Never replace actual library counts or chart values with illustrative data.
 
 ## Windows app
 
 Keep the browser version and standalone desktop version available, sharing
 `src/` for interface and catalog behavior. The desktop app has a separate local
-profile and no sync, pairing or account connection until explicitly requested.
+profile, with optional Google Drive sync now explicitly requested. Hosted browser
+OAuth and phone support are deferred. Keep guest and Google-account workspaces
+separate, credentials out of the renderer, and Google Books keys device-local.
 Keep Node integration disabled in the renderer and use the narrow app protocol
 for catalog calls. Do not expose filesystem access to page scripts.
 Build an installer and attach it to matching releases when shipping desktop
@@ -53,3 +55,8 @@ main. Request explicit approval before manually dispatching a run or changing
 the automatic triggers. Publishing requires an explicit manual run with Publish
 enabled. The private mirror does not run build jobs.
 For local Windows completion, read `desktop/HANDOVER.md`.
+
+For Google Drive releases, supply the public Desktop OAuth client ID through
+QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID (repository variable) or the approved
+workflow’s googleDesktopClientId input. Never hard-code an actual client ID,
+client secret, user identity or refresh token in source. See docs/google-drive.md.

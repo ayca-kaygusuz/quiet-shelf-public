@@ -1,10 +1,10 @@
-QUIET SHELF — PC VERSION 0.11.2
+QUIET SHELF — PC VERSION 0.12.0
 
 THIS PACKAGE IS THE LOCAL BROWSER VERSION
 A separate installable Windows app is also available from the public repository's
 Releases page. It bundles its runtime and needs no Node.js or terminal. Both
-versions remain available and keep separate local libraries. No syncing exists
-in this release. Back up and Restore can copy records manually if desired.
+versions remain available and keep separate local libraries. The Windows app
+has optional Google Drive sync. This browser package uses manual backup/restore.
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -87,7 +87,8 @@ The browser connector and its dependent sources are inactive.
 SAVING AND TRANSFERRING RECORDS
 Use the same browser/profile and http://127.0.0.1:8765 each time.
 Records stay in that browser. Clearing its storage removes them.
-Back up exports all three collections, series settings and reading histories.
+Account → Back up exports all collections, series, reading histories and view
+preferences. Restore also accepts older library-only JSON files.
 Restore replaces the current records after confirmation; back up first if needed.
 To move records from the hosted app, Back up there, then Restore here.
 This version does not sync devices or Kitapyurdu account lists.

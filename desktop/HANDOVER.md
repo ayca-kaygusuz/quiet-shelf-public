@@ -4,12 +4,14 @@
 
 The standalone app is implemented in `desktop/main.mjs`, using the same
 `src/index.html` and `src/catalog.mjs` as the browser app. The browser version
-remains available. This phase has **no syncing, pairing, accounts or shared
-storage**. Do not add those features yet.
+remains available. Version 0.12.0 adds the user-requested optional Google Drive
+connection in the Windows app. Hosted browser sign-in and phone apps are deferred.
 
 The desktop app loads `quiet-shelf://app/` through an in-process protocol handler;
-it does not start the browser HTTP server. Its local profile is separate, in
-`%APPDATA%\Quiet Shelf`. Back up / Restore use the existing JSON format.
+it does not start the browser HTTP server. A temporary random-port loopback
+listener exists only while a Google sign-in is pending. Its local profile is separate, in
+`%APPDATA%\Quiet Shelf`. Account groups sign-in/out, sync, backups/restore and updates. Version-2 backups
+include preferences; legacy library-only arrays still import.
 
 Version 0.10.0 passed local Windows runtime checks in an isolated profile:
 startup, adding a title, recording start and finish dates, rereads, theme
@@ -64,7 +66,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.11.2-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.12.0-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -105,3 +107,32 @@ main. Manual runs require user approval. To publish, manually run the workflow
 from main with Publish enabled. Automatic builds leave a temporary artifact for
 one day. The private mirror skips build jobs. The local Windows build remains
 available for troubleshooting and runtime verification.
+
+## Google Drive handover (0.12.0)
+
+The Windows app uses system-browser OAuth with state and PKCE. Only a public
+Desktop client ID is required; no Web client secret is used. The release workflow
+reads QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID from a repository variable or its
+optional googleDesktopClientId dispatch input. The build generates an ignored
+public configuration file included in the package. Never put actual client IDs,
+tokens, personal account identity or library exports in tracked source.
+
+The cloud integration could not create the GitHub variable (HTTP 403). The
+approved release can pass the public ID as a dispatch input. A maintainer with
+repository Settings access can set the variable for subsequent automatic builds.
+See docs/google-drive.md. Google Drive API must be enabled and the Google account
+must be an allowed test user while the OAuth project is in Testing.
+
+The account controller keeps refresh tokens behind the native app protocol and
+encrypts them with safeStorage. Renderer-local queues contain library/preferences
+only and are keyed by Google subject ID; guest and account workspaces are separate.
+Metered checks run in Windows PowerShell without collecting SSIDs/IP addresses.
+Automated checks cover simulated Google token/identity/Drive exchanges through a
+real temporary callback listener, encrypted-token restore, account binding,
+concurrent merges and UI behavior. They do not prove that real Google consent
+has succeeded. Verify real sign-in, restart, two independent app profiles,
+offline conflicts and account switching on Windows before calling that verified.
+
+No local thread handover is required to build the installer in GitHub Actions.
+Use the local thread only for the real Windows/Google sign-in checks and follow
+the D:\Repositories access restriction. Keep all private configuration local.

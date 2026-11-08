@@ -5,12 +5,15 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {catalog} from '../src/catalog.mjs';
 const html=readFileSync(new URL('../src/index.html',import.meta.url));
+const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync(new URL('../src/'+name,import.meta.url))]));
 const host='127.0.0.1',port=8765;
 
 export function createLocalServer(){
   const server=http.createServer(async(req,res)=>{try{
     const address=server.address(),origin=`http://${host}:${address.port}`,u=new URL(req.url,origin);
     if(req.headers.host!==`${host}:${address.port}`){res.writeHead(403);return res.end('Invalid host')}
+    if(u.pathname==='/api/account/status'&&req.method==='GET'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify({mode:'local',configured:false,account:null,network:{metered:null,source:'browser'}}))}
+    if(assets[u.pathname]&&req.method==='GET'){res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8','X-Content-Type-Options':'nosniff'});return res.end(assets[u.pathname])}
     if(u.pathname==='/api/books'||u.pathname==='/api/book'){
       if(req.headers.origin&&req.headers.origin!==origin){res.writeHead(403);return res.end('Invalid origin')}
       const headers=new Headers(),key=typeof req.headers['x-google-api-key']==='string'?req.headers['x-google-api-key'].trim():'';
