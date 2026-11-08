@@ -20,6 +20,19 @@ separators are included. Version 0.10.1 remembers an optional Google Books key
 in a separate local setting for each app/browser profile, outside library
 records and JSON backups. Clear the field to forget it.
 
+Version 0.11.0 adds Nadir Kitap as a selectable direct catalog source, including
+language/ISBN checks and conservative seller deduplication. It also adds GitHub
+updates for the installed Windows app: startup/daily stable-release checks,
+verified installer downloads, and a user-confirmed restart to install. Install
+0.11.0 manually once to enable updates in older installations. The native Help
+menu provides a manual check (press Alt to show it). Browser copies remain
+independent and do not use the Windows updater.
+
+Keep both `Quiet Shelf.exe` and the installer rebuilt on each Windows release.
+The updater waits for the existing process to exit and reopens the installed
+app without replacing its app-data profile. The Windows workflow checks a silent
+installation/update/restart and preserved app-data sentinel before publishing.
+
 ## Local development and future Windows verification
 
 Follow the user's filesystem restrictions. Use an existing fresh checkout of
@@ -37,7 +50,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.10.1-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.11.0-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording

@@ -1,9 +1,10 @@
-import {app,BrowserWindow,Menu,protocol,shell} from 'electron';
+import {app,BrowserWindow,Menu,protocol,shell,dialog} from 'electron';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {catalog} from '../src/catalog.mjs';
 import {APP_ORIGIN,createAppHandler,isAppURL,isExternalBookURL,isBackupURL} from './app-protocol.mjs';
+import {createUpdateController} from './updates.mjs';
 
 const here=dirname(fileURLToPath(import.meta.url));
 app.setName('Quiet Shelf');
@@ -11,7 +12,7 @@ const profile=join(app.getPath('appData'),'Quiet Shelf');
 mkdirSync(profile,{recursive:true});
 app.setPath('userData',profile);
 protocol.registerSchemesAsPrivileged([{scheme:'quiet-shelf',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,stream:true,codeCache:true}}]);
-let window;
+let window,updates,updateTimer,updateInterval;
 function openExternalBook(url){if(isExternalBookURL(url))void shell.openExternal(url).catch(()=>{})}
 function createWindow(){
   window=new BrowserWindow({title:'Quiet Shelf',width:1440,height:960,minWidth:760,minHeight:560,show:false,backgroundColor:'#17181d',icon:join(here,'assets','icon.ico'),autoHideMenuBar:true,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,webviewTag:false,spellcheck:false}});
@@ -31,12 +32,16 @@ else{
     app.setAppUserModelId('com.quietshelf.desktop');
     const html=readFileSync(join(here,'..','src','index.html'),'utf8');
     protocol.handle('quiet-shelf',createAppHandler({html,catalog}));
+    updates=createUpdateController({app,dialog,shell,getWindow:()=>window});
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'File',submenu:[{role:'quit'}]},
       {label:'Edit',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},
-      {label:'View',submenu:[{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{type:'separator'},{role:'togglefullscreen'}]}
+      {label:'View',submenu:[{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{type:'separator'},{role:'togglefullscreen'}]},
+      {label:'Help',submenu:[{label:'Check for updates…',enabled:process.platform==='win32'&&app.isPackaged,click:()=>void updates.check({manual:true}).catch(()=>{})}]}
     ]));
     createWindow();
+    if(process.platform==='win32'&&app.isPackaged){updateTimer=setTimeout(()=>void updates.check().catch(()=>{}),15000);updateTimer.unref?.();updateInterval=setInterval(()=>void updates.check().catch(()=>{}),24*60*60*1000);updateInterval.unref?.()}
+    app.on('before-quit',()=>{clearTimeout(updateTimer);clearInterval(updateInterval);updates.dispose()});
     const session=window.webContents.session;
     session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
     session.setPermissionCheckHandler(()=>false);

@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.10.1
+QUIET SHELF — PC VERSION 0.11.0
 
 THIS PACKAGE IS THE LOCAL BROWSER VERSION
 A separate installable Windows app is also available from the public repository's
@@ -66,7 +66,7 @@ Sort by date added, title, author, status or most recently finished. Older
 entries without added timestamps use their saved order.
 
 SEARCH
-Select Kitapyurdu, BKM Kitap, Open Library, Google Books or AniList.
+Select Kitapyurdu, BKM Kitap, Nadir Kitap, Open Library, Google Books or AniList.
 Only the selected source is searched. Language filters apply where supported.
 Original title wording is searched first; apostrophes such as DEHB'li stay
 within the word when normalizing. Curly and straight apostrophes match.
@@ -75,7 +75,7 @@ normalized/shorter main-title searches on the same source and language.
 Known wrong volume numbers are excluded.
 Valid ISBN searches verify the identifier and bypass the language filter.
 A catalog may omit a book from its search index even if its page still exists.
-Paste its Kitapyurdu/BKM/Open Library/Google Books edition link into the same
+Paste its Kitapyurdu/BKM/Nadir Kitap/Open Library/Google Books edition link into the same
 search field to import that listing directly; select the result and save.
 AniList provides manga series rather than translated print editions.
 Internet access is needed for catalog searches and covers. Services may block
@@ -97,3 +97,10 @@ src/index.html — interface, collections and browser storage
 src/catalog.mjs — catalog search and metadata import
 pc/server.mjs — local server
 The repository's README.md has full development and source-access details.
+
+Nadir Kitap reads listing metadata directly without a browser connector.
+Matching seller copies are combined only when the ISBN and edition details agree.
+Different years/bindings/languages and missing identifiers remain separate.
+
+The installed Windows application has GitHub updates from version 0.11.0.
+This browser/server copy still updates through its source checkout or update ZIP.

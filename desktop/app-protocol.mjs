@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 
 export const APP_ORIGIN='quiet-shelf://app';
-const externalHosts=new Set(['www.kitapyurdu.com','www.bkmkitap.com','openlibrary.org','books.google.com','anilist.co','www.dr.com.tr','www.idefix.com','www.amazon.com.tr','www.amazon.com','www.amazon.co.uk','www.amazon.de','www.amazon.co.jp']);
+const externalHosts=new Set(['www.kitapyurdu.com','www.bkmkitap.com','www.nadirkitap.com','nadirkitap.com','openlibrary.org','books.google.com','anilist.co','www.dr.com.tr','www.idefix.com','www.amazon.com.tr','www.amazon.com','www.amazon.co.uk','www.amazon.de','www.amazon.co.jp']);
 export function isAppURL(value){try{let u=new URL(value);return u.protocol==='quiet-shelf:'&&u.hostname==='app'&&!u.port&&!u.username&&!u.password&&u.pathname==='/'}catch{return false}}
 export function isExternalBookURL(value){try{let u=new URL(value);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&externalHosts.has(u.hostname)}catch{return false}}
 export function isBackupURL(value){return typeof value==='string'&&value.startsWith('blob:'+APP_ORIGIN+'/')}

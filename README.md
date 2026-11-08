@@ -1,8 +1,9 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.10.1.**
+A personal reading tracker for books, manga and comics. **Current version: 0.11.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
-JSON. Internet access is used for catalog searches and cover images.
+JSON. Internet access is used for catalog searches, cover images and Windows
+update checks/downloads.
 
 ## Windows application
 
@@ -36,6 +37,23 @@ browser storage, survives app upgrades, and is preserved when uninstalling the
 application. Keep JSON backups. The installer refuses a non-empty destination
 unless it is an existing Quiet Shelf installation; uninstall removes only its
 installed files, not arbitrary files added to the installation folder.
+
+### Windows updates
+
+From version 0.11.0, the installed Windows app checks the public GitHub releases
+on startup and daily while open. Only newer stable releases are offered. You
+can also press **Alt**, then choose **Help → Check for updates…**.
+
+Choose **Download update** and, when ready, **Restart and update**. The app
+verifies the installer checksum, closes, installs the update and reopens.
+Choosing **Later** leaves the current version running. Updates keep library
+records, reading history, theme preferences and the separately saved Google key.
+Offline startup stays quiet. Checks send no library records or Google key to GitHub.
+
+Install 0.11.0 once using the release installer to get this feature; older
+versions cannot update themselves. Browser copies continue to use source/ZIP
+updates independently. Every Windows release rebuilds both `Quiet Shelf.exe`
+and the installer from current source; generated binaries stay out of main.
 
 ### Desktop development and installer build
 
@@ -252,14 +270,15 @@ and quota errors are still reported; the app does not switch databases silently.
 Valid ISBN-10/13 queries accept hyphens, spaces and an optional ISBN prefix.
 Exact ISBN lookup bypasses the edition-language filter and verifies matching
 identifiers rather than returning unrelated editions. Google Books and Open
-Library receive explicit ISBN queries. Kitapyurdu results without an ISBN are
+Library receive explicit ISBN queries. Nadir Kitap uses its ISBN search field
+and verifies the listing identifiers. Kitapyurdu results without an ISBN are
 checked against up to four product pages; only verified matches are displayed.
 Catalog indexing still limits coverage: for example, Kitapyurdu's search does
 not return ISBN **9786054782369**, although its *The Valley Of Fear* page exists.
 
 Paste a product/edition link into the same search field to load that exact
 listing inside the app, then select it and save. Supported links are Kitapyurdu,
-BKM Kitap, Open Library edition pages and Google Books volume pages. The source
+BKM Kitap, Nadir Kitap, Open Library edition pages and Google Books volume pages. The source
 selector switches to the link's catalog; normal source access restrictions still
 apply. Kitapyurdu imports also read the page's displayed language when its
 structured metadata omits it.
@@ -268,9 +287,16 @@ structured metadata omits it.
 | --- | --- |
 | Kitapyurdu | Edition search/import with a language filter. Local searches have worked; the hosted server has received HTTP 403 responses. |
 | BKM Kitap | Edition search/import. Language filtering uses the listing's language metadata. Hosted searches and imports have succeeded. |
+| Nadir Kitap | Title/author and exact ISBN search, plus listing-link import. Details are read directly without a browser connector. Seller copies with matching valid ISBN and edition details are combined; conflicting years, bindings, languages or missing identifiers remain separate. |
 | Open Library | International edition search/import with language filtering. Coverage varies by title and language. |
 | Google Books | Volume search/import with language filtering. Shared unauthenticated requests have hit quota limits; an optional personal API key is supported. |
 | AniList | Manga series search/import, rather than a specific translated print edition. Edition-language filtering is disabled for this source. API access has failed from the cloud environment. |
+
+Nadir Kitap suggestions include publication year and binding when supplied.
+Language filtering uses the listing's metadata; choose Any language to include
+listings whose language is unknown. Detail requests are cached and limited to
+three at a time, checking up to 24 relevant listings to find unique editions.
+Partial failures are reported, and access blocks are not shown as empty results.
 
 Access can change independently of the application. A successful deployment or
 fixture test does not establish that every live catalog is reachable.
@@ -347,6 +373,8 @@ Main files:
 | `pc/server.mjs` | Local browser HTTP server |
 | `desktop/main.mjs` | Separate Windows app window and local profile |
 | `desktop/app-protocol.mjs` | In-process app/catalog routing and navigation policy |
+| `desktop/updates.mjs` | GitHub release checks and verified Windows update downloads |
+| `scripts/check-windows-update.ps1` | Installed Windows upgrade/restart smoke check |
 | `scripts/build-windows.mjs` | Windows installer packaging |
 | `desktop/installer.nsi` | Per-user installation and data-preserving uninstall |
 | `pc/start-windows.bat` | Windows launcher, including portable Node.js support |

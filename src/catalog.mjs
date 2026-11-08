@@ -15,6 +15,72 @@ export function bkmURL(value){try{let u=new URL(value);return u.origin==='https:
 function safeBkmCover(v){try{let u=new URL(v);return u.protocol==='https:'&&(u.hostname==='cdn.bkmkitap.com'||/^bkmcdn\d+\.witcdn\.net$/.test(u.hostname))?u.href:''}catch{return ''}}
 function bkmRecord(b){let sourceUrl=bkmURL(b.url||b.offers?.url);if(!sourceUrl||!b.name)return null;return {title:text(b.name),author:text(names(b.author)),publisher:text(names(b.publisher)),isbn:text(b.isbn||''),language:normalizeLanguage(b.inLanguage),cover:safeBkmCover(Array.isArray(b.image)?b.image[0]:b.image),sourceUrl,source:'BKM Kitap'}}
 export function parseBkm(html,lang=''){let items=graphs(html).flatMap(g=>g['@type']==='ItemList'?(g.itemListElement||[]).map(x=>x.item):[g]);let seen=new Set();return items.filter(b=>b&&[b['@type']].flat().includes('Book')).map(bkmRecord).filter(b=>b&&!seen.has(b.sourceUrl)&&seen.add(b.sourceUrl)&&(!lang||b.language===lang)).slice(0,40)}
+
+const nadirRoot='https://www.nadirkitap.com';
+const nadirLanguages={tr:1,en:7,de:3,fr:6,ja:27,es:8,it:9,ru:10,ar:4,ko:30,zh:16,pt:41};
+export function nadirURL(value){try{let u=new URL(value);return u.protocol==='https:'&&['www.nadirkitap.com','nadirkitap.com'].includes(u.hostname)&&!u.port&&!u.username&&!u.password&&/^\/[a-zA-Z0-9%-]+-kitap\d+\.html$/.test(u.pathname)?nadirRoot+u.pathname:''}catch{return ''}}
+function nadirCover(value){try{let u=new URL(value);return u.origin==='https://static.nadirkitap.com'&&!u.username&&!u.password&&u.pathname.startsWith('/fotograf/')?u.href:''}catch{return ''}}
+function publisherYear(value){let full=text(value),match=full.match(/,\s*(\d{1,4})\s*$/);return {publisher:match?full.slice(0,match.index).trim():full,publicationYear:match&&/^\d{4}$/.test(match[1])&&Number(match[1])>=1000?match[1]:''}}
+export function parseNadirSearch(html){
+  let records=[],seen=new Set();
+  // The page repeats every listing in a hidden grid. Read the list once.
+  let list=(html.split(/<div\b[^>]*id=["']listView["'][^>]*>/i)[1]||html).split(/<div\b[^>]*id=["']gridView["'][^>]*>/i)[0];
+  for(let block of list.split(/<div\b[^>]*class=["'][^"']*\bproductsListHover\b[^"']*["'][^>]*>/i).slice(1)){
+    let title=[...block.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)].find(m=>/\bnadirBook\b/.test(attr(m[0].split('>')[0],'class')));
+    if(!title)continue;let sourceUrl=nadirURL(attr(title[0].split('>')[0],'href'));
+    if(!sourceUrl||seen.has(sourceUrl)||!text(title[1]))continue;seen.add(sourceUrl);
+    let line=block.match(/<li\b[^>]*class=["'][^"']*\bnkLineAuthor\b[^"']*["'][^>]*>([\s\S]*?)<\/li>/i)?.[1]||'';
+    let fields=[...line.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)].filter(m=>/\bnadirBook\b/.test(attr(m[0].split('>')[0],'class'))).map(m=>text(m[1]));
+    let img=block.match(/<img\b[^>]*>/i)?.[0]||'';
+    records.push({title:text(title[1]),author:fields[0]||'',...publisherYear(fields[1]||''),isbn:'',language:'',cover:nadirCover(attr(img,'src')),sourceUrl,source:'Nadir Kitap',recordKind:'edition'});
+    if(records.length===40)break;
+  }
+  return records;
+}
+export function parseNadirBook(html,url){
+  let b=graphs(html).find(g=>[g['@type']].flat().includes('Book')),sourceUrl=nadirURL(url);
+  if(!b?.name||!sourceUrl)throw Error('Nadir Kitap edition details unavailable');
+  let fields={};
+  for(let m of html.matchAll(/<i\b[^>]*>([\s\S]*?)<\/i>\s*<b\b[^>]*class=["'][^"']*\bspec-desc\b[^"']*["'][^>]*>([\s\S]*?)<\/b>/gi)){
+    let value=text(m[2]);if(value&&!/^[-–\s]+$/.test(value))fields[text(m[1])]=value;
+  }
+  let publication=publisherYear(fields['Yayınevi ve Yılı']||''),date=text(b.datePublished||'').match(/^([12]\d{3})(?:-|$)/);
+  return {title:text(b.name),author:text(names(b.author)),publisher:text(names(b.publisher))||publication.publisher,publicationYear:date?.[1]||publication.publicationYear,isbn:text(b.isbn||fields.ISBN||''),language:normalizeLanguage(b.inLanguage||fields.Dili||''),translator:fields['Çeviren']||'',binding:fields['Cilt Durumu']||'',cover:nadirCover(Array.isArray(b.image)?b.image[0]:b.image),sourceUrl,source:'Nadir Kitap',recordKind:'edition'};
+}
+export function dedupeNadir(results){
+  let seen=new Set();return results.filter(book=>{
+    let isbn=comparableISBN(book.isbn);
+    // Missing/conflicting metadata is not proof that two seller listings are the same edition.
+    let identity=isbn?JSON.stringify([isbn,searchVolume(book.title),normalizeSearch(book.author),normalizeSearch(book.publisher),book.language||'',book.publicationYear||'',normalizeSearch(book.binding),normalizeSearch(book.translator)]):book.sourceUrl;
+    if(seen.has(identity))return false;seen.add(identity);return true;
+  });
+}
+const nadirPending=new Map();let nadirActive=0;const nadirQueue=[];
+async function nadirSlot(work){if(nadirActive>=3)await new Promise(resolve=>nadirQueue.push(resolve));else nadirActive++;try{return await work()}finally{let next=nadirQueue.shift();if(next)next();else nadirActive--}}
+async function nadirBook(url){
+  let key=JSON.stringify(['nadir','',url]),cached=memory.get(key);
+  if(cached&&cached.until>Date.now())return cached.data;
+  if(nadirPending.has(url))return nadirPending.get(url);
+  let pending=nadirSlot(async()=>{let data=parseNadirBook(await publicFetch(url,nadirRoot),url);cacheCatalog(key,data);return data});
+  nadirPending.set(url,pending);try{return await pending}finally{nadirPending.delete(url)}
+}
+async function nadirSearch(query,lang){
+  let isbn=parseISBN(query),url=new URL(isbn?'/kitapara.php':'/kitapara_sonuc.php',nadirRoot);
+  if(isbn){url.searchParams.set('ara','kitapdetay');url.searchParams.set('tip','kitap');url.searchParams.set('isbn',isbn)}
+  else{url.searchParams.set('kelime',query);if(lang)url.searchParams.set('dil',String(nadirLanguages[lang]))}
+  let html=await publicFetch(url.href,nadirRoot),basic=parseNadirSearch(html);
+  if(!basic.length&&!/id=["']listView["']|sonuç bulunamadı|sonuc bulunamadi|bulunamadı/i.test(html))throw Error('Nadir Kitap search unavailable');
+  let candidates=rankSearchResults(basic,query,24),records=[],failures=[];
+  // Bound parallel requests and cache detail pages, including across query variants.
+  for(let offset=0;offset<candidates.length;offset+=3){
+    let batch=candidates.slice(offset,offset+3),details=await Promise.allSettled(batch.map(book=>nadirBook(book.sourceUrl)));
+    details.forEach((detail,i)=>{if(detail.status==='fulfilled')records.push(detail.value);else{failures.push(detail.reason);if(!lang&&!isbn)records.push(batch[i])}});
+    if(dedupeNadir(records.filter(book=>!lang||book.language===lang)).length>=12)break;
+  }
+  if(candidates.length&&failures.length===candidates.length)throw failures[0];
+  let results=dedupeNadir(records.filter(book=>!lang||book.language===lang));
+  return {results,...(failures.length?{searchNotice:'Some listing details could not be loaded. Retry to include them.'}:lang&&records.some(book=>!book.language)?{searchNotice:'Some listings lack language details. Choose Any language to include them.'}:{})};
+}
 export function parseOpenLibrary(data,lang='',requestedISBN=''){let seen=new Set();return (data.docs||[]).flatMap(w=>(w.editions?.docs||[]).map(e=>{if(!/^\/books\/OL\d+M$/.test(e.key))return null;let language=(e.language||[]).map(normalizeLanguage);if(lang&&!language.includes(lang))return null;return {title:text(e.title||w.title),author:text((w.author_name||[]).join(', ')),publisher:text((e.publisher||[]).join(', ')),isbn:(requestedISBN&&(e.isbn||[]).find(x=>comparableISBN(x)===comparableISBN(requestedISBN)))||(e.isbn||[]).find(x=>x.length===13)||(e.isbn||[])[0]||'',language:lang||language.join(', '),cover:'https://covers.openlibrary.org/b/olid/'+e.key.split('/').pop()+'-M.jpg?default=false',sourceUrl:'https://openlibrary.org'+e.key,source:'Open Library'}})).filter(b=>b&&!seen.has(b.sourceUrl)&&seen.add(b.sourceUrl)).slice(0,40)}
 async function publicFetch(url,origin){let r;for(let i=0;i<4;i++){r=await fetch(url,{headers:{'Accept':'application/json, text/html','User-Agent':'QuietShelf/1.0 (personal reading catalog)'},redirect:'manual',signal:AbortSignal.timeout(15000)});if(r.status>=300&&r.status<400){let next=new URL(r.headers.get('location'),url);if(next.origin!==origin)throw Error('Unexpected redirect');url=next.href;continue}break}if(!r?.ok){let error=Error('Catalog HTTP '+r?.status);error.upstreamStatus=r?.status;throw error}let content=await r.text();if(content.length>4000000)throw Error('Response too large');return content}
 export const apiSources={google:'Google Books',anilist:'AniList'};
@@ -47,11 +113,13 @@ async function isbnSearch(request,isbn){
 }
 
 const memory=new Map();
-async function catalogOnce(request){let u=new URL(request.url);if(request.method!=='GET')return Response.json({error:'Method not allowed'},{status:405});let source=u.searchParams.get('source')||'kitapyurdu';let lang=u.searchParams.get('lang')||'';if(!['kitapyurdu','bkm','openlibrary','google','anilist'].includes(source)||lang&&!languages[lang])return Response.json({error:'Choose a supported source and language.'},{status:400});let query=(u.searchParams.get('q')||'').trim(),target=u.searchParams.get('url')||'',search=u.pathname==='/api/books';if(search&&(query.length<2||query.length>300))return Response.json({error:'Use 2–300 characters.'},{status:400});if(apiSources[source])return extraAPI(request,source,search,query,target,source==='anilist'?'':lang);if(!search){let valid=source==='kitapyurdu'?bookURL(target):source==='bkm'?bkmURL(target):/^https:\/\/openlibrary\.org\/books\/OL\d+M$/.test(target)?target:'';if(!valid)return Response.json({error:'Choose a valid result from the selected source.'},{status:400});target=valid}let key=JSON.stringify([source,lang,search?query:target]);let cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);let name={kitapyurdu:'Kitapyurdu',bkm:'BKM Kitap',openlibrary:'Open Library'}[source];try{let data;
+function cacheCatalog(key,data){if(memory.size>=100)memory.delete(memory.keys().next().value);memory.set(key,{data,until:Date.now()+300000})}
+async function catalogOnce(request){let u=new URL(request.url);if(request.method!=='GET')return Response.json({error:'Method not allowed'},{status:405});let source=u.searchParams.get('source')||'kitapyurdu';let lang=u.searchParams.get('lang')||'';if(!['kitapyurdu','bkm','nadir','openlibrary','google','anilist'].includes(source)||lang&&!languages[lang])return Response.json({error:'Choose a supported source and language.'},{status:400});let query=(u.searchParams.get('q')||'').trim(),target=u.searchParams.get('url')||'',search=u.pathname==='/api/books';if(search&&(query.length<2||query.length>300))return Response.json({error:'Use 2–300 characters.'},{status:400});if(apiSources[source])return extraAPI(request,source,search,query,target,source==='anilist'?'':lang);if(!search){let valid=source==='kitapyurdu'?bookURL(target):source==='bkm'?bkmURL(target):source==='nadir'?nadirURL(target):/^https:\/\/openlibrary\.org\/books\/OL\d+M$/.test(target)?target:'';if(!valid)return Response.json({error:'Choose a valid result from the selected source.'},{status:400});target=valid}let key=JSON.stringify([source,lang,search?query:target]);let cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);let name={kitapyurdu:'Kitapyurdu',bkm:'BKM Kitap',nadir:'Nadir Kitap',openlibrary:'Open Library'}[source];try{let data;
 if(source==='kitapyurdu'){let url=search?root+'/index.php?route=product/list&filter_name='+encodeURIComponent(query)+(lang?'&filter_language='+encodeURIComponent(languages[lang].ky):''):target;let html=await upstream(url);data=search?{results:parseSearch(html)}:parseBook(html,target);if(search&&!data.results.length&&!/searchFilters|Aradım Bulamadım|Aramanız|sonuç bulunamadı/i.test(html))throw Error('Search unavailable')}
+else if(source==='nadir'){data=search?await nadirSearch(query,lang):await nadirBook(target)}
 else if(source==='bkm'){let html=await publicFetch(search?'https://www.bkmkitap.com/arama?q='+encodeURIComponent(query):target,'https://www.bkmkitap.com');let results=parseBkm(html,search?lang:'');if(search){if(!graphs(html).length)throw Error('Search unavailable');data={results}}else{data=results.find(x=>x.sourceUrl===target);if(!data)throw Error('Edition details unavailable')}}
 else{if(search){let escaped=query.replace(/[+\-!(){}\[\]^"~*?:\\/]/g,' ');let url=new URL('https://openlibrary.org/search.json');url.searchParams.set('q',parseISBN(query)?'isbn:'+parseISBN(query):escaped+(lang?' language:'+languages[lang].ol:''));url.searchParams.set('limit','40');url.searchParams.set('fields','key,title,author_name,editions,editions.key,editions.title,editions.language,editions.publisher,editions.isbn');data={results:parseOpenLibrary(JSON.parse(await publicFetch(url.href,'https://openlibrary.org')),lang,parseISBN(query)||'')}}else{let e=JSON.parse(await publicFetch(target+'.json','https://openlibrary.org'));data={title:text(e.title),publisher:text((e.publishers||[]).join(', ')),isbn:e.isbn_13?.[0]||e.isbn_10?.[0]||'',language:(e.languages||[]).map(x=>normalizeLanguage(x.key.split('/').pop())).join(', '),cover:'https://covers.openlibrary.org/b/olid/'+target.split('/').pop()+'-M.jpg?default=false',sourceUrl:target,source:'Open Library'}}}
-if(memory.size>=100)memory.delete(memory.keys().next().value);memory.set(key,{data,until:Date.now()+300000});return Response.json(data,{headers:{'Cache-Control':'private, max-age=60'}})
+cacheCatalog(key,data);return Response.json(data,{headers:{'Cache-Control':'private, max-age=60'}})
 }catch(error){console.error('Catalog upstream failure',source,String(error?.message));let blocked=error.upstreamStatus===403;let local=['127.0.0.1','localhost'].includes(u.hostname);return Response.json({error:blocked?(local?name+' declined this connection. Open its website or choose another source.':name+' is blocking the hosted connection. Use the PC version or choose another source.'):name+' is unavailable right now. Try again, choose another source, or enter the title manually.',code:blocked?'SOURCE_BLOCKED':'CATALOG_UNAVAILABLE'},{status:502})}}
 
 export function normalizeSearch(value){return String(value||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/ı/g,'i').replace(/([\p{L}\p{N}])['‘’ʼ＇`](?=[\p{L}\p{N}])/gu,'$1').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ')}
@@ -73,6 +141,6 @@ export function searchVariants(query){
 }
 const unimportant=new Set(['cilt','vol','volume','tome','the','a','an','and','of','ve','book','kitap']);
 function searchScore(book,query){let q=normalizeSearch(query),title=normalizeSearch(book.title),author=normalizeSearch(book.author),core=normalizeSearch(mainTitle(query));let isbn=q.replace(/\s/g,'');if(/^\d{9}[\dx]$|^\d{13}$/i.test(isbn))return String(book.isbn||'').replace(/[^\dx]/gi,'')===isbn?2000:100;let volume=searchVolume(query),candidateVolume=searchVolume(book.title);if(volume!==null&&candidateVolume!==null&&volume!==candidateVolume)return -1;let words=[...new Set(q.split(' ').filter(w=>!unimportant.has(w)))],coreWords=[...new Set(core.split(' ').filter(w=>!unimportant.has(w)))];let titleWords=new Set(title.split(' ')),authorWords=new Set(author.split(' '));let wordMatch=(set,word)=>set.has(word)||word.length>=2&&[...set].some(candidate=>candidate.startsWith(word));let coverage=words.length?words.filter(w=>wordMatch(titleWords,w)).length/words.length:0,coreCoverage=coreWords.length?coreWords.filter(w=>wordMatch(titleWords,w)).length/coreWords.length:0,authorCoverage=words.length?words.filter(w=>wordMatch(authorWords,w)).length/words.length:0;if(Math.max(coverage,coreCoverage,authorCoverage)<0.75&&title!==q&&!title.startsWith(q)&&author!==q)return -1;let score=coverage*200+coreCoverage*180+authorCoverage*120;if(title===q)score+=1000;else if(title.startsWith(q))score+=700;else if(q.startsWith(title+' '))score+=300;if(core&&title.includes(core))score+=250;if(author&&author===q)score+=900;if(volume!==null&&candidateVolume===volume)score+=200;else if(volume!==null)score-=100;return score}
-export function rankSearchResults(results,query){let unique=new Map();for(let result of results){let identity=result.sourceUrl||[result.source,result.isbn,result.title,result.author].join('|');if(!unique.has(identity))unique.set(identity,result)}let scored=[...unique.values()].map((book,index)=>({book,index,score:searchScore(book,query)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score||a.index-b.index);let cutoff=scored.length?Math.max(0,scored[0].score-450):0;return scored.filter(x=>x.score>=cutoff).slice(0,12).map(x=>x.book)}
+export function rankSearchResults(results,query,limit=12){let unique=new Map();for(let result of results){let identity=result.sourceUrl||[result.source,result.isbn,result.title,result.author].join('|');if(!unique.has(identity))unique.set(identity,result)}let scored=[...unique.values()].map((book,index)=>({book,index,score:searchScore(book,query)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score||a.index-b.index);let cutoff=scored.length?Math.max(0,scored[0].score-450):0;return scored.filter(x=>x.score>=cutoff).slice(0,limit).map(x=>x.book)}
 function strongSearchMatch(results,query){if(!results.length)return false;let q=normalizeSearch(query),title=normalizeSearch(results[0].title),author=normalizeSearch(results[0].author);return title===q||title.startsWith(q)||author===q||searchScore(results[0],query)>=700}
-export async function catalog(request){let u=new URL(request.url);if(request.method!=='GET'||u.pathname!=='/api/books')return catalogOnce(request);let query=(u.searchParams.get('q')||'').trim();if(query.length<2||query.length>300)return Response.json({error:'Use 2–300 characters.'},{status:400});let isbn=parseISBN(query);if(isbn)return isbnSearch(request,isbn);let variants=searchVariants(query);if(!variants.length)return catalogOnce(request);let candidates=[],lastData={results:[]},lastSuccess;for(let variant of variants){let url=new URL(u);url.searchParams.set('q',variant);let r=await catalogOnce(new Request(url,{headers:request.headers,signal:request.signal}));if(!r.ok){if(lastSuccess)break;return r}let data=await r.json();candidates.push(...(data.results||[]));lastData={...data,results:rankSearchResults(candidates,query)};lastSuccess=r;if(strongSearchMatch(lastData.results,query))break}return Response.json(lastData,{headers:{'Cache-Control':'private, max-age=60'}})}
+export async function catalog(request){let u=new URL(request.url);if(request.method!=='GET'||u.pathname!=='/api/books')return catalogOnce(request);let query=(u.searchParams.get('q')||'').trim();if(query.length<2||query.length>300)return Response.json({error:'Use 2–300 characters.'},{status:400});let isbn=parseISBN(query);if(isbn)return isbnSearch(request,isbn);let variants=searchVariants(query);if(!variants.length)return catalogOnce(request);let candidates=[],lastData={results:[]},lastSuccess;for(let variant of variants){let url=new URL(u);url.searchParams.set('q',variant);let r=await catalogOnce(new Request(url,{headers:request.headers,signal:request.signal}));if(!r.ok){if(lastSuccess)break;return r}let data=await r.json();candidates.push(...(data.results||[]));lastData={...data,results:rankSearchResults(u.searchParams.get('source')==='nadir'?dedupeNadir(candidates):candidates,query)};lastSuccess=r;if(strongSearchMatch(lastData.results,query))break}return Response.json(lastData,{headers:{'Cache-Control':'private, max-age=60'}})}

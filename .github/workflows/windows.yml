@@ -84,6 +84,9 @@ jobs:
           } finally {
             if (-not $appProcess.HasExited) { Stop-Process -Id $appProcess.Id -Force }
           }
+      - name: Check installed update and restart
+        shell: pwsh
+        run: ./scripts/check-windows-update.ps1
       - uses: actions/upload-artifact@v7.0.2
         id: installer
         with:

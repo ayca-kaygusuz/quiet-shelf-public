@@ -40,6 +40,12 @@ for catalog calls. Do not expose filesystem access to page scripts.
 Build an installer and attach it to matching releases when shipping desktop
 updates; keep generated binaries outside Git. Preserve local user data during
 upgrades and uninstall. Report Windows-runtime testing limits accurately.
+Every Windows release must rebuild the standalone `Quiet Shelf.exe` and its
+versioned installer from the same current source. Keep the installed executable
+current with new features; the browser launcher remains `pc/start-windows.bat`.
+GitHub updates use stable public releases, verify the installer checksum before
+execution, and ask before restarting. Never include library records or saved
+Google credentials in update checks, installers or release assets.
 
 Windows Actions builds run automatically for Windows-related changes on public
 main. Request explicit approval before manually dispatching a run or changing
