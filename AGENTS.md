@@ -41,6 +41,8 @@ Build an installer and attach it to matching releases when shipping desktop
 updates; keep generated binaries outside Git. Preserve local user data during
 upgrades and uninstall. Report Windows-runtime testing limits accurately.
 
-Windows Actions builds are manual-only after unwanted failure notifications.
-Do not trigger them or restore automatic push triggers without explicit approval.
+Windows Actions builds run automatically for Windows-related changes on public
+main. Request explicit approval before manually dispatching a run or changing
+the automatic triggers. Publishing requires an explicit manual run with Publish
+enabled. The private mirror does not run build jobs.
 For local Windows completion, read `desktop/HANDOVER.md`.

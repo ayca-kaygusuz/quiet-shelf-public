@@ -71,9 +71,8 @@ in the public repository and must not be recreated or committed here.
 
 ## Build notifications
 
-**Do not trigger GitHub Actions without asking the user first.** Repeated failed
-verification runs caused unwanted notifications. The Windows workflow is now
-manual-only (`workflow_dispatch`); do not restore push triggers. It is configured
-to run only in the public repository and clean temporary build artifacts after
-publishing. No private paid runners are needed. Prefer the local Windows build
-for this handover.
+The Windows workflow builds automatically for Windows-related changes on public
+main. Manual runs require user approval. To publish, manually run the workflow
+from main with Publish enabled. Automatic builds leave a temporary artifact for
+one day. The private mirror skips build jobs. The local Windows build remains
+available for troubleshooting and runtime verification.

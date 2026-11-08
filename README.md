@@ -57,12 +57,11 @@ on the first build. Build dependencies, generated installers and personal data
 are not committed. `scripts/generate-desktop-icon.mjs` regenerates the app icons.
 The browser build command below remains separate and does not require Electron.
 
-The Windows release workflow is manual-only; do not start it without user
-approval. It runs only on the public repository's standard free runners; the
-private mirror skips the jobs. It builds and checks native startup
-on Windows, then publishes the installer. Temporary build artifacts are deleted
-after publishing (or expire after one day if publication fails), keeping storage
-use low. Bump the application version before publishing a changed installer.
+Windows-related changes on public main automatically build the installer and
+check native startup. The private mirror skips the jobs. Build artifacts expire
+after one day. To publish a release, manually run the workflow from main with
+Publish enabled. That run builds again and deletes its temporary artifact after
+publishing. Bump the application version before publishing a changed installer.
 
 ## Run locally
 
