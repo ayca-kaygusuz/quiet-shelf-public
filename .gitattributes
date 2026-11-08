@@ -1,0 +1,12 @@
+* text=auto
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.nsi text eol=lf
+*.command text eol=lf
+*.bat text eol=crlf
+*.ico binary
+*.png binary
+*.zip binary

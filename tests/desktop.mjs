@@ -7,12 +7,12 @@ import {join,dirname} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {APP_ORIGIN,createAppHandler,isAppURL,isExternalBookURL,isBackupURL} from '../desktop/app-protocol.mjs';
 
-const html=readFileSync('src/index.html','utf8'),script=html.match(/<script>([\s\S]*)<\/script>/)[1];
+const html=readFileSync('src/index.html','utf8'),script=html.match(/<script>([\s\S]*)<\/script>/)[1].replace(/\r\n?/g,'\n');
 let calls=[];
 const handler=createAppHandler({html,catalog:async request=>{calls.push(request);return Response.json({results:[{title:'A catalog result'}]})}});
 let r=await handler(new Request(APP_ORIGIN+'/'));assert.equal(r.status,200);assert.equal(await r.text(),html);assert.equal(r.headers.get('Referrer-Policy'),'no-referrer');
 const policy=r.headers.get('Content-Security-Policy');assert(policy.includes("connect-src 'self'"));assert(policy.includes("object-src 'none'"));assert(policy.includes("'sha256-"+createHash('sha256').update(script).digest('base64')+"'"));assert(!policy.includes('unsafe-eval'));
-const windowsHTML=html.replace(/\n/g,'\r\n');r=await createAppHandler({html:windowsHTML,catalog:()=>{}})(new Request(APP_ORIGIN+'/'));assert.equal(r.headers.get('Content-Security-Policy'),policy,'Windows line endings must not break the inline-script hash');
+const windowsHTML=html.replace(/\r\n?/g,'\n').replace(/\n/g,'\r\n');r=await createAppHandler({html:windowsHTML,catalog:()=>{}})(new Request(APP_ORIGIN+'/'));assert.equal(r.headers.get('Content-Security-Policy'),policy,'Windows line endings must not break the inline-script hash');
 r=await handler(new Request(APP_ORIGIN+'/api/books?source=google&lang=en&q=Test',{headers:{'X-Google-Api-Key':'test-only-key','Cookie':'not-forwarded','Authorization':'not-forwarded'}}));assert.equal((await r.json()).results[0].title,'A catalog result');assert.equal(calls[0].url,'http://localhost/api/books?source=google&lang=en&q=Test');assert.equal(calls[0].headers.get('X-Google-Api-Key'),'test-only-key');assert.equal(calls[0].headers.get('Cookie'),null);assert.equal(calls[0].headers.get('Authorization'),null);
 await handler(new Request(APP_ORIGIN+'/api/book?source=kitapyurdu&url='+encodeURIComponent('https://www.kitapyurdu.com/kitap/test/123.html'),{headers:{'X-Google-Api-Key':'test-only-key'}}));assert.equal(calls.at(-1).headers.get('X-Google-Api-Key'),null);
 for(let url of ['quiet-shelf://other/','https://example.com/','quiet-shelf://user@app/'])assert.equal((await handler({url,method:'GET'})).status,403);
@@ -32,7 +32,7 @@ async function boot(primary=true){
   loadURL(url){this.url=url;return Promise.resolve()}show(){this.shown=true}isMinimized(){return true}restore(){this.restored=true}focus(){this.focused=true}
  }
  session.setPermissionRequestHandler=fn=>session.permission=fn;session.setPermissionCheckHandler=fn=>session.permissionCheck=fn;
- const main=readFileSync('desktop/main.mjs','utf8').replace(/^import .*;\n/gm,'').replaceAll('import.meta.url',JSON.stringify(pathToFileURL(join(process.cwd(),'desktop/main.mjs')).href));
+ const main=readFileSync('desktop/main.mjs','utf8').replace(/\r\n?/g,'\n').replace(/^import .*;\n/gm,'').replaceAll('import.meta.url',JSON.stringify(pathToFileURL(join(process.cwd(),'desktop/main.mjs')).href));
  let context={app,BrowserWindow:Window,Menu:{buildFromTemplate:items=>items,setApplicationMenu:items=>menus=items},protocol:{registerSchemesAsPrivileged:schemes=>registered.schemes=schemes,handle:(scheme,fn)=>registered.handler=fn},shell:{openExternal:async url=>opened.push(url)},mkdirSync:(path,options)=>{assert.equal(options.recursive,true);trace.push(['mkdir',path])},readFileSync:(path,encoding)=>{assert.equal(path,join(process.cwd(),'src/index.html'));assert.equal(encoding,'utf8');return html},join,dirname,fileURLToPath,catalog:async()=>Response.json({results:[]}),APP_ORIGIN,createAppHandler,isAppURL,isExternalBookURL,isBackupURL,process:{platform:'win32'},console};
  vm.createContext(context);vm.runInContext(main,context);await new Promise(resolve=>setImmediate(resolve));return {trace,windows,app,session,registered,opened,menus};
 }
