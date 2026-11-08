@@ -1,0 +1,88 @@
+name: Windows application
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows.yml'
+      - 'desktop/**'
+      - 'src/**'
+      - 'assets/**'
+      - 'scripts/build-windows.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Standard public-repository runners are free; never start a private-repo VM.
+    if: github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:windows
+      - name: Check native Windows startup
+        shell: pwsh
+        run: |
+          $appProcess = Start-Process -FilePath 'work/windows/win-unpacked/Quiet Shelf.exe' -ArgumentList '--disable-gpu' -PassThru
+          try {
+            Start-Sleep -Seconds 12
+            $appProcess.Refresh()
+            if ($appProcess.HasExited) { throw 'Quiet Shelf exited during startup.' }
+            if ($appProcess.MainWindowHandle -eq 0) { throw 'Quiet Shelf did not create its native window.' }
+            if ($appProcess.MainWindowTitle -ne 'Quiet Shelf') { throw 'Unexpected application window title.' }
+          } finally {
+            if (-not $appProcess.HasExited) { Stop-Process -Id $appProcess.Id -Force }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quiet-shelf-windows
+          if-no-files-found: error
+          path: |
+            work/windows/Quiet-Shelf-Setup-*-x64.exe
+            work/windows/SHA256SUMS.txt
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: quiet-shelf-windows
+          path: release
+      - name: Publish installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft > release-state.json 2>/dev/null; then
+            if [ "$(node -p "require('./release-state.json').isDraft")" != true ]; then
+              echo 'This version is already published; bump the version for a new installer.' >&2
+              exit 1
+            fi
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"
+          else
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft --target "$GITHUB_SHA" --title "Quiet Shelf $version — Windows app" --notes-file desktop/RELEASE-NOTES.md
+          fi
+          gh release upload "$tag" release/*.exe release/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --notes-file desktop/RELEASE-NOTES.md
