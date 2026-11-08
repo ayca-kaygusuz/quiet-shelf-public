@@ -1,12 +1,57 @@
 {
   "name": "quiet-shelf",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "description": "A personal book, manga and comic reading library",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node pc/server.mjs",
     "test": "node scripts/check.mjs",
-    "build": "node build.mjs"
-  }
+    "build": "node build.mjs",
+    "desktop": "electron .",
+    "build:windows": "node scripts/build-windows.mjs"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0"
+  },
+  "main": "desktop/main.mjs",
+  "productName": "Quiet Shelf",
+  "build": {
+    "appId": "com.quietshelf.desktop",
+    "productName": "Quiet Shelf",
+    "copyright": "Copyright Quiet Shelf contributors",
+    "directories": {
+      "output": "work/windows",
+      "buildResources": "desktop/assets"
+    },
+    "asar": true,
+    "npmRebuild": false,
+    "files": [
+      "desktop/**/*.mjs",
+      "desktop/assets/icon.ico",
+      "desktop/assets/icon.png",
+      "src/index.html",
+      "src/catalog.mjs",
+      "assets/Manrope-OFL.txt",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "desktop/assets/icon.ico",
+      "executableName": "Quiet Shelf",
+      "signExecutable": false
+    },
+    "publish": null
+  },
+  "author": "Quiet Shelf contributors"
 }

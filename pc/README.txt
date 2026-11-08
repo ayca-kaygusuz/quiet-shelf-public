@@ -1,4 +1,10 @@
-QUIET SHELF — PC VERSION 0.9.0
+QUIET SHELF — PC VERSION 0.10.0
+
+THIS PACKAGE IS THE LOCAL BROWSER VERSION
+A separate installable Windows app is also available from the public repository's
+Releases page. It bundles its runtime and needs no Node.js or terminal. Both
+versions remain available and keep separate local libraries. No syncing exists
+in this release. Back up and Restore can copy records manually if desired.
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -11,7 +17,7 @@ Open http://127.0.0.1:8765 and keep the terminal window open while using it.
 Press Ctrl+C to stop. After updating files, restart and refresh the browser.
 
 THEMES AND LIBRARY INSIGHTS
-Theme in the header switches between Dark Ink and Sage / Beige, with flat
+Theme in the header switches between Dark Ink and Paper Grove, with flat
 colors, rounded panels and bundled Manrope type (no online font request).
 The theme and chart scope are remembered in this browser, separately from backups.
 The status ring uses real title counts. Finished readings shows the last six

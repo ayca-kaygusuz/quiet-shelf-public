@@ -1,0 +1,25 @@
+import {createRequire} from 'node:module';
+import {readFileSync,mkdirSync,writeFileSync,readdirSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {resolve,join} from 'node:path';
+import {createHash} from 'node:crypto';
+const require=createRequire(import.meta.url);
+const {build,Platform,Arch}=require('electron-builder');
+const {getMakeNsisPath}=require('app-builder-lib/out/toolsets/windows');
+const version=JSON.parse(readFileSync('package.json','utf8')).version;
+const output=resolve('work/windows');
+const config=process.env.QUIET_SHELF_ELECTRON_DIST?{electronDist:resolve(process.env.QUIET_SHELF_ELECTRON_DIST)}:{};
+await build({targets:Platform.WINDOWS.createTarget('dir',Arch.x64),config,publish:'never'});
+const nsis=await getMakeNsisPath('1.2.1');
+const appDir=join(output,'win-unpacked'),files=[],directories=[];
+function walk(dir,relative=''){for(let entry of readdirSync(dir,{withFileTypes:true})){let local=relative?relative+'/'+entry.name:entry.name;if(entry.isDirectory()){directories.push(local);walk(join(dir,entry.name),local)}else files.push(local)}}
+walk(appDir);
+const quote=value=>value.replaceAll('$','$$').replaceAll('"','$\\"').replaceAll('/','\\');
+const uninstallFile=join(output,'uninstall-files.nsh');
+writeFileSync(uninstallFile,[...files.map(file=>`Delete "$INSTDIR\\${quote(file)}"`),...directories.sort((a,b)=>b.split('/').length-a.split('/').length).map(dir=>`RMDir "$INSTDIR\\${quote(dir)}"`)].join('\n')+'\n');
+const artifact=join(output,`Quiet-Shelf-Setup-${version}-x64.exe`);
+mkdirSync(output,{recursive:true});
+execFileSync(nsis.path,['-V2',`-DAPP_DIR=${appDir}`,`-DUNINSTALL_FILES=${uninstallFile}`,`-DAPP_VERSION=${version}`,`-DAPP_ICON=${resolve('desktop/assets/icon.ico')}`,`-DOUTPUT_FILE=${artifact}`,resolve('desktop/installer.nsi')],{stdio:'inherit',env:{...process.env,...nsis.env}});
+const bytes=readFileSync(artifact);if(bytes.subarray(0,2).toString()!=='MZ')throw Error('The installer is not a Windows executable.');
+const digest=createHash('sha256').update(bytes).digest('hex');writeFileSync(join(output,'SHA256SUMS.txt'),`${digest}  ${artifact.split(/[\\/]/).at(-1)}\n`);
+console.log(`Windows installer ready: ${artifact}`);

@@ -24,8 +24,19 @@ explicitly requested. Run the active checks with `npm test`.
 
 ## Interface
 
-Preserve the approved rounded, flat design in both Dark Ink and Sage / Beige.
+Preserve the approved rounded, flat design in both Dark Ink and Paper Grove.
 Use solid color tokens, without gradients, bevels or shadows. Themes share the
 same functions and charts. Keep appearance/chart-scope preferences separate
 from book records; they are browser-local until device syncing is implemented.
 Never replace actual library counts or chart values with illustrative data.
+
+## Windows app
+
+Keep the browser version and standalone desktop version available, sharing
+`src/` for interface and catalog behavior. The desktop app has a separate local
+profile and no sync, pairing or account connection until explicitly requested.
+Keep Node integration disabled in the renderer and use the narrow app protocol
+for catalog calls. Do not expose filesystem access to page scripts.
+Build an installer and attach it to matching releases when shipping desktop
+updates; keep generated binaries outside Git. Preserve local user data during
+upgrades and uninstall. Report Windows-runtime testing limits accurately.

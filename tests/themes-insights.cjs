@@ -28,3 +28,9 @@ let blocked=app(records,{},true);blocked.element('#theme').value='sage';blocked.
 let empty=app([]);assert.equal(empty.run('insightData().total'),0);assert.equal(empty.element('#activityEmpty').hidden,false);assert(!/NaN|Infinity/.test(empty.element('#statusDonut').innerHTML+empty.element('#activityChart').innerHTML));
 assert(!/src:\s*url\(https?:\/\/fonts/.test(html),'bundled fonts must not contact a font service at runtime');
 console.log('PASS: remembered themes/scope, real status totals, independent archive/wishlist switches, rereads across year boundaries, collection/filter isolation, preserved drafts, live updates, invalid preferences/storage failure and empty charts');
+
+assert.equal(a.run('themes.sage'),'Paper Grove');
+let ring=app(Array.from({length:132},(_,i)=>({id:'entry-'+i,title:'Entry '+i,status:i===0?'In progress':i<4?'Done':'Unread',history:[]})));
+const arcs=[...ring.element('#statusDonut').innerHTML.matchAll(/stroke-dasharray="([0-9.]+) ([0-9.]+)"/g)];assert.equal(arcs.length,3);assert(arcs.every(m=>Number(m[1])>0));
+assert(arcs.some(m=>Number(m[1])<4),'a small In progress segment must stay visible with separators');
+let single=app([{id:'only',title:'One entry',status:'Done',history:[]}]);assert.equal([...single.element('#statusDonut').innerHTML.matchAll(/stroke-dasharray=/g)].length,1);

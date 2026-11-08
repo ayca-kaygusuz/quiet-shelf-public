@@ -1,8 +1,58 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.9.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.10.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
+
+## Windows application
+
+Download the `.exe` installer from the public repository's **Releases** page,
+run it, and open **Quiet Shelf** from Start or its desktop shortcut. The installer
+targets Windows 11 (64-bit Intel/AMD), installs for the current user,
+and includes its own runtime. Node.js, a terminal window and the browser server
+are not needed. The installer is unsigned; Windows may show an unknown-publisher
+or reputation warning. There is no paid service or account requirement.
+
+The Windows app and both browser versions remain available. The desktop app
+uses the same interface, reading features and catalog adapters, but has its
+**own separate local library and preferences**. It opens an internal app page,
+not a hosted website, and starts no HTTP server or listening port. It can run
+beside the browser app. **There is no synchronization, pairing, account or
+background upload in this version.**
+
+Reading records work locally without internet. New catalog searches and uncached
+cover images need an internet connection. Catalog source links open in your
+normal browser. Back up opens a save dialog; Restore accepts the same JSON
+backup format as the browser app. If desired, copy records manually by backing
+up in one version and restoring in the other; changes remain independent.
+
+The desktop profile lives in `%APPDATA%\Quiet Shelf`. It is separate from
+browser storage, survives app upgrades, and is preserved when uninstalling the
+application. Keep JSON backups. The installer refuses a non-empty destination
+unless it is an existing Quiet Shelf installation; uninstall removes only its
+installed files, not arbitrary files added to the installation folder.
+
+### Desktop development and installer build
+
+Use Node.js 24 LTS (or 22.12 or newer):
+
+```sh
+npm ci
+npm run desktop
+```
+
+To make a Windows installer:
+
+```sh
+npm run build:windows
+```
+
+This packages the shared application with Electron, then uses NSIS to produce
+`work/windows/Quiet-Shelf-Setup-<version>-x64.exe` and `SHA256SUMS.txt`. Official
+build tools/runtimes are downloaded for development, and require network access
+on the first build. Build dependencies, generated installers and personal data
+are not committed. `scripts/generate-desktop-icon.mjs` regenerates the app icons.
+The browser build command below remains separate and does not require Electron.
 
 ## Run locally
 
@@ -12,7 +62,8 @@ Use Node.js 22 or newer; Node.js 24 LTS is recommended. From the project root:
 npm start
 ```
 
-No npm dependencies need installing. You can also run `node pc/server.mjs`.
+The browser/server version needs no npm dependencies. You can also run
+`node pc/server.mjs`. Desktop development uses the separate npm dev dependencies.
 On Windows, double-click `pc/start-windows.bat`, or run it in PowerShell:
 
 ```powershell
@@ -66,7 +117,7 @@ completion dates. Existing records from earlier versions remain in My library.
 
 The interface uses rounded panels, compact book rows, flat solid colors and
 bundled Manrope type. **Dark Ink** is the default charcoal/violet theme;
-**Sage / Beige** provides a lighter alternative with the same layout and charts.
+**Paper Grove** provides a lighter alternative with the same layout and charts.
 Use the Theme selector in the header to switch. The font is embedded so loading
 it does not contact a font service. Its license is in `assets/Manrope-OFL.txt`.
 
@@ -247,7 +298,7 @@ storage unless you export them. Never commit personal backups, API keys or
 account/session information. Local `private/`, `data/`, `backups/`, and `exports/`
 folders, environment files, database files and common key formats are ignored;
 ignore rules do not remove anything already present in Git history.
-Phone/computer syncing and Kitapyurdu account-list import/sync are not
+Browser/desktop/phone syncing and Kitapyurdu account-list import/sync are not
 implemented.
 
 ## Keeping the development mirrors synchronized
@@ -278,7 +329,11 @@ Main files:
 | --- | --- |
 | `src/index.html` | Interface, browser storage, reading history and collections |
 | `src/catalog.mjs` | Catalog adapters and API request handling |
-| `pc/server.mjs` | Local HTTP server |
+| `pc/server.mjs` | Local browser HTTP server |
+| `desktop/main.mjs` | Separate Windows app window and local profile |
+| `desktop/app-protocol.mjs` | In-process app/catalog routing and navigation policy |
+| `scripts/build-windows.mjs` | Windows installer packaging |
+| `desktop/installer.nsi` | Per-user installation and data-preserving uninstall |
 | `pc/start-windows.bat` | Windows launcher, including portable Node.js support |
 | `scripts/check.mjs` | Explicit active-test runner |
 | `tests/` | Active checks and catalog metadata fixtures |
