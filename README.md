@@ -54,6 +54,12 @@ on the first build. Build dependencies, generated installers and personal data
 are not committed. `scripts/generate-desktop-icon.mjs` regenerates the app icons.
 The browser build command below remains separate and does not require Electron.
 
+The Windows release workflow runs only on the public repository's standard free
+runners; the private mirror skips the jobs. It builds and checks native startup
+on Windows, then publishes the installer. Temporary build artifacts are deleted
+after publishing (or expire after one day if publication fails), keeping storage
+use low. Bump the application version before publishing a changed installer.
+
 ## Run locally
 
 Use Node.js 22 or newer; Node.js 24 LTS is recommended. From the project root:
