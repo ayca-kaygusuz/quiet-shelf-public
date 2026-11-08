@@ -38,7 +38,34 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: npm test
+      - name: Prepare verified Windows build tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'quiet-shelf-tools'
+          New-Item -ItemType Directory -Force $toolRoot | Out-Null
+          $electronVersion = node -p "require('./package.json').devDependencies.electron"
+          $archiveName = "electron-v$electronVersion-win32-x64.zip"
+          gh release download "v$electronVersion" --repo electron/electron --pattern $archiveName --pattern SHASUMS256.txt --dir $toolRoot
+          if ($LASTEXITCODE -ne 0) { throw 'Electron runtime download failed.' }
+          $hashLine = Get-Content (Join-Path $toolRoot 'SHASUMS256.txt') | Where-Object { $_.TrimEnd().EndsWith($archiveName) }
+          $expected = ($hashLine -split '\s+')[0]
+          $actual = (Get-FileHash (Join-Path $toolRoot $archiveName) -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw 'Electron runtime checksum mismatch.' }
+          Expand-Archive (Join-Path $toolRoot $archiveName) (Join-Path $toolRoot 'electron')
+          gh release download 'nsis@1.2.1' --repo electron-userland/electron-builder-binaries --pattern nsis-bundle-3.12.tar.gz --dir $toolRoot
+          if ($LASTEXITCODE -ne 0) { throw 'NSIS tool download failed.' }
+          $actual = (Get-FileHash (Join-Path $toolRoot 'nsis-bundle-3.12.tar.gz') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne '56997fdefe25e7928a1a68b4583d08b240b66cf660234053b20131a74cc082f4') { throw 'NSIS tool checksum mismatch.' }
+          New-Item -ItemType Directory -Force (Join-Path $toolRoot 'nsis') | Out-Null
+          tar -xzf (Join-Path $toolRoot 'nsis-bundle-3.12.tar.gz') -C (Join-Path $toolRoot 'nsis')
+          if ($LASTEXITCODE -ne 0) { throw 'NSIS extraction failed.' }
+          Add-Content $env:GITHUB_ENV "QUIET_SHELF_ELECTRON_DIST=$toolRoot\electron"
+          Add-Content $env:GITHUB_ENV "ELECTRON_BUILDER_NSIS_DIR=$toolRoot\nsis\nsis-bundle"
       - run: npm run build:windows
       - name: Check native Windows startup
         shell: pwsh
