@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.10.0
+QUIET SHELF — PC VERSION 0.10.1
 
 THIS PACKAGE IS THE LOCAL BROWSER VERSION
 A separate installable Windows app is also available from the public repository's
@@ -80,7 +80,8 @@ search field to import that listing directly; select the result and save.
 AniList provides manga series rather than translated print editions.
 Internet access is needed for catalog searches and covers. Services may block
 requests or enforce quotas. Google Books accepts an optional personal API key;
-the key is not saved and must currently be re-entered each Add title session.
+the key is remembered in a separate local browser setting, outside library
+records and JSON backups. Clear the API-key field to forget it.
 The browser connector and its dependent sources are inactive.
 
 SAVING AND TRANSFERRING RECORDS

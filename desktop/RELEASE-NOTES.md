@@ -1,13 +1,11 @@
-Quiet Shelf now has an installable Windows application alongside the browser version.
+Quiet Shelf 0.10.1 remembers your optional Google Books API key on this device.
 
-- Includes its own runtime: no Node.js or terminal window is needed.
-- Same interface, reading history, series, wishlist and catalog search features.
-- Independent local library and preferences. No syncing, pairing or account connection.
-- Existing JSON Back up and Restore allow optional manual transfers.
-- Installs for the current user, with Start menu and desktop shortcuts. Local reading data survives upgrades and uninstall.
-- Paper Grove has clearer status colors and chart boundaries.
-- Google Books accepts an optional personal API key, retries an existing search when the key changes, and distinguishes project quota from shared quota.
+- The key survives closing Add title and restarting the app.
+- It stays in a separate local setting, outside application source, library records and JSON backups.
+- The Windows app and each browser profile remember their own key independently. Clear the API-key field to forget it.
+- A changed key retries the current search. Searches for other sources never receive the Google key.
+- If local storage cannot be updated, the form reports it and you can still search with the current field value.
 
-Download the x64 `.exe` installer for Windows 11 (Intel/AMD). `SHA256SUMS.txt` contains its checksum.
+Download the Windows 11 x64 `.exe` installer and install it over the existing version. Your local library and reading history are preserved. `SHA256SUMS.txt` contains the installer checksum. This build is unsigned, so Windows may show an unknown-publisher or reputation warning.
 
-This build is unsigned, so Windows may show an unknown-publisher or reputation warning. The release workflow runs the automated checks, builds on Windows, and checks that the native window starts. Version 0.10.0 also passed local Windows runtime checks in an isolated profile: startup, adding a title, start/finish dates, rereads, theme persistence, JSON backup/restore, and independent browser storage. The Google Books fix has additional automated form and HTTP regression checks.
+The app and browser remain independent; syncing is not part of this release. Automated regression tests cover key persistence and clearing, separate app/browser storage, unavailable storage, Google-only requests, and backup exclusion. The release workflow builds on Windows and checks native startup. The original 0.10.0 app also passed local Windows interaction checks for adding titles, reading dates/rereads, theme persistence and JSON backup/restore.

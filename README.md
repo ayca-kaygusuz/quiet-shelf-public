@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.10.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.10.1.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches and cover images.
 
@@ -286,9 +286,12 @@ current request path.
 In **Add title**, select Google Books and paste the key into its API-key field.
 If a search term is already entered, pasting or changing the key retries that
 search automatically. The key is sent through the app server to Google. It is
-not saved in your library, source preferences, backups or Git.
-The form resets when reopened, so the key must currently be entered again for
-each Add title session. Your project's Google quota still applies.
+saved in a separate local setting for this browser or Windows app profile.
+It survives closing the form and restarting the app, but is not included in
+library records, source preferences, JSON backups or Git. Clear the field to
+forget the saved key. The browser and Windows app remember their own keys
+independently. If local storage is unavailable, the form says so and the key
+can still be used for the current form. Your project's Google quota still applies.
 
 ## Saving, backups and syncing
 

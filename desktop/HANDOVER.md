@@ -16,7 +16,9 @@ startup, adding a title, recording start and finish dates, rereads, theme
 persistence, JSON backup/restore, and separate browser storage. Subsequent
 Google Books API-key changes passed automated regression tests
 and Windows build/startup checks. Paper Grove, clearer status colors, and chart
-separators are included.
+separators are included. Version 0.10.1 remembers an optional Google Books key
+in a separate local setting for each app/browser profile, outside library
+records and JSON backups. Clear the field to forget it.
 
 ## Local development and future Windows verification
 
@@ -35,7 +37,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.10.0-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.10.1-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
