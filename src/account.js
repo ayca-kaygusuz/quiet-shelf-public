@@ -41,7 +41,7 @@
   $('#syncConflicts').innerHTML=conflicts.map((conflict,i)=>{const p=conflict.parts,book=localDocument().library.find(b=>b.id===p[1]),label=p[0]==='p'?'View preference · '+p.slice(1).join(' / '):(book?.title||'Title '+p[1])+' · '+(p[2]==='field'?p[3]:p[2]);return '<div class="sync-conflict"><strong>'+App.esc(label)+'</strong><label class="sr-only" for="conflict-'+i+'">Value to keep</label><select id="conflict-'+i+'">'+conflict.choices.map((value,n)=>'<option value="'+n+'">'+App.esc(p[2]==='present'?value?'Keep this title':'Keep deleted':value===null?'Remove this value':typeof value==='string'?value:JSON.stringify(value))+'</option>').join('')+'</select><button data-resolve-conflict="'+i+'" type="button">Keep selected value</button></div>'}).join('');
  }
  function recordChange(){
-  if(applying)return;
+  if(applying||!workspaceReady)return;
   try{
    if(!account){guest=App.snapshot();store(guestStorage,guest);return}
    const changed=S.update(state,App.snapshot(),actor),disk=read(workspaceKey(account.id),null),before=JSON.stringify(state);state=disk?.state?S.merge(changed,disk.state):changed;

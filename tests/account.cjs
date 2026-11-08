@@ -45,7 +45,7 @@ const settle=()=>new Promise(resolve=>setImmediate(resolve));
  a.dispose();
  // A remembered account whose backend session has ended must never appear as guest data.
  storage['quiet-shelf-active-account-v1']=JSON.stringify({id:'202',email:'two@example.invalid'});storage['quiet-shelf-v1']=JSON.stringify([book('other','Other account')]);
- const expired=launch(storage);await settle();assert.equal(expired.run('books[0].title'),'Local title');assert.equal(expired.ctx.QuietShelfAccount.status().account,null);expired.dispose();
+ const expired=launch(storage);expired.run("uiPreferences.theme='sage';rememberPreferences()");await settle();assert.equal(expired.run('books[0].title'),'Local title');assert.equal(expired.ctx.QuietShelfAccount.status().account,null);expired.dispose();
  const browser=launch({'quiet-shelf-v1':JSON.stringify([book('browser','Browser title')])},'http:');await settle();assert.equal(browser.run('books[0].title'),'Browser title');assert.equal(browser.element('#googleSignIn').hidden,true);assert.match(browser.element('#accountConnection').textContent,/Windows app/);browser.dispose();
  const future='2090-01-01';a.run(`validate([{id:'timezone',title:'Recorded in another time zone',status:'Done',history:[{id:'history',date:'${future}',startDate:'${future}'}]}])`);assert.equal(a.run(`validDate('${future}')`),false,'stored calendar dates stay portable, while new future date input remains rejected');
  console.log('PASS: Account navigation, signed-out mode, versioned preference backups/legacy import, separate guest/account workspaces, explicit migration without samples, theme/status sync, secret exclusion, metered/manual behavior, edits during sync, account switching and expired-session isolation');
