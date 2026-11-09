@@ -1,12 +1,11 @@
-Quiet Shelf 0.14.1 adds four themes to the Windows and browser apps.
+Quiet Shelf 0.15.0 introduces the Android app alongside Windows and the browser version.
 
-- Midnight Tide: deep navy with sea-glass accents.
-- Rosewood: dark plum with dusty rose accents.
-- Porcelain: cool white with blue accents.
-- Apricot Hour: warm cream with terracotta accents.
+- Android packages the shared library, reading dates/rereads, series, wishlist/archive, catalogs, insights, themes, backup format and Google Drive sync behavior.
+- Native Google authorization keeps access tokens out of the web interface. The Android app uses its registered package/signing certificate and needs no client secret. First sync keeps the current shelf and offers the same explicit choices and recovery copies.
+- The system document picker handles JSON backups without broad storage access. Phone details open in a dedicated panel; Android Back closes the current form, Account or details before exiting. System bars follow the theme.
+- Offline and metered state comes from Android. Update checks use the saved preference and link to the signed APK when a newer version is available. Android does not need a running PC or local server.
+- Windows/browser source remains aligned. Shared account status accepts native online state, and the release parser recognizes Android APKs. Existing Windows installer/update behavior is preserved.
 
-Dark Ink and Paper Grove remain available. The Theme menu groups dark and light palettes. Every theme uses the same flat, rounded interface, chart separators and functions. Choices are remembered locally and included in JSON backups and optional Drive sync; changing themes does not change book records. Update synced clients before choosing a new palette on another device.
+Install Quiet-Shelf-Android-0.15.0.apk on Android 8+ with an updated System WebView. Google sign-in requires Google Play services. Install future updates over the existing app; uninstalling removes local data. The checksum manifest covers Android, Windows and browser packages. Windows updates remain under Account → App updates. Preserve the local browser private runtime folder when updating its files.
 
-Checks cover readable text/status/button contrast, persistence, restore and Drive serialization for all six palettes. Windows CI checks each new theme in the actual packaged Windows and browser interfaces, including charts, account/update controls and layout overflow, plus installed upgrade/restart.
-
-Update Windows through Account → App updates. The release also includes quiet-shelf-pc.zip, quiet-shelf-update.zip and SHA256SUMS.txt. Preserve the browser private runtime folder and use the same browser/profile/address after replacing files and restarting pc/start-windows.bat. Hosted web deployment and native Android/iOS apps remain deferred.
+Checks include shared adapter/CSP/credential-isolation tests, Android lint, Android emulator library/history/theme/restart/native-bridge checks and screenshots, plus packaged Windows/browser and installed Windows upgrade/restart checks. Real Google consent and Android document-picker interactions require verification on a device. Public web hosting and native iOS remain deferred.

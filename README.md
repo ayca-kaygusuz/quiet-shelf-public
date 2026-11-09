@@ -1,9 +1,9 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.14.1.**
+A personal reading tracker for books, manga and comics. **Current version: 0.15.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
-update checks/downloads, and optional Google Drive sync in the Windows app.
+update checks/downloads, and optional Google Drive sync in the Windows, Android and local browser apps.
 
 ## Windows application
 
@@ -38,6 +38,29 @@ browser storage, survives app upgrades, and is preserved when uninstalling the
 application. Keep JSON backups. The installer refuses a non-empty destination
 unless it is an existing Quiet Shelf installation; uninstall removes only its
 installed files, not arbitrary files added to the installation folder.
+
+### Android app
+
+The release includes **Quiet-Shelf-Android-0.15.0.apk** for Android 8 or later
+with an updated Android System WebView. Download the APK on your phone and open
+it; Android may ask you to allow installation from that browser. Future APKs
+install over the existing app using the same signing identity. No PC, browser
+server or paid app-store account is needed. Uninstalling removes local app data;
+use Drive or a JSON backup before doing so.
+
+Android shares library/status/history, series, archive/wishlist, all six themes,
+search providers, insights, first-sync choices and recovery with Windows/web.
+Title details open as a phone-sized panel; the Android Back action closes forms,
+Account or details before leaving the app. System bars follow the selected theme.
+The native system file picker handles backup and restore without broad storage
+permission. Google sign-in needs Google Play services and the app's registered
+Android client; no client secret or manual user credential setup is required.
+
+Automatic sync and update checks pause on metered/offline connections. Manual
+checks and the saved preference remain available. Android updates link to the
+release APK and require the normal Android install confirmation. The release
+checksum manifest covers the APK alongside the Windows/browser packages.
+See [Android development and signing](android/README.md).
 
 ### Themes
 
@@ -431,7 +454,7 @@ that browser copy; Drive retains the shared data while it is stopped.
 
 A hosted Worker adapter implements Web OAuth with server-side Web credentials,
 encrypted HttpOnly remembered-session cookies, state/PKCE and the same data
-format. Public hosting deployment and native Android/iOS apps are deferred. The release supplies the Desktop application credentials alongside PKCE; users
+format. Public hosting deployment and the native iOS app is deferred. The release supplies the Desktop application credentials alongside PKCE; users
 only sign in and approve access. Web client credentials remain separate. Kitapyurdu account-list sync is
 not implemented. See [Google Drive setup](docs/google-drive.md) for maintainer
 configuration and the real-account verification checklist.

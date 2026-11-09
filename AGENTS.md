@@ -36,7 +36,8 @@ Never replace actual library counts or chart values with illustrative data.
 Keep the browser version and standalone desktop version available, sharing
 `src/` for interface and catalog behavior. The desktop app has a separate local
 profile, with optional Google Drive sync now explicitly requested. Browser Google sign-in and first-sync choices share the Windows behavior. Public
-web hosting deployment and native Android/iOS apps remain deferred. Keep guest and Google-account workspaces
+web hosting deployment and the native iOS app remain deferred. Android is implemented
+in `android/` using the same shared source and data format. Keep guest and Google-account workspaces
 separate, credentials out of the renderer, and Google Books keys device-local.
 Keep browser and Windows development aligned: implement common features,
 preferences, backup migrations and sync data formats in shared code, and check
@@ -80,3 +81,27 @@ native first-sync UI together. The browser ZIP uses the distributable Desktop
 client only on loopback; hosted web uses its server-side Web client configuration.
 Never bundle a Web client secret or browser session-encryption key into a ZIP,
 frontend, installer or Worker source. Runtime values stay on the hosted server.
+
+## Android app
+
+Keep Android and Windows/browser features aligned through `src/`. Android uses
+a restricted, origin-bound WebMessage bridge and local signed assets, without
+a local HTTP server. Native HTTP is limited to the catalog/Drive/release hosts.
+Google authorization uses Google Play services with the registered Android
+package/signing certificate; access tokens remain native and in memory. Never
+package Desktop/Web OAuth secrets or an APK signing key. The app requests
+Internet/network state only; JSON backup/restore uses the system document picker.
+Preserve guest/account separation and read-only first-sync behavior on Android.
+
+Use `npm run build:android`; production builds require the private keystore
+Actions secrets. Never rotate the release key to fix a build failure: updates
+must preserve the original signing identity. Keep keys outside Git and public
+artifacts. Provide one private plaintext file per secret when asking for setup,
+containing only the value to paste; do not combine secret values in a JSON file.
+
+Android CI runs only in the public mirror and tests a real emulator before APK
+publication. A previously tested artifact may be promoted only from a successful
+run of this exact workflow and source commit. Keep published APKs immutable;
+merge their checksums into the matching Windows/browser release manifest.
+Report real-device Google consent and file-picker checks separately from
+mocked adapter tests and emulator checks.

@@ -5,8 +5,8 @@
 The standalone app is implemented in `desktop/main.mjs`, using the same
 `src/index.html` and `src/catalog.mjs` as the browser app. The browser version
 remains available. Version 0.12.0 adds the user-requested optional Google Drive
-connection in the Windows app. Web sign-in is implemented alongside Windows. Public web deployment and native
-Android/iOS apps remain deferred.
+connection in the Windows app. Web sign-in is implemented alongside Windows. Public web deployment and the native iOS app remain deferred. Android is now
+implemented in `android/` with the same shared source.
 
 The desktop app loads `quiet-shelf://app/` through an in-process protocol handler;
 it does not start the browser HTTP server. A temporary random-port loopback
@@ -67,7 +67,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.14.1-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.15.0-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -218,3 +218,13 @@ actions on their relevant surfaces. Packaged Windows and browser checks switch
 each new palette, verify real three-status chart counts and preference retention,
 then capture library/account views. New theme choices require a current client;
 older clients reject unknown preference values without replacing their shelf.
+
+## Android alongside Windows (0.15.0)
+
+Android is now built from the same shared interface/catalog/sync/release source.
+The adapter lives in `android/`; Windows keeps its in-process app protocol.
+The shared account status now accepts native online state and a phone storage
+label. The release parser supports the signed Android APK; Windows verification
+and installer behavior remain the same. Android CI tests the WebView/native
+message boundary on an emulator, and Android releases append their checksum to
+the matching Windows/browser manifest without replacing existing packages.

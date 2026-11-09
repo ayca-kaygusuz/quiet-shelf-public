@@ -1,8 +1,8 @@
 # Google Drive connection
 
-Version 0.13.1 connects the Windows and local browser apps to Google Drive.
+Version 0.15.0 connects Windows, Android and the local browser app to Google Drive.
 The hosted web OAuth adapter is implemented too; public hosting deployment and
-native Android/iOS apps are deferred. Libraries and JSON import/export work
+the native iOS app is deferred. Libraries and JSON import/export work
 without an account. No web hosting is required for native sync.
 
 ## Google Cloud setup
@@ -23,7 +23,7 @@ without an account. No web hosting is required for native sync.
 6. Before general public use, change **Audience** from **Testing** to
    **Production**, and complete any production/branding steps Google requests.
    Users outside the test list cannot use an app left in Testing. Hosted Web
-   client setup is described below; native Android/iOS client setup is deferred.
+   client setup is described below; native iOS client setup is deferred; Android setup is described in android/README.md.
 
 Google Testing projects can expire refresh tokens after seven days when Drive
 access is requested. This is a Google test-mode limit, not a sync defect. Moving
@@ -161,3 +161,14 @@ account. Do not call the real-account path verified until those checks pass.
 
 Installers and source mirrors must be rebuilt/synchronized for every release.
 Keep private files, local caches and downloaded credentials outside Git.
+
+## Android native authorization
+
+Android uses Google Play services AuthorizationClient with the registered
+`com.quietshelf.android` package and release certificate. Register the Android
+OAuth client in this same Cloud project. Android client secrets are not needed
+and are never read. Native token renewal verifies Google's userinfo subject
+against the expected account. Tokens remain native/in memory; only a non-secret
+marker and public account ID cross the Android WebMessage interface.
+The shared Drive model, read-only preview, explicit first connection and recovery
+behavior remain the same. See [Android setup](../android/README.md).

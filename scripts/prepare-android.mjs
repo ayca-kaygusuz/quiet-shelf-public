@@ -1,0 +1,11 @@
+import {readFileSync,writeFileSync,mkdirSync,copyFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const root='android/app/src/main/assets';mkdirSync(root,{recursive:true});
+let html=readFileSync('src/index.html','utf8');
+html=html.replace('</style>','</style><link rel="stylesheet" href="/android.css">').replace('<script src="/sync-core.js" defer>','<script src="/android-bootstrap.js"></script><script src="/sync-core.js" defer>');
+writeFileSync(root+'/index.html',html);
+for(const file of ['account.js','sync-core.js','catalog.mjs','drive.mjs','releases.mjs'])copyFileSync('src/'+file,root+'/'+file);
+for(const file of ['android-bootstrap.js','android-api.mjs','android.css'])copyFileSync('android/web/'+file,root+'/'+file);
+const script=html.match(/<script>([\s\S]*)<\/script>/)[1],digest=createHash('sha256').update(script.replace(/\r\n?/g,'\n')).digest('base64');
+writeFileSync(root+'/csp.txt',`default-src 'none'; script-src 'self' 'sha256-${digest}'; style-src 'self' 'unsafe-inline'; img-src https: data:; font-src data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'`);
+console.log('Android assets prepared from the shared interface, catalog, sync and release code.');

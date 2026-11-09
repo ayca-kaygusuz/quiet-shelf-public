@@ -34,3 +34,12 @@ service-account*.json
 # Generated Desktop app OAuth configuration is supplied by the release environment.
 /desktop/google-client.generated.json
 /pc/google-client.generated.json
+
+# Android build tools, generated assets and signing material
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/app/src/main/assets/
+/android/local.properties
+*.jks
+*.keystore
