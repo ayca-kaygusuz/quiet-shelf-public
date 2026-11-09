@@ -9,7 +9,7 @@
  const publicAccount=value=>value&&typeof value.id==='string'&&/^\d{1,100}$/.test(value.id)&&typeof value.email==='string'?{id:value.id,email:value.email,name:typeof value.name==='string'?value.name:value.email}:null;
  let settings={auto:true,meteredOverride:null,...read(settingsStorage,{})};if(typeof settings.auto!=='boolean')settings.auto=true;if(typeof settings.meteredOverride!=='boolean')settings.meteredOverride=null;
  let account=null,linked=false,state=S.empty(),dirty=false,lastSync=null,firstPull=false,sourceAccountId=null,preview=null;
- let connection={configured:false,mode:location.protocol==='quiet-shelf:'?'desktop':'local',network:{}},applying=false,syncing=false,choosing=false,queued=false,authRequired=false,failed=false,workspaceReady=false,notice='',epoch=0,syncTimer,authTimer,periodicTimer;
+ let connection={configured:false,mode:location.protocol==='quiet-shelf:'?'desktop':'local',network:{}},applying=false,syncing=false,choosing=false,queued=false,authRequired=false,failed=false,workspaceReady=false,saveFailed=false,draftBlocked=false,notice='',epoch=0,syncTimer,authTimer,periodicTimer,indicatorTimer;
  const previous=read(activeStorage,null);
  sourceAccountId=previous?(previous.setupPending?previous.sourceAccountId||null:previous.id):null;
  let guest=read(guestStorage,null);if(!guest&&!previous){guest=App.snapshot();try{store(guestStorage,guest)}catch{}}
@@ -21,13 +21,41 @@
   const cached=read(workspaceKey(previous.id),null);
   if(cached?.setupComplete!==true&&realBooks(App.snapshot()).length===0&&realBooks(guest).length){try{apply(validated(guest));sourceAccountId=null}catch{}}
  }
- function accountPage(open=true){$('#accountPage').hidden=!open;$('#libraryPage').hidden=open;$('#accountButton').setAttribute('aria-expanded',String(open));if(open)$('#accountHeading').focus?.();else $('#accountButton').focus?.()}
+ function syncPopover(open,focus=false){$('#syncPopover').hidden=!open;$('#syncIndicator').setAttribute('aria-expanded',String(open));if(!open&&focus)$('#syncIndicator').focus?.()}
+ function accountPage(open=true){syncPopover(false);$('#accountPage').hidden=!open;$('#libraryPage').hidden=open;$('#accountButton').setAttribute('aria-expanded',String(open));if(open)$('#accountHeading').focus?.();else $('#accountButton').focus?.()}
  $('#accountButton').onclick=()=>accountPage($('#accountPage').hidden);$('#backToLibrary').onclick=()=>accountPage(false);$('#reviewSyncSetup').onclick=()=>accountPage();
  function networkMetered(){if(settings.meteredOverride!==null)return settings.meteredOverride;return connection.network?.metered===true||navigator.connection?.saveData===true||navigator.connection?.type==='cellular'}
  const online=()=>navigator.onLine!==false;
  const canAuto=()=>settings.auto&&!networkMetered()&&online()&&!document.hidden&&!authRequired&&account?.id===publicAccount(connection.account)?.id;
  function localDocument(){return S.project(state)}
- function persist(){if(!account)return;if(linked)store(workspaceKey(account.id),{version:1,state,dirty,lastSync,firstPull,setupComplete:true});else store(pendingKey(account.id),{version:1,document:App.snapshot(),sourceAccountId});}
+ function persist(){if(!account)return;if(linked)store(workspaceKey(account.id),{version:1,state,dirty,lastSync,firstPull,setupComplete:true});else store(pendingKey(account.id),{version:1,document:App.snapshot(),sourceAccountId});saveFailed=false;}
+ function checkedAgo(value){const elapsed=Date.now()-new Date(value).getTime();if(!Number.isFinite(elapsed))return 'Not checked yet';const minutes=Math.max(0,Math.floor(elapsed/60000));return 'Checked '+(minutes<1?'just now':minutes<60?minutes+' min ago':minutes<1440?Math.floor(minutes/60)+' hr ago':Math.floor(minutes/1440)+' days ago')}
+ function renderSyncIndicator(){
+  let phase='local',label='Local only',detail='Saved on this device',explanation='Sign in to connect this library to Google Drive. Manual backups are available in Account.';
+  const checked=linked&&lastSync?lastSync:preview?.checkedAt,conflicts=account&&linked?localDocument().conflicts.length:0;
+  if(!workspaceReady){phase='checking';label='Checking connection';detail='Your library stays here';explanation='Checking the remembered Google connection. Your current library stays on this device.'}
+  if(account){
+   if(syncing||choosing){phase='syncing';label=choosing?'Connecting library':linked?'Syncing…':'Checking Drive…';detail='Your library stays here';explanation=choosing?'Saving a recovery copy and connecting the chosen library.':linked?'Comparing and saving library changes with Google Drive.':'Checking Drive without uploading your local library.'}
+   else if(authRequired){phase='attention';label='Reconnect Google';detail='Changes kept on this device';explanation='Google needs you to sign in again. Open Account to reconnect.'}
+   else if(!online()){phase='paused';label='Offline';detail='Saved on this device';explanation='Drive cannot be checked while offline. Changes will wait on this device.'}
+   else if(failed){phase='error';label='Sync failed';detail='Changes kept on this device';explanation=notice||'Drive could not be reached. Try Sync now or review Account.'}
+   else if(!linked){phase='attention';label='Choose library';detail=checked?checkedAgo(checked):'Waiting to check Drive';explanation='Your current shelf is still open. Review the library choices in Account before connecting.'}
+   else if(conflicts){phase='attention';label='Review sync changes';detail=conflicts+' conflicting '+(conflicts===1?'change':'changes');explanation='Changes are saved, but some values differ between devices. Open Account to choose which values to keep.'}
+   else if(draftBlocked&&App.hasDraft?.()){phase='paused';label='Finish editing to sync';detail='Your draft stays open';explanation='Save your series changes or close Add title before syncing incoming changes.'}
+   else if(networkMetered()||!settings.auto){phase='paused';label='Sync paused';detail=networkMetered()?'Metered connection':'Automatic sync is off';explanation=(dirty?'Unsynced changes are saved on this device. ':'Automatic sync is paused. ')+'Sync now is available whenever you choose.'}
+   else if(dirty){phase='waiting';label='Changes waiting to sync';detail='Saved on this device';explanation='Local changes are queued for Google Drive.'}
+   else if(!lastSync){phase='waiting';label='Waiting to check Drive';detail='Saved on this device';explanation='This library has not completed its first sync on this device.'}
+   else{phase='synced';label='Synced';detail=checkedAgo(lastSync);explanation='This device and Google Drive matched at the last successful sync. Changes from another device appear after the next check.'}
+  }else if(connection.pending){phase='checking';label='Signing in…';detail='Your library stays here'}
+  else if(failed&&!workspaceReady){phase='error';label='Connection unavailable';detail='Your library stays here';explanation=notice}
+  if(saveFailed){phase='error';label='Local save needs attention';detail='Download a backup';explanation='The sync queue could not be saved on this device. Download a backup in Account before closing Quiet Shelf.'}
+  const text=(selector,value)=>{if($(selector).textContent!==value)$(selector).textContent=value};
+  $('#syncIndicator').setAttribute('data-state',phase);text('#syncIndicatorLabel',label);text('#syncIndicatorDetail',detail);text('#syncIndicatorAnnouncement',label);
+  text('#syncPopoverHeading',label);text('#syncPopoverDetail',explanation);text('#syncPopoverLastSaved',checked?'Last successful '+(linked?'sync: ':'Drive check: ')+new Date(checked).toLocaleString():'No successful Drive '+(linked?'sync':'check')+' on this device yet.');
+  $('#syncPopoverLastSaved').hidden=!account;$('#syncIndicator').setAttribute('aria-label',label+' · '+detail+'. Show sync details');
+  $('#quickSync').hidden=!account;$('#quickSync').disabled=!account||syncing||choosing||!online()||authRequired||!!connection.pending; text('#quickSync',syncing?'Checking…':linked?'Sync now':'Check Drive');
+  text('#syncAccount',authRequired?'Reconnect Google':account&&!linked?'Review library choices':conflicts?'Review changes':'Account & settings');
+ }
  function recoveries(){const saved=read(recoveryStorage,[]);return Array.isArray(saved)?saved.filter(entry=>entry&&Array.isArray(entry.copies)):[]}
  function checkpoint(reason,document=App.snapshot()){
   const copies=[{label:'This device before '+reason,document:validated(document)}];
@@ -70,15 +98,15 @@
   const conflicts=account&&linked?localDocument().conflicts:[];$('#syncConflictsSection').hidden=!conflicts.length;
   $('#syncConflicts').innerHTML=conflicts.map((conflict,i)=>{const p=conflict.parts,book=localDocument().library.find(b=>b.id===p[1]),label=p[0]==='p'?'View preference · '+p.slice(1).join(' / '):(book?.title||'Title '+p[1])+' · '+(p[2]==='field'?p[3]:p[2]);return '<div class="sync-conflict"><strong>'+App.esc(label)+'</strong><label class="sr-only" for="conflict-'+i+'">Value to keep</label><select id="conflict-'+i+'">'+conflict.choices.map((value,n)=>'<option value="'+n+'">'+App.esc(p[2]==='present'?value?'Keep this title':'Keep deleted':value===null?'Remove this value':typeof value==='string'?value:JSON.stringify(value))+'</option>').join('')+'</select><button data-resolve-conflict="'+i+'" type="button">Keep selected value</button></div>'}).join('');
   const options=recoveryOptions(),selected=$('#recoveryChoice').value;$('#recoverySection').hidden=!options.length;$('#recoveryChoice').innerHTML=options.map(option=>'<option value="'+App.esc(option.value)+'">'+App.esc(option.label)+'</option>').join('');if(options.some(o=>o.value===selected))$('#recoveryChoice').value=selected;
-  renderSetup();
+  renderSetup();renderSyncIndicator();
  }
  function recordChange(){
   if(applying||!workspaceReady)return;
   try{
-   if(!account||!linked){if(!account||sourceAccountId===null){guest=App.snapshot();store(guestStorage,guest)}persist();if(account)renderAccount();return}
+   if(!account||!linked){if(!account||sourceAccountId===null){guest=App.snapshot();store(guestStorage,guest)}persist();saveFailed=false;renderAccount();return}
    const changed=S.update(state,App.snapshot(),actor),disk=read(workspaceKey(account.id),null),before=JSON.stringify(state);state=disk?.state?S.merge(changed,disk.state):changed;if(JSON.stringify(state)===before)return;
-   if(JSON.stringify(state)!==JSON.stringify(changed))apply(localDocument());dirty=true;persist();failed=false;renderAccount();schedule();
-  }catch{failed=true;notice='This device could not save the sync queue. Download a backup before closing Quiet Shelf.';renderAccount();App.message(notice)}
+   if(JSON.stringify(state)!==JSON.stringify(changed))apply(localDocument());dirty=true;persist();failed=false;draftBlocked=false;renderAccount();schedule();
+  }catch{failed=true;saveFailed=true;notice='This device could not save the sync queue. Download a backup before closing Quiet Shelf.';renderAccount();App.message(notice)}
  }
  App.changed=recordChange;
  function schedule(delay=1500){clearTimeout(syncTimer);if(account&&canAuto())syncTimer=setTimeout(()=>void sync(false),delay)}
@@ -88,24 +116,24 @@
   const saved=next?read(workspaceKey(next.id),null):null,nextState=saved?.state?S.validate(saved.state):S.empty();if(next)validated(S.project(nextState));
   const before=App.snapshot(),owner=account&&linked?account.id:sourceAccountId;
   if(account){if(!linked&&sourceAccountId!==null)checkpoint('leaving connection setup');persist()}else if(!previous){guest=before;store(guestStorage,guest)}
-  account=next;state=nextState;linked=!!next&&saved?.setupComplete===true;sourceAccountId=owner;preview=null;epoch++;workspaceReady=true;authRequired=false;failed=false;notice='';clearTimeout(syncTimer);
+  account=next;state=nextState;linked=!!next&&saved?.setupComplete===true;sourceAccountId=owner;preview=null;epoch++;workspaceReady=true;authRequired=false;failed=false;draftBlocked=false;notice='';clearTimeout(syncTimer);
   dirty=saved?.dirty===true;lastSync=saved?.lastSync||null;firstPull=saved?.firstPull===true;
   if(account){store(activeStorage,{...account,setupPending:!linked,sourceAccountId});if(linked){apply(localDocument());sourceAccountId=account.id}else{persist();notice='Your library is still here. Check Drive, then choose how to connect it.'}}
   else{localStorage.removeItem(activeStorage);linked=false;sourceAccountId=null;dirty=false;lastSync=null;firstPull=false;apply(guest||{library:[],preferences:{}})}
   $('#libraryPage').inert=false;$('#add').disabled=false;
  }
  async function sync(manual=false){
-  if(linked&&App.hasDraft?.()){notice='Save your series changes or close the Add title form before syncing.';renderAccount();return false}
+  if(linked&&App.hasDraft?.()){draftBlocked=true;notice='Save your series changes or close the Add title form before syncing.';renderAccount();return false}
   if(!account||syncing){if(syncing)queued=true;return false}if(!online()||!manual&&!canAuto()){renderAccount();return false}
-  clearTimeout(syncTimer);syncing=true;failed=false;notice='';const identity=account.id,revision=epoch,readOnly=!linked,sent=linked?state:S.empty();renderAccount();
+  clearTimeout(syncTimer);syncing=true;failed=false;draftBlocked=false;notice='';const identity=account.id,revision=epoch,readOnly=!linked,sent=linked?state:S.empty();renderAccount();
   try{
    const response=await request('sync',{accountId:identity,state:sent,readOnly,manual,meteredOverride:settings.meteredOverride});if(response.paused){connection.network=response.network;notice='Automatic sync paused because Windows reports a metered connection.';return false}
    if(account?.id!==identity||epoch!==revision)return false;if(response.account?.id!==identity)throw Error('The sync response belongs to a different account.');
    const returned=S.validate(response.state);validated(S.project(returned));
    if(readOnly){preview={state:returned,checkedAt:new Date().toISOString()};persist();notice='Drive checked. Choose which library to connect; your current books stay here.';return true}
-   const merged=S.merge(state,returned),document=S.project(merged);validated(document);if(App.hasDraft?.()){notice='Drive was checked. Incoming changes will load after you finish editing.';return false}
+   const merged=S.merge(state,returned),document=S.project(merged);validated(document);if(App.hasDraft?.()){draftBlocked=true;notice='Drive was checked. Incoming changes will load after you finish editing.';return false}
    state=merged;dirty=!S.covers(returned,merged);lastSync=new Date().toISOString();firstPull=true;persist();apply(document);authRequired=false;notice=document.conflicts.length?'Sync completed. Review the conflicting changes below.':'Sync completed.';return true;
-  }catch(e){if(epoch!==revision)return false;failed=true;notice=e.message;if(e.code==='SIGN_IN_REQUIRED')authRequired=true;try{persist()}catch{notice+=' Download a backup before closing.'}return false}
+  }catch(e){if(epoch!==revision)return false;failed=true;notice=e.message;if(e.code==='SIGN_IN_REQUIRED')authRequired=true;try{persist()}catch{saveFailed=true;notice+=' Download a backup before closing.'}return false}
   finally{syncing=false;renderAccount();if(linked&&(queued||dirty&&!failed)){queued=false;schedule(2000)}}
  }
  async function chooseLibrary(choice){
@@ -135,6 +163,9 @@
  $('#googleSignOut').onclick=async()=>{if(syncing||choosing)return;try{persist();if(linked&&dirty&&!confirm('Some changes have not synced yet. They will stay on this device for this Google account. Sign out?'))return;connection=await request('signout',{});activate(null);notice='Signed out. Your separate local library is open.';renderAccount()}catch(e){notice=e.message;renderAccount()}};
  $('#saveGoogleClientId').onclick=async()=>{try{connection=await request('configure',{clientId:$('#googleClientId').value.trim()});notice='Google connection settings saved.';renderAccount()}catch(e){notice=e.message;renderAccount()}};
  $('#syncNow').onclick=$('#checkSetupDrive').onclick=()=>sync(true);$('#startSyncLibrary').onclick=()=>chooseLibrary('combine');$('#useDriveLibrary').onclick=()=>chooseLibrary('drive');$('#setupLater').onclick=()=>accountPage(false);
+ $('#syncIndicator').onclick=()=>{renderSyncIndicator();syncPopover($('#syncPopover').hidden)};$('#quickSync').onclick=()=>sync(true);$('#syncAccount').onclick=()=>accountPage();
+ document.addEventListener('click',event=>{if(!$('#syncPopover').hidden&&!event.target.closest('#syncOverview'))syncPopover(false)});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#syncPopover').hidden){event.preventDefault();syncPopover(false,true)}});
  $('#autoSync').onchange=()=>{settings.auto=$('#autoSync').checked;try{store(settingsStorage,settings)}catch{}renderAccount();if(settings.auto)schedule(100);else clearTimeout(syncTimer)};
  $('#meteredConnection').onchange=()=>{settings.meteredOverride=$('#meteredConnection').checked;try{store(settingsStorage,settings)}catch{}renderAccount();if(networkMetered())clearTimeout(syncTimer);else schedule(100)};
  $('#resetMetered').onclick=()=>{settings.meteredOverride=null;try{store(settingsStorage,settings)}catch{}renderAccount();schedule(100)};
@@ -147,6 +178,8 @@
  root.addEventListener('storage',event=>{if(account&&linked&&event.key===workspaceKey(account.id)){try{const incoming=read(event.key,null);if(incoming?.state){state=S.merge(state,incoming.state);dirty=dirty||incoming.dirty;persist();if(!App.hasDraft?.())apply(localDocument());renderAccount();schedule()}}catch{notice='Another window’s changes could not be loaded. Keep a backup before closing.';renderAccount()}}});
  periodicTimer=setInterval(()=>{if(account&&online()&&!document.hidden)void refreshConnection().then(()=>{if(canAuto())return sync(false)})},120000);
  if(new URL(location.href).searchParams.has('account')){accountPage();history.replaceState(null,'',location.pathname)}
- root.QuietShelfAccount={refresh:refreshConnection,sync,status:()=>({account,dirty,lastSync,firstPull,syncing,metered:networkMetered(),auto:settings.auto,setupPending:!!account&&!linked,setupReady:!!preview}),dispose(){clearTimeout(syncTimer);clearTimeout(authTimer);clearInterval(periodicTimer)}};
+ indicatorTimer=setInterval(()=>{if(!document.hidden)renderSyncIndicator()},30000);
+ const headerObserver=root.ResizeObserver?new root.ResizeObserver(entries=>{document.documentElement.style.setProperty('--app-header-height',Math.ceil(entries[0].target.getBoundingClientRect().height)+'px')}):null;headerObserver?.observe($('.app-header'));
+ root.QuietShelfAccount={refresh:refreshConnection,sync,status:()=>({account,dirty,lastSync,firstPull,syncing,metered:networkMetered(),auto:settings.auto,setupPending:!!account&&!linked,setupReady:!!preview}),dispose(){clearTimeout(syncTimer);clearTimeout(authTimer);clearInterval(periodicTimer);clearInterval(indicatorTimer);headerObserver?.disconnect()}};
  renderAccount();void refreshConnection();
 })(globalThis);

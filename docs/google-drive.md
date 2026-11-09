@@ -1,6 +1,6 @@
 # Google Drive connection
 
-Version 0.13.0 connects the Windows and local browser apps to Google Drive.
+Version 0.13.1 connects the Windows and local browser apps to Google Drive.
 The hosted web OAuth adapter is implemented too; public hosting deployment and
 native Android/iOS apps are deferred. Libraries and JSON import/export work
 without an account. No web hosting is required for native sync.

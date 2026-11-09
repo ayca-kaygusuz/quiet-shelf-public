@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.13.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.13.1.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads, and optional Google Drive sync in the Windows app.
@@ -365,6 +365,14 @@ stay on the device and include the pre-connection shelf and Drive snapshots.
 The separate signed-out library and account queues are retained. Accounts that
 have completed the new connection choice reopen quietly. Older empty account
 views recover the preserved signed-out shelf before any network call.
+
+The header stays visible while scrolling and shows the current sync status beside
+Account: Local only, Syncing, Changes waiting, Offline, Sync paused, Sync failed,
+or Synced with the age of the last successful check. Click the indicator for the
+exact timestamp, an explanation and **Sync now**. Opening this panel never starts
+sync automatically. A previous successful sync is not a live guarantee about
+changes another device made afterward. Unfinished setup, conflicts, sign-in and
+local save problems have their own status; Windows update progress stays separate.
 
 Automatic sync is on by default, with a short delay after changes and a periodic
 check while the app is visible. Windows metered/data-limit/roaming detection

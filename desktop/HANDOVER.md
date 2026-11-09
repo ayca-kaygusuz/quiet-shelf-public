@@ -67,7 +67,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.13.0-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.13.1-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -154,7 +154,7 @@ Developer-only client-ID controls are hidden in packaged apps, and old local
 ID overrides do not override a packaged release's app identity. Both browser and
 native continue to share the same interface, data format and account logic.
 
-## First-sync and web parity (0.13.0)
+## First-sync and web parity (0.13.1)
 
 Sign-in no longer changes the visible library. New/unmigrated accounts preview
 Drive with readOnly requests; backend adapters enforce an empty submitted state
@@ -177,3 +177,14 @@ isolated profile, then checks the first-sync UI in both browser and native app,
 with both themes. Google client preflight can validate Desktop and Web pairs;
 public hosting and real user consent/Drive round trips still require their
 respective deployment/interactive checks.
+
+## Visible sync status (0.13.1)
+
+The shared header is sticky and shows a separate sync indicator beside Account.
+It reports local-only, setup, syncing, queued edits, offline/metered/manual pauses,
+failures, reconnection and conflicts. Synced includes when Drive last matched;
+the relative time refreshes locally without polling Drive. Its disclosure offers
+the exact last successful sync, manual sync and Account navigation. Opening it
+does not start a network request or change data. Escape restores trigger focus.
+The details sidebar stays below the measured header height. Both packaged native
+and browser CI checks exercise the indicator/disclosure in both themes.

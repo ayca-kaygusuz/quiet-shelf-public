@@ -116,6 +116,7 @@ jobs:
             work/windows/update-preview-*.png
             work/windows/account-preview-*.png
             work/windows/*first-sync*.png
+            work/windows/*sync-status*.png
       - name: Check installed update and restart
         shell: pwsh
         run: ./scripts/check-windows-update.ps1
