@@ -1,8 +1,9 @@
 # Google Drive connection
 
-Version 0.12.1 connects the Windows app directly to Google Drive. Browser OAuth
-and phone apps are deferred. Existing browser libraries and JSON import/export
-continue to work without an account. No web hosting is required for native sync.
+Version 0.13.0 connects the Windows and local browser apps to Google Drive.
+The hosted web OAuth adapter is implemented too; public hosting deployment and
+native Android/iOS apps are deferred. Libraries and JSON import/export work
+without an account. No web hosting is required for native sync.
 
 ## Google Cloud setup
 
@@ -21,8 +22,8 @@ continue to work without an account. No web hosting is required for native sync.
    they never create clients, copy keys or import credential JSON.
 6. Before general public use, change **Audience** from **Testing** to
    **Production**, and complete any production/branding steps Google requests.
-   Users outside the test list cannot use an app left in Testing. Web client
-   credentials and Android client setup are deferred.
+   Users outside the test list cannot use an app left in Testing. Hosted Web
+   client setup is described below; native Android/iOS client setup is deferred.
 
 Google Testing projects can expire refresh tokens after seven days when Drive
 access is requested. This is a Google test-mode limit, not a sync defect. Moving
@@ -47,7 +48,7 @@ it with the native app. Google treats installed apps as public clients whose
 application credentials are distributable. The app relies on PKCE, Google
 consent and scoped user tokens. User access/refresh tokens and Google Books
 keys stay private and are never bundled or included in library backups. Web
-client secrets belong only on their server when browser OAuth is implemented.
+client secrets belong only on their hosted server.
 
 Before publication, `scripts/check-google-release.mjs` submits a nonexistent
 refresh token to Google's real token endpoint with the app's configured pair.
@@ -62,28 +63,71 @@ Developer-only client-ID overrides remain available in an unpackaged build.
 Packaged apps use their release identity and hide those controls. Changing a
 local developer ID does not borrow credentials from a different release client.
 
-The browser server does not read private Web OAuth JSON in this release. The
-previously discussed `private/google-oauth.json` setup is deferred along with
-hosted browser authorization. Retain any downloaded credential file privately;
-it must not be tracked or attached to releases.
+## First connection and recovery
 
-## First use
+Signing in keeps the current device shelf visible. The first check is read-only
+on both backend adapters, even if a caller supplies a local snapshot. It uploads
+no titles and does not compact/delete cloud checkpoints. Failed checks keep the
+current shelf open. Metered detection pauses automatic checks; Check Drive works
+manually. The user reviews counts across all three collections and chooses:
 
-Open **Account → Sign in with Google**, finish Google's consent in the system
-browser, then return to Quiet Shelf. The temporary loopback callback listener
-closes when the response is claimed, cancelled or timed out. The app does not
-run an always-on HTTP server.
+- **Start syncing this library**, when Drive contains no titles.
+- **Combine libraries**, keeping local and Drive titles and all reading dates.
+- **Use Drive library**, opening the saved Drive snapshot.
 
-An account starts in its own workspace and loads its Drive copy. Your previous
-signed-out library remains separate. After the first successful sync, use
-**Copy local library to this account** to add it explicitly. Sample titles are
-excluded. An empty Drive account does not automatically receive guest data.
+Samples are excluded from uploads. Shared record IDs merge histories; concurrent
+same-field choices remain available for review. The current theme and view
+preferences are retained when combining, while Use Drive loads Drive preferences.
+Local edits made while deciding are included. If Drive changed since the preview,
+the counts refresh and the user reviews the choice again before anything switches.
 
-Automatic sync defaults on. Windows metered/roaming/data-limit detection pauses
-it, with a device-local override. **Sync now** works even on a metered connection.
-Offline work is queued locally. Closing the app stops sync; reopening it online
-resumes. Signing out forgets this installation's token and returns to the local
-library, while retaining any account-specific pending queue for later sign-in.
+Before changing the workspace, the app must save a local recovery set. Find it
+under Account → Backups & restore. Its downloadable snapshots use the existing
+version-2 JSON backup format. The latest three sets stay on the device; user
+credentials are excluded. A failed recovery write blocks the switch. Older empty
+account views reopen the preserved local shelf before any network access.
+An account's setupComplete marker records the approved choice, so it reopens
+quietly later. Guest libraries and account queues remain separate.
+
+## Local browser package
+
+The release includes quiet-shelf-pc.zip and quiet-shelf-update.zip with the same
+source as the Windows app, plus installed-app configuration for loopback use.
+The local browser server uses the Desktop client with a callback at
+`http://127.0.0.1:8765/api/account/callback`. Users only sign in and approve access.
+Each browser profile has its own encrypted HttpOnly remembered-session cookie.
+Its AES key is generated in ignored `private/browser-session.key`. Keep that
+private folder when updating the same local browser installation.
+
+The browser server is only required while using that local browser app. It is
+not a shared sync host and does not need to stay on for other devices to use
+Drive. Update the same folder and keep the same origin/browser profile to retain
+library and sign-in storage. Library records remain local when signed out.
+
+## Hosted web adapter
+
+The generated Worker and the Node server share `src/web-account.mjs`. Configure
+the hosted server once with these runtime values:
+
+- `QUIET_SHELF_GOOGLE_WEB_CLIENT_ID`
+- `QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET` (raw value or downloaded Web OAuth JSON)
+- `QUIET_SHELF_SESSION_KEY` (base64-encoded 32 cryptographically random bytes)
+- `QUIET_SHELF_PUBLIC_ORIGIN` (the exact HTTPS origin, recommended)
+
+Register `<origin>/api/account/callback` on the Web OAuth client. Web credentials
+are confidential server configuration and never bundled into frontend code,
+local browser ZIPs, or installers. The existing GitHub Web secret can validate
+that client pair in CI; actual hosting needs the same server-runtime values
+configured on the chosen host. No public deployment is implied by storing a CI
+secret. Preserve the host's existing access boundary; optional platform visitor
+IDs bind the encrypted cookie to that visitor as well as the origin.
+
+OAuth uses state and PKCE. Remembered refresh tokens stay inside AES-GCM encrypted
+HttpOnly/SameSite cookies; production cookies are Secure. Browser scripts see
+public account identity and library data only. POSTs require the exact Origin
+and the app's custom header. Separate browser profiles, accounts and hosted
+visitors cannot reuse each other's encrypted session. Sign-out clears the
+browser connection and leaves Drive data intact.
 
 ## Data and security boundaries
 
@@ -91,7 +135,8 @@ Drive stores library records, start/finish history and whitelisted view settings
 Google Books keys, OAuth tokens and connection configuration are excluded.
 Only the app's own hidden Drive folder is requested. This is not end-to-end
 encryption: Google stores the app-data files, and the app's OS profile stores
-local library copies. Windows refresh tokens use Electron safeStorage/DPAPI.
+local library copies. Windows refresh tokens use Electron safeStorage/DPAPI; browser refresh tokens use
+server-encrypted HttpOnly cookies.
 The renderer receives only public identity and library/sync responses.
 
 Concurrent devices create immutable snapshots, merge causal field changes and

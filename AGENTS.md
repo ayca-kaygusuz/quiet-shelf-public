@@ -34,13 +34,13 @@ Never replace actual library counts or chart values with illustrative data.
 
 Keep the browser version and standalone desktop version available, sharing
 `src/` for interface and catalog behavior. The desktop app has a separate local
-profile, with optional Google Drive sync now explicitly requested. Hosted browser
-OAuth and phone support are deferred. Keep guest and Google-account workspaces
+profile, with optional Google Drive sync now explicitly requested. Browser Google sign-in and first-sync choices share the Windows behavior. Public
+web hosting deployment and native Android/iOS apps remain deferred. Keep guest and Google-account workspaces
 separate, credentials out of the renderer, and Google Books keys device-local.
 Keep browser and Windows development aligned: implement common features,
 preferences, backup migrations and sync data formats in shared code, and check
-both platform adapters. Deferring hosted browser OAuth and hosting does not
-freeze the browser app or authorize a separate feature fork. Future web and
+both platform adapters. Deferring public web hosting does not freeze web functionality or authorize
+a separate feature fork. Future web and
 phone clients must be able to use the current shared data format.
 Keep Node integration disabled in the renderer and use the narrow app protocol
 for catalog calls. Do not expose filesystem access to page scripts.
@@ -70,3 +70,12 @@ QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET for the same Desktop client. Public
 releases must pass scripts/check-google-release.mjs before packaging. End users
 only sign in; never require them to import client credentials. Never hard-code an actual client ID,
 client secret, user identity or refresh token in source. See docs/google-drive.md.
+
+First sign-in keeps the visible device library until the user chooses how to
+connect. Preview Drive read-only, then offer keeping/combining the current shelf
+or using Drive. Save a downloadable local recovery set before switching. Never
+upload a guest/other-account library before this explicit choice. Check web and
+native first-sync UI together. The browser ZIP uses the distributable Desktop
+client only on loopback; hosted web uses its server-side Web client configuration.
+Never bundle a Web client secret or browser session-encryption key into a ZIP,
+frontend, installer or Worker source. Runtime values stay on the hosted server.

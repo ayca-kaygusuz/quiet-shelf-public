@@ -44,6 +44,7 @@ try{
  assert(!JSON.stringify(account.status()).includes(desktopCredential));assert(!JSON.stringify(account.status()).includes('private-test'));assert(!JSON.stringify(await (await request('status')).json()).includes('private-test'));
  const S=globalThis.QuietShelfSync,state=S.update(S.empty(),{library:[{id:'a',title:'A title',status:'Unread',history:[]}],preferences:{theme:'sage'}},'actor');
  assert.equal((await request('sync',{accountId:'202',state,manual:true})).status,400);assert.equal(files.size,0);
+ const preview=await (await request('sync',{accountId:'101',state,manual:true,readOnly:true})).json();assert.equal(preview.state.registers.length,0);assert.equal(files.size,0,'native previews ignore the supplied local state and never upload it');
  const synced=await (await request('sync',{accountId:'101',state,manual:true})).json();assert.equal(synced.account.id,'101');assert.equal(S.project(synced.state).library.length,1);assert.equal(files.size,1);assert(!JSON.stringify(synced).includes('private-test'));
  account.dispose();account=createGoogleAccount(options);await account.ready;assert.equal(account.status().account.id,'101','remembered identity and refresh token restore from encrypted storage');
  // Guard the actual native protocol, including cross-origin/preflight and body limits.

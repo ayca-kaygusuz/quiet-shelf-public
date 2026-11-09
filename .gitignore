@@ -33,3 +33,4 @@ service-account*.json
 
 # Generated Desktop app OAuth configuration is supplied by the release environment.
 /desktop/google-client.generated.json
+/pc/google-client.generated.json

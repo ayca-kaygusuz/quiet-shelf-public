@@ -1,12 +1,13 @@
-Quiet Shelf 0.12.1 fixes Google sign-in after the browser returns to the Windows app.
+Quiet Shelf 0.13.0 keeps your shelf visible when you sign in and brings browser sync onto the same feature track as Windows.
 
-- The release now supplies Quiet Shelf's Desktop application credential alongside PKCE for both sign-in and token refresh. Users only click Sign in with Google and approve access; no credential files or developer setup are required on their devices.
-- OAuth configuration errors are distinguished from expired sign-ins, with safe messages that exclude credentials and token responses. Developer-only client controls are hidden in the installed app.
-- Before publishing, the release checks the application's credential pair against Google's real token endpoint using a nonexistent refresh token. A release with missing or rejected configuration cannot publish.
-- Library data, backups, view preferences, offline queues and the existing Google Books key are preserved. The browser and Windows apps continue to share interface and data-model development; hosted browser sign-in remains deferred.
+- Google sign-in checks Drive before changing anything. An empty Drive account offers Start syncing this library; an existing Drive library shows both counts with Combine libraries and Use Drive library.
+- Checking Drive uploads no local titles and does not compact cloud copies. Failed checks leave the current shelf open. Edits made while deciding are kept, and sample titles are excluded from uploads.
+- A recovery set is saved before combining or switching. Download it under Account → Backups & restore. Older empty account views bring the preserved local shelf back into view before connecting.
+- Web and Windows share the first-sync choices, library model, preferences and recovery behavior. The local browser ZIP now includes configured Google sign-in; users only approve Google access. Hosted Web OAuth is implemented with server-side configuration; public deployment remains separate.
+- Remembered browser connections use encrypted HttpOnly cookies. Web client secrets and session keys stay on the server. User tokens and Google Books keys are excluded from release packages and backups.
 
-The app's distributable Desktop OAuth configuration is generated from release settings and kept out of tracked source. User access/refresh tokens stay encrypted on the device; Google Books keys remain device-local. No hosted server is required for native Drive sync.
+Update Windows through Account → App updates. To update the local browser version, extract quiet-shelf-pc.zip over its existing folder and restart pc/start-windows.bat. Keep the same browser/profile/address and private runtime folder. SHA256SUMS.txt covers the installer and both browser ZIPs.
 
-Update through Account → App updates or Alt → Help → Check for updates…. The installer includes the rebuilt Quiet Shelf.exe and SHA256SUMS.txt. It is unsigned, so Windows may display an unknown-publisher or reputation warning.
+Automated checks cover both OAuth adapters, browser profile/visitor isolation, read-only Drive previews, account choices, recovery, offline/metered behavior, and existing library features. Windows CI checks the rebuilt native app and extracted browser package in both themes, plus installed upgrade/restart. Real Google consent and public hosted deployment still require their own interactive/deployment checks. Android/iOS native apps remain future work.
 
-The developer must move the Google OAuth audience out of Testing before general public use and complete any Google-required production/branding setup. Real user consent and a Drive round trip still require an interactive sign-in check after updating; the release configuration probe does not grant user access.
+The Google project must be in Production, with any Google-required setup completed, for access beyond approved testers. The Windows installer remains unsigned and may trigger an unknown-publisher or reputation warning.

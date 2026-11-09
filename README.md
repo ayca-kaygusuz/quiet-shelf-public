@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.12.1.**
+A personal reading tracker for books, manga and comics. **Current version: 0.13.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads, and optional Google Drive sync in the Windows app.
@@ -9,7 +9,7 @@ update checks/downloads, and optional Google Drive sync in the Windows app.
 
 [Download Quiet Shelf for Windows](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
 Choose the x64 `.exe` installer, run it, and open **Quiet Shelf** from Start or
-its desktop shortcut. The release also includes `SHA256SUMS.txt`.
+its desktop shortcut. The release also includes the current browser ZIP, browser update ZIP and `SHA256SUMS.txt`.
 
 Version 0.10.0 passed local Windows runtime checks in an isolated profile:
 startup, adding a title, start/finish dates, rereads, theme persistence, JSON
@@ -352,13 +352,19 @@ Drive app-data folder (`drive.appdata`), not access to your other Drive files.
 No PC or server has to stay on for Drive to retain the saved copy. Sync runs
 while the app is open; an offline device catches up after it reconnects.
 
-Each Google account has a separate device workspace. Your original signed-out
-library is kept separately. Signing in first loads that account’s Drive data.
-Use **Copy local library to this account** if you want to add your original
-local titles; sample titles are excluded and existing account titles remain.
-Signing out returns to the signed-out library. Unsynced account edits remain
-cached for that account on this device. These device caches are not a password
-vault: use separate Windows user accounts when sharing a computer.
+Signing in keeps the current shelf visible while Drive is checked read-only.
+For an empty Drive account, choose **Start syncing this library**. When Drive
+already has titles, review both counts and choose **Combine libraries** or
+**Use Drive library**. Counts cover all three collections; sample titles are
+excluded. Local edits made while deciding are kept. A failed check leaves the
+current library open, with a waiting-to-connect message.
+
+Before a choice changes the workspace, the app saves a recovery set. Find it in
+**Account → Backups & restore → Download recovery copy**. The latest three sets
+stay on the device and include the pre-connection shelf and Drive snapshots.
+The separate signed-out library and account queues are retained. Accounts that
+have completed the new connection choice reopen quietly. Older empty account
+views recover the preserved signed-out shelf before any network call.
 
 Automatic sync is on by default, with a short delay after changes and a periodic
 check while the app is visible. Windows metered/data-limit/roaming detection
@@ -380,8 +386,17 @@ backup JSON or release assets. Sign-out forgets this installation’s connection
 it does not delete Drive data or sign other devices out. Google can revoke or
 expire authorization, in which case the app requests sign-in again.
 
-The browser version stays available with local storage and manual backup/restore.
-Hosted browser Drive authorization and phone apps are deferred. The release supplies the Desktop application credentials alongside PKCE; users
+Web and Windows share sign-in, first-sync choices, preferences, recovery and
+library behavior. The release includes **quiet-shelf-pc.zip**, an updated local
+browser package with Google sign-in configured. Extract it over the existing
+browser folder, restart `pc/start-windows.bat`, and use the same browser/profile
+and `http://127.0.0.1:8765` to retain library and sign-in storage. Keep its private
+runtime folder when updating. The local web server is needed only while using
+that browser copy; Drive retains the shared data while it is stopped.
+
+A hosted Worker adapter implements Web OAuth with server-side Web credentials,
+encrypted HttpOnly remembered-session cookies, state/PKCE and the same data
+format. Public hosting deployment and native Android/iOS apps are deferred. The release supplies the Desktop application credentials alongside PKCE; users
 only sign in and approve access. Web client credentials remain separate. Kitapyurdu account-list sync is
 not implemented. See [Google Drive setup](docs/google-drive.md) for maintainer
 configuration and the real-account verification checklist.

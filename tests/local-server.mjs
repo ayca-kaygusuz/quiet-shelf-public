@@ -4,7 +4,7 @@ import {once} from 'node:events';
 import {createLocalServer} from '../pc/server.mjs';
 
 // Exercise the real HTTP boundary: testing catalog() alone misses dropped headers.
-const server=createLocalServer(),originalFetch=globalThis.fetch,calls=[];
+const server=createLocalServer({accountEnvironment:{},desktopConfiguration:null}),originalFetch=globalThis.fetch,calls=[];
 const volume={id:'test-volume',volumeInfo:{title:'Test catalog result',language:'en'}};
 globalThis.fetch=async(url,options)=>{
   const headers=new Headers(options.headers);

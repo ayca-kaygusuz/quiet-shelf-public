@@ -16,6 +16,10 @@ const removalConflict=view.conflicts.find(c=>c.parts[2]==='present');merged=S.me
 const one=S.update(base,doc([{...book,title:'Choice A'}]),'first'),two=S.update(base,doc([{...book,title:'Choice B'}]),'second');
 merged=S.merge(one,two);const conflict=S.project(merged).conflicts.find(c=>c.parts[2]==='field');assert(conflict);merged=S.resolve(merged,conflict.key,0,'reviewer');assert.equal(S.project(merged).conflicts.length,0);assert.equal(S.project(S.merge(merged,two)).library[0].title,'Choice A');
 const secret=S.update(S.empty(),{...doc(),googleApiKey:'PRIVATE',access_token:'PRIVATE',preferences:{theme:'sage',googleApiKey:'PRIVATE'}},'clean');assert(!JSON.stringify(secret).includes('PRIVATE'));
+const combined=S.connectLibrary(a,doc([{...book,history:[{id:'local-read',date:'2026-01-04'}]},{...book,id:'sample',sample:true}],{theme:'sage'}),'connect');
+assert.equal(S.project(combined).library.length,1);assert.equal(S.project(combined).library[0].history.length,2);assert.equal(S.project(combined).preferences.theme,'sage');
+assert(S.project(combined).conflicts.some(c=>c.parts[2]==='reading'),'conflicting statuses remain reviewable');
+const restored=S.connectLibrary(deleted,doc(),'restore-connection');assert.equal(S.project(restored).library[0].id,'one','explicitly keeping this library can restore its previously deleted Drive title');
 const removedHistory=S.update(a,doc([{...book,status:'Done',history:[]}]),'remove-history');assert.equal(S.project(S.merge(a,removedHistory)).library[0].history.length,0);
 assert(S.covers(merged,one));assert(S.covers(merged,two));assert(!S.covers(base,one));
 assert.throws(()=>S.validate({...base,registers:[...base.registers,base.registers[0]]}));assert.throws(()=>S.validate({...base,schema:2}));
@@ -25,6 +29,8 @@ const legacyOrder=S.update(S.empty(),doc([{...book,id:'z',createdAt:undefined},{
 const files=new Map([['seed',base]]);let serial=0,reads=0,uploads=0,failUpload=false;
 const store={async list(){return [...files.keys()].map(id=>({id,version:'1'}))},async read(f){reads++;return files.get(f.id)},async create(s){if(failUpload)throw Error('Offline');const id='file'+(++serial);files.set(id,structuredClone(s));uploads++;return {id,version:'1'}},async remove(f){files.delete(f.id)}};
 const r=await reconcileDrive({state:a,store});assert.equal(S.project(r.state).library[0].status,'Done');assert.equal(files.size,1);
+files.set('second-checkpoint',b);const preflightFiles=[...files.entries()],preflightUploads=uploads;
+await reconcileDrive({state:S.empty(),store,readOnly:true});assert.equal(uploads,preflightUploads);assert.deepEqual([...files.entries()],preflightFiles,'the first Drive preview never compacts, uploads or deletes cloud copies');
 const r2=await reconcileDrive({state:b,store});assert.equal(S.project(r2.state).library[0].history.length,2);assert.equal(files.size,1);
 const beforeUploads=uploads,beforeReads=reads;await reconcileDrive({state:r2.state,store,cache:r2.cache});assert.equal(uploads,beforeUploads);assert.equal(reads,beforeReads);
 files.set('late-device',one);const r3=await reconcileDrive({state:r2.state,store});assert(S.covers(r3.state,one));assert.equal(files.size,1);

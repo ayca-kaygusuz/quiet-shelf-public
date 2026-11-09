@@ -1,5 +1,6 @@
 // Runs only against the Windows CI app launched with a loopback DevTools port.
 import assert from 'node:assert/strict';
+import {checkFirstSyncUI} from './check-first-sync-ui.mjs';
 import {writeFile} from 'node:fs/promises';
 
 const pages=await (await fetch('http://127.0.0.1:9222/json/list',{signal:AbortSignal.timeout(10000)})).json();
@@ -26,5 +27,6 @@ try{
   const screenshot=await command('Page.captureScreenshot',{format:'png',clip:view.clip});
   await writeFile(`work/windows/update-preview-${theme}.png`,Buffer.from(screenshot.data,'base64'));
  }
+ await checkFirstSyncUI({evaluate,prefix:'native-first-sync',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  console.log('PASS: actual native account/assets/update bridges, configured Desktop client, Account navigation, visible download card and both themes');
 }finally{socket.close();for(const entry of pending.values())clearTimeout(entry.timer)}

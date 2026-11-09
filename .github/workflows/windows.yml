@@ -23,6 +23,10 @@ on:
         description: Public Desktop OAuth client ID (optional; otherwise use repository variable)
         type: string
         default: ''
+      googleWebClientId:
+        description: Optional public Web OAuth client ID for validating hosted browser configuration
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -50,6 +54,9 @@ jobs:
           cache: npm
       - name: Validate release Google client configuration
         if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env:
+          QUIET_SHELF_GOOGLE_WEB_CLIENT_ID: ${{ inputs.googleWebClientId || vars.QUIET_SHELF_GOOGLE_WEB_CLIENT_ID }}
+          QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET: ${{ secrets.QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET }}
         run: node scripts/check-google-release.mjs
       - run: npm ci
         env:
@@ -96,7 +103,10 @@ jobs:
           } finally {
             if (-not $appProcess.HasExited) { Stop-Process -Id $appProcess.Id -Force }
           }
-      - name: Keep update indicator previews briefly
+      - name: Check packaged browser version
+        shell: pwsh
+        run: ./scripts/check-browser-windows.ps1
+      - name: Keep interface previews briefly
         uses: actions/upload-artifact@v7.0.2
         with:
           name: quiet-shelf-update-previews
@@ -105,6 +115,7 @@ jobs:
           path: |
             work/windows/update-preview-*.png
             work/windows/account-preview-*.png
+            work/windows/*first-sync*.png
       - name: Check installed update and restart
         shell: pwsh
         run: ./scripts/check-windows-update.ps1
@@ -116,6 +127,7 @@ jobs:
           if-no-files-found: error
           path: |
             work/windows/Quiet-Shelf-Setup-*-x64.exe
+            work/windows/quiet-shelf-*.zip
             work/windows/SHA256SUMS.txt
 
   publish:
@@ -148,7 +160,7 @@ jobs:
           else
             gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft --target "$GITHUB_SHA" --title "Quiet Shelf $version — Windows app" --notes-file desktop/RELEASE-NOTES.md
           fi
-          gh release upload "$tag" release/*.exe release/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$tag" release/*.exe release/*.zip release/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
           gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --notes-file desktop/RELEASE-NOTES.md
       - name: Remove temporary build artifact after publishing
         env:

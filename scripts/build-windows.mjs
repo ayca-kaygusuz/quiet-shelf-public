@@ -1,5 +1,5 @@
 import {createRequire} from 'node:module';
-import {readFileSync,mkdirSync,writeFileSync,readdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync,readdirSync,copyFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {resolve,join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
@@ -31,4 +31,6 @@ const prefix=process.platform==='win32'?'/':'-';
 execFileSync(compiler,[prefix+'V2',`${prefix}DAPP_DIR=${appDir}`,`${prefix}DUNINSTALL_FILES=${uninstallFile}`,`${prefix}DAPP_VERSION=${version}`,`${prefix}DAPP_ICON=${resolve('desktop/assets/icon.ico')}`,`${prefix}DOUTPUT_FILE=${artifact}`,resolve('desktop/installer.nsi')],{stdio:'inherit',env:toolEnv});
 const bytes=readFileSync(artifact);if(bytes.subarray(0,2).toString()!=='MZ')throw Error('The installer is not a Windows executable.');
 const digest=createHash('sha256').update(bytes).digest('hex');writeFileSync(join(output,'SHA256SUMS.txt'),`${digest}  ${artifact.split(/[\\/]/).at(-1)}\n`);
+execFileSync(process.execPath,['build.mjs'],{stdio:'inherit'});
+let checksums=readFileSync(join(output,'SHA256SUMS.txt'),'utf8');for(const name of ['quiet-shelf-pc.zip','quiet-shelf-update.zip']){copyFileSync(join('work',name),join(output,name));checksums+=createHash('sha256').update(readFileSync(join(output,name))).digest('hex')+'  '+name+'\n'}writeFileSync(join(output,'SHA256SUMS.txt'),checksums);
 console.log(`Windows installer ready: ${artifact}`);

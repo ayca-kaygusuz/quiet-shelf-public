@@ -1,10 +1,11 @@
-QUIET SHELF — PC VERSION 0.12.1
+QUIET SHELF — PC VERSION 0.13.0
 
 THIS PACKAGE IS THE LOCAL BROWSER VERSION
 A separate installable Windows app is also available from the public repository's
 Releases page. It bundles its runtime and needs no Node.js or terminal. Both
-versions remain available and keep separate local libraries. The Windows app
-has optional Google Drive sync. This browser package uses manual backup/restore.
+versions remain available and keep separate local libraries. Both versions
+have optional Google Drive sync, the same first-sync choices and manual backups.
+The release browser ZIP is preconfigured; users only sign in with Google.
 
 START
 Use Node.js 22 or newer (24 LTS recommended).
@@ -91,7 +92,10 @@ Account → Back up exports all collections, series, reading histories and view
 preferences. Restore also accepts older library-only JSON files.
 Restore replaces the current records after confirmation; back up first if needed.
 To move records from the hosted app, Back up there, then Restore here.
-This version does not sync devices or Kitapyurdu account lists.
+Sign in under Account to connect Google Drive. The existing shelf stays visible
+until you choose Start syncing, Combine libraries, or Use Drive library.
+Recovery copies are available in Account before a switch. Kitapyurdu account
+list import remains separate and is not implemented.
 
 SOURCE
 src/index.html — interface, collections and browser storage
@@ -105,3 +109,14 @@ Different years/bindings/languages and missing identifiers remain separate.
 
 The installed Windows application has GitHub updates from version 0.11.0.
 This browser/server copy still updates through its source checkout or update ZIP.
+
+GOOGLE CONNECTION AND UPDATES
+Update this same folder to preserve private/browser-session.key, the local
+server key that protects remembered Google sessions. The ZIP never contains
+that key or user tokens. The bundled application configuration identifies the
+local installed app to Google; access/refresh tokens stay in encrypted HttpOnly
+browser cookies. Each browser profile has its own Google connection.
+
+Public web deployments use their server's Web OAuth configuration instead;
+those credentials are never bundled into this local browser ZIP. Android/iOS
+native apps and public hosting deployment remain future work.

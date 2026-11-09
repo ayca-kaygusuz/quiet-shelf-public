@@ -82,5 +82,13 @@
  }
  function resolve(raw,k,choice,actor){const s=validate(raw),heads=new Map(s.registers).get(k);if(!heads||!Number.isInteger(choice)||choice<0||choice>=heads.length)throw Error('Invalid conflict choice.');const w=writer(s,actor);w.put(k,heads[choice].value);return w.finish()}
  function covers(newer,older){const all=new Map(newer.registers);return older.registers.every(([k,heads])=>heads.every(old=>(all.get(k)||[]).some(h=>dotKey(h)===dotKey(old)||dominates(h,old))))}
- const api={SCHEMA,MAX_BYTES,empty,validate,merge,project,update,resolve,covers};root.QuietShelfSync=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ function connectLibrary(remote,document,actor){
+  const library=document.library.filter(b=>!b.sample),local=update(empty(),{library,preferences:{}},actor+'_import');let combined=merge(remote,local);
+  // The user explicitly chose to keep the titles currently on this device.
+  // Restore any of those titles whose old Drive copy had been deleted.
+  for(const b of library){const k=key(['b',b.id,'present']),heads=new Map(combined.registers).get(k);if(heads?.some(h=>h.value===false))combined=resolve(combined,k,heads.findIndex(h=>h.value===true),actor)}
+  const current=project(combined),preferences={...current.preferences,...document.preferences,seriesState:{...current.preferences.seriesState,...document.preferences?.seriesState}};
+  return update(combined,{library:current.library,preferences},actor);
+ }
+ const api={SCHEMA,MAX_BYTES,empty,validate,merge,project,update,resolve,covers,connectLibrary};root.QuietShelfSync=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

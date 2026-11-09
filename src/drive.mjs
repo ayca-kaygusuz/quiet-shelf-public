@@ -29,11 +29,11 @@ export function createDriveStore({accessToken,fetcher=fetch}){
   async remove(file){if(!/^[a-zA-Z0-9_-]+$/.test(file.id))throw Error('Invalid Drive file.');try{await call(API+'/'+file.id,{method:'DELETE'})}catch{/* Cleanup is optional. Never discard a locally saved edit because cleanup failed. */}}
  };
 }
-export async function reconcileDrive({state,store,cache=new Map()}){
+export async function reconcileDrive({state,store,cache=new Map(),readOnly=false}){
  const local=Sync.validate(state),files=await store.list(),copies=[],nextCache=new Map();let bytes=0;
  for(const file of files){const cacheKey=file.id+':'+file.version;const copy=cache.get(cacheKey)||await store.read(file);bytes+=JSON.stringify(copy).length;if(bytes>32*1024*1024)throw Error('The combined Drive copies are too large to reconcile safely.');copies.push(copy);nextCache.set(cacheKey,copy)}
  const remote=Sync.merge(...copies),merged=Sync.merge(remote,local);
- if((merged.registers.length&&!Sync.covers(remote,merged))||files.length>1){
+ if(!readOnly&&((merged.registers.length&&!Sync.covers(remote,merged))||files.length>1)){
   // Create an immutable checkpoint first. Concurrent writers create separate files,
   // so a stale device can never overwrite a newer device's copy.
   const created=await store.create(merged);if(!created?.id)throw Error('Drive did not confirm the saved copy.');

@@ -39,9 +39,9 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
   const timer=setTimeout(()=>{if(pending?.server===server){error='Sign-in timed out. You can try again.';closePending()}},5*60*1000);timer.unref?.();pending={server,timer};
   try{await openExternal(googleAuthorizationURL({clientId,redirectURI,...pkce}))}catch{closePending();throw Error('The system browser could not be opened.')}return status();
  }
- async function sync(accountId,state){
+ async function sync(accountId,state,readOnly=false){
   await ready;if(!session||session.account.id!==accountId)throw Error('Sign in to this account before syncing.');if(busy||pending)throw Error('Wait for the current operation to finish.');busy=true;const active=session;let token;
-  try{const store=createDriveStore({fetcher,accessToken:async force=>{if(!token||force){const result=await refreshGoogleToken({clientId:active.clientId,clientSecret:credentialFor(active.clientId),refreshToken:active.refreshToken},fetcher);token=result.access_token;if(result.refresh_token){active.refreshToken=result.refresh_token;await persist()}}return token}});const result=await reconcileDrive({state,store,cache});cache=result.cache;error='';return {state:result.state,account:active.account,hasRemote:result.hasRemote}}
+  try{const store=createDriveStore({fetcher,accessToken:async force=>{if(!token||force){const result=await refreshGoogleToken({clientId:active.clientId,clientSecret:credentialFor(active.clientId),refreshToken:active.refreshToken},fetcher);token=result.access_token;if(result.refresh_token){active.refreshToken=result.refresh_token;await persist()}}return token}});const result=await reconcileDrive({state:readOnly?globalThis.QuietShelfSync.empty():state,store,cache,readOnly});cache=result.cache;error='';return {state:result.state,account:active.account,hasRemote:result.hasRemote}}
   catch(e){error=e.message;throw e}finally{busy=false}
  }
  async function network(force=false){
@@ -60,7 +60,7 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
    if(action==='cancel'){closePending();return Response.json(status())}
    if(action==='signout'){if(busy)throw Error('Wait for the current sync to finish.');closePending();session=null;cache.clear();error='';await persist();return Response.json(status())}
    if(action==='configure'){if(!developerControls)return new Response('Developer settings are unavailable in this build',{status:403});if(session||busy||pending)throw Error('Sign out before changing the Google connection.');const data=await limitedJSON(request,8192);if(!googleClientID(data.clientId))throw Error('Enter the Desktop OAuth client ID, ending in .apps.googleusercontent.com.');clientId=data.clientId;await atomic(configFile,JSON.stringify({clientId}));return Response.json(status())}
-   if(action==='sync'){const data=await limitedJSON(request,globalThis.QuietShelfSync.MAX_BYTES+2048);const cost=await network(true);if(data.manual!==true&&data.meteredOverride!==false&&cost.metered===true)return Response.json({paused:true,network:cost});return Response.json(await sync(data.accountId,data.state))}
+   if(action==='sync'){const data=await limitedJSON(request,globalThis.QuietShelfSync.MAX_BYTES+2048);const cost=await network(true);if(data.manual!==true&&data.meteredOverride!==false&&cost.metered===true)return Response.json({paused:true,network:cost});return Response.json(await sync(data.accountId,data.state,data.readOnly===true))}
    return new Response('Not found',{status:404});
   }catch(e){return Response.json({error:e.message,code:e.code||'ACCOUNT_ERROR'},{status:e.code==='SIGN_IN_REQUIRED'?401:400,headers:{'Cache-Control':'no-store'}})}
  }

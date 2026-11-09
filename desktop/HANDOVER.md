@@ -5,7 +5,8 @@
 The standalone app is implemented in `desktop/main.mjs`, using the same
 `src/index.html` and `src/catalog.mjs` as the browser app. The browser version
 remains available. Version 0.12.0 adds the user-requested optional Google Drive
-connection in the Windows app. Hosted browser sign-in and phone apps are deferred.
+connection in the Windows app. Web sign-in is implemented alongside Windows. Public web deployment and native
+Android/iOS apps remain deferred.
 
 The desktop app loads `quiet-shelf://app/` through an in-process protocol handler;
 it does not start the browser HTTP server. A temporary random-port loopback
@@ -66,7 +67,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.12.1-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.13.0-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -152,3 +153,27 @@ use and complete any Google-requested production/branding requirements.
 Developer-only client-ID controls are hidden in packaged apps, and old local
 ID overrides do not override a packaged release's app identity. Both browser and
 native continue to share the same interface, data format and account logic.
+
+## First-sync and web parity (0.13.0)
+
+Sign-in no longer changes the visible library. New/unmigrated accounts preview
+Drive with readOnly requests; backend adapters enforce an empty submitted state
+and skip upload/compaction until approval. The shared Account page previews both
+counts, then keeps/combines this shelf or opens Drive. A recovery set is saved
+before switching, with a download in Backups & restore. Account caches store
+setupComplete after the choice. Legacy empty-account views recover the guest
+shelf before network access. Pending edits remain device-local until approval.
+
+Local browser ZIPs now include installed-app configuration and all shared server
+modules. A local browser server uses the Desktop client with a loopback callback;
+a hosted server uses Web credentials and QUIET_SHELF_SESSION_KEY. HttpOnly
+AES-GCM cookies hold remembered browser sessions; no user token reaches page
+scripts. Browser profiles and hosted platform visitor identities are isolated.
+The Web client secret comes from runtime settings, never source or browser ZIPs.
+
+The release supplies quiet-shelf-pc.zip and quiet-shelf-update.zip beside the
+installer. Windows CI launches the extracted browser package and Edge in an
+isolated profile, then checks the first-sync UI in both browser and native app,
+with both themes. Google client preflight can validate Desktop and Web pairs;
+public hosting and real user consent/Drive round trips still require their
+respective deployment/interactive checks.
