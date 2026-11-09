@@ -66,7 +66,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.12.0-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.12.1-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -110,11 +110,16 @@ available for troubleshooting and runtime verification.
 
 ## Google Drive handover (0.12.0)
 
-The Windows app uses system-browser OAuth with state and PKCE. Only a public
-Desktop client ID is required; no Web client secret is used. The release workflow
+The Windows app uses system-browser OAuth with state and PKCE. The app uses its Desktop client ID and associated client value during code and
+refresh exchanges. Version 0.12.0 omitted the latter; Google rejected it with
+invalid_request / client_secret is missing. Version 0.12.1 supplies the pair from
+release configuration, so end users only click Sign in with Google. The release workflow
 reads QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID from a repository variable or its
 optional googleDesktopClientId dispatch input. The build generates an ignored
-public configuration file included in the package. Never put actual client IDs,
+application configuration file included in the package. The Desktop client
+value comes from Actions secret QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET.
+This is distributable installed-app identification under Google’s public-client
+model. User access/refresh tokens and Google Books keys remain private. Never put actual client IDs,
 tokens, personal account identity or library exports in tracked source.
 
 The cloud integration could not create the GitHub variable (HTTP 403). The
@@ -136,3 +141,14 @@ offline conflicts and account switching on Windows before calling that verified.
 No local thread handover is required to build the installer in GitHub Actions.
 Use the local thread only for the real Windows/Google sign-in checks and follow
 the D:\Repositories access restriction. Keep all private configuration local.
+
+Version 0.12.1 corrects the Google Desktop token exchange and reports safe,
+actionable OAuth failure categories. Release publishing first checks the
+application credential pair against Google's real token endpoint using a
+nonexistent refresh token (no user session). An invalid_grant response confirms
+client authentication passed. Missing/invalid client settings block release.
+The developer must configure Google Audience Production before general public
+use and complete any Google-requested production/branding requirements.
+Developer-only client-ID controls are hidden in packaged apps, and old local
+ID overrides do not override a packaged release's app identity. Both browser and
+native continue to share the same interface, data format and account logic.

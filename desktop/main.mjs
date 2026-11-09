@@ -34,7 +34,7 @@ else{
     const html=readFileSync(join(here,'..','src','index.html'),'utf8');
     const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync(join(here,'..','src',name),'utf8')]));
     updates=createUpdateController({app,dialog,shell,getWindow:()=>window,enabled:process.platform==='win32'&&app.isPackaged});
-    googleAccount=createGoogleAccount({profile,safeStorage,openExternal:url=>shell.openExternal(url)});
+    googleAccount=createGoogleAccount({profile,safeStorage,developerControls:!app.isPackaged,openExternal:url=>shell.openExternal(url)});
     protocol.handle('quiet-shelf',createAppHandler({html,catalog,updates,assets,account:googleAccount}));
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'File',submenu:[{role:'quit'}]},

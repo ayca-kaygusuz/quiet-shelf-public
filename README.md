@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.12.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.12.1.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads, and optional Google Drive sync in the Windows app.
@@ -338,7 +338,7 @@ Closing or updating the server does not erase browser records; clearing the
 browser's storage does.
 
 **Account → Back up** exports all three collections, series, reading start/finish
-history and view preferences in version-2 JSON. Google Books keys, Google tokens,
+history and view preferences in version-2 JSON. Google Books keys, user access/refresh tokens,
 connection settings and account identity are excluded. **Restore** accepts this
 format and legacy library-only JSON arrays. It replaces the current workspace
 after confirmation. When signed in, that replacement becomes a syncable change;
@@ -381,8 +381,8 @@ it does not delete Drive data or sign other devices out. Google can revoke or
 expire authorization, in which case the app requests sign-in again.
 
 The browser version stays available with local storage and manual backup/restore.
-Hosted browser Drive authorization and phone apps are deferred. A Web client
-secret is not needed for the Windows PKCE flow. Kitapyurdu account-list sync is
+Hosted browser Drive authorization and phone apps are deferred. The release supplies the Desktop application credentials alongside PKCE; users
+only sign in and approve access. Web client credentials remain separate. Kitapyurdu account-list sync is
 not implemented. See [Google Drive setup](docs/google-drive.md) for maintainer
 configuration and the real-account verification checklist.
 

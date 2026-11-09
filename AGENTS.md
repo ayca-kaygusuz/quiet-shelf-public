@@ -53,7 +53,9 @@ current with new features; the browser launcher remains `pc/start-windows.bat`.
 GitHub updates use stable public releases, verify the installer checksum before
 execution, and ask before restarting. Preserve the in-app progress/status
 indicator alongside taskbar progress, with both themes supported. Never include library records or saved
-Google credentials in update checks, installers or release assets.
+user access/refresh tokens or Google Books keys in update checks, installers or
+release assets. The app’s distributable Desktop OAuth configuration is generated
+from release settings and packaged with the native app; never track its values.
 
 Windows Actions builds run automatically for Windows-related changes on public
 main. Request explicit approval before manually dispatching a run or changing
@@ -63,5 +65,8 @@ For local Windows completion, read `desktop/HANDOVER.md`.
 
 For Google Drive releases, supply the public Desktop OAuth client ID through
 QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID (repository variable) or the approved
-workflow’s googleDesktopClientId input. Never hard-code an actual client ID,
+workflow’s googleDesktopClientId input, plus the Actions secret
+QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET for the same Desktop client. Public
+releases must pass scripts/check-google-release.mjs before packaging. End users
+only sign in; never require them to import client credentials. Never hard-code an actual client ID,
 client secret, user identity or refresh token in source. See docs/google-drive.md.

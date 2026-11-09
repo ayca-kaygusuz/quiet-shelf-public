@@ -24,6 +24,7 @@ const settle=()=>new Promise(resolve=>setImmediate(resolve));
  const storage={'quiet-shelf-v1':JSON.stringify([book('local','Local title'),{...book('sample','Sample title'),sample:true}]),'quiet-shelf-google-key-v1':'PRIVATE-BOOKS-KEY'};
  const a=launch(storage);await settle();
  assert.equal(a.run('books.length'),2);assert.equal(a.element('#googleSignOut').hidden,true);assert.equal(a.element('#autoSync').checked,true);
+ assert.equal(a.element('#googleDesktopSetup').hidden,true,'regular users have no manual OAuth client setup controls');
  a.element('#accountButton').onclick();assert.equal(a.element('#accountPage').hidden,false);assert.equal(a.element('#libraryPage').hidden,true);
  assert(!html.match(/<header[^]*?<\/header>/)[0].includes('id="export"'),'maintenance actions live in Account');
  const backup=a.run('QuietShelfApp.backup()');assert.equal(backup.format,'quiet-shelf-backup');assert.equal(backup.library.length,2);assert.equal(backup.preferences.theme,'ink');assert(!JSON.stringify(backup).includes('PRIVATE'));

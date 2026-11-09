@@ -14,7 +14,7 @@ try{
  const bridge=await evaluate(`(async()=>{const status=await fetch('/api/update-status');const state=await status.json();const action=await fetch('/api/update-action?action=check',{method:'POST',headers:{'X-Quiet-Shelf-Update':'1'}});const accountResponse=await fetch('/api/account/status');const account=await accountResponse.json();document.querySelector('#accountButton').click();return {status:status.status,action:action.status,enabled:state.enabled,visible:!document.querySelector('#desktopUpdates').hidden&&!document.querySelector('#accountPage').hidden,accountStatus:accountResponse.status,accountMode:account.mode,configured:account.configured,accountLoaded:!!globalThis.QuietShelfAccount}})()`);
  assert.equal(bridge.status,200);assert.equal(bridge.action,202);assert.equal(bridge.enabled,true);assert.equal(bridge.visible,true);
  assert.equal(bridge.accountStatus,200);assert.equal(bridge.accountMode,'desktop');assert.equal(bridge.accountLoaded,true);
- if(process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID)assert.equal(bridge.configured,true);
+ if(process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID&&process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET)assert.equal(bridge.configured,true);
  await evaluate(`(async()=>{while(updatePolling)await new Promise(resolve=>setTimeout(resolve,25));clearTimeout(updatePollTimer);updatePolling=true;return true})()`);
  for(const theme of ['ink','sage']){
   await evaluate(`document.querySelector('#theme').value=${JSON.stringify(theme)};document.querySelector('#theme').dispatchEvent(new Event('change',{bubbles:true}));if(document.querySelector('#accountPage').hidden)document.querySelector('#accountButton').click();document.querySelector('#updateCard').hidden=true;window.scrollTo(0,0);true`);

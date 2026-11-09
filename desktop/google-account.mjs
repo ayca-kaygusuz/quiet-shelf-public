@@ -2,20 +2,26 @@ import http from 'node:http';
 import {readFile,writeFile,rename,mkdir,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {execFile} from 'node:child_process';
-import {googleClientID,googlePKCE,googleAuthorizationURL,exchangeGoogleCode,refreshGoogleToken,googleIdentity} from '../src/google-oauth.mjs';
+import {googleClientID,googleDesktopCredential,googlePKCE,googleAuthorizationURL,exchangeGoogleCode,refreshGoogleToken,googleIdentity} from '../src/google-oauth.mjs';
 import {createDriveStore,reconcileDrive,limitedJSON} from '../src/drive.mjs';
 
-export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fetch,platform=process.platform,defaultClientId=process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID||''}){
- let session=null,clientId=defaultClientId,pending=null,busy=false,error='',cache=new Map(),networkCache=null;
+export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fetch,platform=process.platform,defaultClientId=process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID||'',defaultClientSecret=process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET||'',developerControls=false}){
+ let session=null,clientId=defaultClientId,credentialClientId=defaultClientId,clientSecret=defaultClientSecret,pending=null,busy=false,error='',errorCode='',cache=new Map(),networkCache=null;
+ const credentialFor=id=>id===credentialClientId&&googleDesktopCredential(clientSecret)?clientSecret:undefined;
  const configFile=join(profile,'google-connection.json'),tokenFile=join(profile,'drive-session.bin');
  const rememberSupported=()=>safeStorage.isEncryptionAvailable()&&(platform==='win32'||safeStorage.getSelectedStorageBackend?.()!=='basic_text');
  async function atomic(path,data){await mkdir(profile,{recursive:true});await writeFile(path+'.tmp',data,{mode:0o600});await rename(path+'.tmp',path)}
- async function persist(){if(session&&rememberSupported())await atomic(tokenFile,safeStorage.encryptString(JSON.stringify(session)));else await rm(tokenFile,{force:true})}
- const ready=(async()=>{if(!clientId)try{const config=JSON.parse(await readFile(new URL('./google-client.generated.json',import.meta.url),'utf8'));if(googleClientID(config.clientId))clientId=config.clientId}catch{}try{const config=JSON.parse(await readFile(configFile,'utf8'));if(googleClientID(config.clientId))clientId=config.clientId}catch{}try{if(rememberSupported()){const saved=JSON.parse(safeStorage.decryptString(await readFile(tokenFile)));if(googleClientID(saved.clientId)&&(!clientId||saved.clientId===clientId)&&saved.account&&/^\d{1,100}$/.test(saved.account.id)&&typeof saved.refreshToken==='string'){clientId=saved.clientId;session=saved}}}catch(e){if(e.code!=='ENOENT')error='The saved Google connection could not be opened. Please sign in again.'}})();
- function status(){return {mode:'desktop',configured:googleClientID(clientId),clientId,account:session?.account||null,pending:!!pending,busy,error,rememberSupported:rememberSupported()}}
+ async function persist(value=session){if(value&&rememberSupported())await atomic(tokenFile,safeStorage.encryptString(JSON.stringify(value)));else await rm(tokenFile,{force:true})}
+ const ready=(async()=>{
+  try{const config=JSON.parse(await readFile(new URL('./google-client.generated.json',import.meta.url),'utf8'));if(googleClientID(config.clientId)&&(!clientId||config.clientId===clientId)){clientId=config.clientId;if(!clientSecret&&googleDesktopCredential(config.clientSecret)){credentialClientId=config.clientId;clientSecret=config.clientSecret}}}catch{}
+  if(developerControls)try{const config=JSON.parse(await readFile(configFile,'utf8'));if(googleClientID(config.clientId))clientId=config.clientId}catch{}
+  try{if(rememberSupported()){const saved=JSON.parse(safeStorage.decryptString(await readFile(tokenFile)));if(googleClientID(saved.clientId)&&(!clientId||saved.clientId===clientId)&&saved.account&&/^\d{1,100}$/.test(saved.account.id)&&typeof saved.refreshToken==='string'){clientId=saved.clientId;session=saved}}}catch(e){if(e.code!=='ENOENT')error='The saved Google connection could not be opened. Please sign in again.'}
+ })();
+ function status(){return {mode:'desktop',configured:googleClientID(clientId)&&!!credentialFor(clientId),clientId,developerControls,account:session?.account||null,pending:!!pending,busy,error,errorCode,rememberSupported:rememberSupported()}}
+
  function closePending(){if(pending){clearTimeout(pending.timer);pending.server.close();pending=null}}
  async function start(){
-  await ready;if(busy)throw Error('Wait for the current sync to finish.');if(!googleClientID(clientId))throw Error('Set up the Google Desktop client ID first.');closePending();error='';
+  await ready;if(busy)throw Error('Wait for the current sync to finish.');if(!googleClientID(clientId)||!credentialFor(clientId))throw Error('This app build is missing Google sign-in configuration. Install the latest Quiet Shelf release.');closePending();error='';errorCode='';
   const pkce=await googlePKCE();let redirectURI;
   const server=http.createServer(async(req,res)=>{
    const current=pending;let url;try{url=new URL(req.url,redirectURI)}catch{res.writeHead(400);res.end('Invalid callback.');return}
@@ -24,10 +30,10 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
    closePending();busy=true;
    try{
     const code=url.searchParams.get('code');if(url.searchParams.has('error')||!code)throw Error('Google sign-in was cancelled.');
-    const tokens=await exchangeGoogleCode({clientId,code,redirectURI,verifier:pkce.verifier},fetcher),account=await googleIdentity(tokens.access_token,fetcher);
+    const tokens=await exchangeGoogleCode({clientId,clientSecret:credentialFor(clientId),code,redirectURI,verifier:pkce.verifier},fetcher),account=await googleIdentity(tokens.access_token,fetcher);
     if(typeof tokens.refresh_token!=='string')throw Error('Google did not allow a remembered connection. Try signing in again.');
-    session={clientId,account,refreshToken:tokens.refresh_token};cache=new Map();await persist();error='';res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'",'Referrer-Policy':'no-referrer'});res.end('<!doctype html><title>Quiet Shelf</title><p>Connected to Google Drive. You can close this tab and return to Quiet Shelf.</p>');
-   }catch(e){error=e.message;res.writeHead(400,{'Content-Type':'text/plain; charset=utf-8'});res.end('Quiet Shelf could not complete sign-in. Return to the app for details.')}finally{busy=false}
+    const nextSession={clientId,account,refreshToken:tokens.refresh_token};await persist(nextSession);session=nextSession;cache=new Map();error='';errorCode='';res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'",'Referrer-Policy':'no-referrer'});res.end('<!doctype html><title>Quiet Shelf</title><p>Connected to Google Drive. You can close this tab and return to Quiet Shelf.</p>');
+   }catch(e){error=e.message;errorCode=e.code||'ACCOUNT_ERROR';res.writeHead(400,{'Content-Type':'text/plain; charset=utf-8'});res.end('Quiet Shelf could not complete sign-in. Return to the app for details.')}finally{busy=false}
   });
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});redirectURI=`http://127.0.0.1:${server.address().port}/oauth/callback`;
   const timer=setTimeout(()=>{if(pending?.server===server){error='Sign-in timed out. You can try again.';closePending()}},5*60*1000);timer.unref?.();pending={server,timer};
@@ -35,7 +41,7 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
  }
  async function sync(accountId,state){
   await ready;if(!session||session.account.id!==accountId)throw Error('Sign in to this account before syncing.');if(busy||pending)throw Error('Wait for the current operation to finish.');busy=true;const active=session;let token;
-  try{const store=createDriveStore({fetcher,accessToken:async force=>{if(!token||force){const result=await refreshGoogleToken({clientId:active.clientId,refreshToken:active.refreshToken},fetcher);token=result.access_token;if(result.refresh_token){active.refreshToken=result.refresh_token;await persist()}}return token}});const result=await reconcileDrive({state,store,cache});cache=result.cache;error='';return {state:result.state,account:active.account,hasRemote:result.hasRemote}}
+  try{const store=createDriveStore({fetcher,accessToken:async force=>{if(!token||force){const result=await refreshGoogleToken({clientId:active.clientId,clientSecret:credentialFor(active.clientId),refreshToken:active.refreshToken},fetcher);token=result.access_token;if(result.refresh_token){active.refreshToken=result.refresh_token;await persist()}}return token}});const result=await reconcileDrive({state,store,cache});cache=result.cache;error='';return {state:result.state,account:active.account,hasRemote:result.hasRemote}}
   catch(e){error=e.message;throw e}finally{busy=false}
  }
  async function network(force=false){
@@ -53,7 +59,7 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
    if(action==='start')return Response.json(await start());
    if(action==='cancel'){closePending();return Response.json(status())}
    if(action==='signout'){if(busy)throw Error('Wait for the current sync to finish.');closePending();session=null;cache.clear();error='';await persist();return Response.json(status())}
-   if(action==='configure'){if(session||busy||pending)throw Error('Sign out before changing the Google connection.');const data=await limitedJSON(request,8192);if(!googleClientID(data.clientId))throw Error('Enter the Desktop OAuth client ID, ending in .apps.googleusercontent.com.');clientId=data.clientId;await atomic(configFile,JSON.stringify({clientId}));return Response.json(status())}
+   if(action==='configure'){if(!developerControls)return new Response('Developer settings are unavailable in this build',{status:403});if(session||busy||pending)throw Error('Sign out before changing the Google connection.');const data=await limitedJSON(request,8192);if(!googleClientID(data.clientId))throw Error('Enter the Desktop OAuth client ID, ending in .apps.googleusercontent.com.');clientId=data.clientId;await atomic(configFile,JSON.stringify({clientId}));return Response.json(status())}
    if(action==='sync'){const data=await limitedJSON(request,globalThis.QuietShelfSync.MAX_BYTES+2048);const cost=await network(true);if(data.manual!==true&&data.meteredOverride!==false&&cost.metered===true)return Response.json({paused:true,network:cost});return Response.json(await sync(data.accountId,data.state))}
    return new Response('Not found',{status:404});
   }catch(e){return Response.json({error:e.message,code:e.code||'ACCOUNT_ERROR'},{status:e.code==='SIGN_IN_REQUIRED'?401:400,headers:{'Cache-Control':'no-store'}})}
