@@ -141,3 +141,10 @@ book/series data edits; retain grouped expansion/filter choices when switching.
 Use catalog study metadata before recommendation ranking. A title or language
 alone is never proof of a textbook. Generation may look up missing information
 only on explicit demand; retain cached offline generation and label unknown types.
+
+Manual read-next exclusions apply to individual books or canonical series,
+including later volumes. Optional inclusive end dates expire locally without
+mutating a checklist or generating a replacement. Preserve indefinite legacy
+book exclusions, keep every rule reversible, validate new backup/sync fields and
+keep guest/account rules separate. A skipped volume never authorizes suggesting
+its later volumes out of order.

@@ -107,6 +107,14 @@ generation or background metadata refresh is used. Effort estimates combine
 known page count and format. Title details → Read next preferences allows a
 reversible exclusion or format override.
 
+Open a title → **Read next preferences** to exclude just that title or its entire
+series. Leave the end date blank for no expiry, or choose a date to pause
+suggestions through that day. Series exclusions also cover volumes added later.
+**Read next → Excluded titles & series** lists active and expired rules and lets
+you undo either kind. Rules never remove books or rewrite the current checklist;
+expired titles become eligible the next time you generate. Exclusions and dates
+are saved locally, backed up and synced separately for each account/guest shelf.
+
 The current checklist, settings, exclusions and cached information are included
 in backups and optional Drive sync, separately for guest/account workspaces.
 Update Windows, Android and browser copies before sharing these new fields;

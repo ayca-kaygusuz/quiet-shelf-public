@@ -13,6 +13,15 @@
  const only=(v,keys)=>plain(v)&&Object.keys(v).every(k=>keys.includes(k));
  const string=(v,n)=>typeof v==='string'&&v.length<=n;
  const stamp=v=>string(v,40)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString()===v;
+ function calendarDate(v){if(!string(v,10)||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const d=new Date(v+'T12:00:00Z');return Number.isFinite(d.valueOf())&&d.toISOString().slice(0,10)===v}
+ function localDay(now){if(calendarDate(now))return now;const d=new Date(now);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+ function validSeriesExclusions(v){return Array.isArray(v)&&v.length<=10000&&new Set(v.map(r=>r?.key)).size===v.length&&v.every(r=>only(r,['key','name','until'])&&string(r.key,1000)&&!!r.key&&string(r.name,1000)&&!!r.name.trim()&&(r.until===null||calendarDate(r.until)))}
+ const exclusionActive=(until,now=new Date())=>!until||until>=localDay(now);
+ function excluded(book,{seriesInfo=()=>null,seriesExclusions=[],now=new Date()}={}){
+  if(book.readNextExcluded&&exclusionActive(book.readNextExcludedUntil,now))return 'manual';
+  const key=seriesInfo(book)?.key;
+  return key&&seriesExclusions.some(r=>r.key===key&&exclusionActive(r.until,now))?'series':null;
+ }
  function isbn(v){const n=String(v||'').replace(/[\s-]/g,'').toUpperCase();if(/^97[89]\d{10}$/.test(n)&&[...n].reduce((s,c,i)=>s+Number(c)*(i%2?3:1),0)%10===0)return n;if(/^\d{9}[\dX]$/.test(n)&&[...n].reduce((s,c,i)=>s+(c==='X'?10:Number(c))*(10-i),0)%11===0){const base='978'+n.slice(0,9);return base+(10-[...base].reduce((s,c,i)=>s+Number(c)*(i%2?3:1),0)%10)%10}return ''}
  function validInfo(v){return only(v,['version','isbn','pages','subjects','format','sources','checkedAt'])&&v.version===1&&string(v.isbn,20)&&(v.isbn===''||!!isbn(v.isbn))&&(v.pages===null||Number.isInteger(v.pages)&&v.pages>0&&v.pages<=50000)&&Array.isArray(v.subjects)&&v.subjects.length<=30&&v.subjects.every(s=>string(s,120))&&formats.includes(v.format)&&Array.isArray(v.sources)&&v.sources.length<=3&&v.sources.every(s=>string(s,100))&&stamp(v.checkedAt)}
  function validList(v){return v===null||only(v,['id','createdAt','mode','genre','entries'])&&string(v.id,100)&&!!v.id&&stamp(v.createdAt)&&modes.includes(v.mode)&&Object.hasOwn(genres,v.genre)&&Array.isArray(v.entries)&&v.entries.length>0&&v.entries.length<=15&&new Set(v.entries.map(e=>e.bookId)).size===v.entries.length&&v.entries.every(e=>only(e,['bookId','title','author','reason','effort'])&&string(e.bookId,1000)&&!!e.bookId&&string(e.title,10000)&&!!e.title.trim()&&string(e.author,10000)&&string(e.reason,300)&&string(e.effort,80))}
@@ -47,20 +56,20 @@
   const tags=Object.keys(patterns).filter(k=>patterns[k].test(words));
   const minutes=metadata?.pages?metadata.pages*({manga:.22,comic:.65,prose:1.6,unknown:1.6,reference:2}[format]):null;
   const effort=minutes===null?'Reading effort unknown':minutes<=180?'Shorter read · estimate':minutes<=480?'Medium read · estimate':'Longer read · estimate';
-  return {format,tags,minutes,effort,typeConfirmed:!!(explicit||metadata&&(metadata.format!=='unknown'||metadata.subjects.length)),uncertain:format==='unknown'||!metadata?.pages};
+  return {format,tags,minutes,effort,typeConfirmed:!!(explicit||metadata&&(metadata.format!=='unknown'||studyMaterial(book,metadata)||/\b(fiction|novels?|roman|oyku|hikaye|manga|manhwa|manhua|comics?|graphic novels?|cizgi roman|biograph\p{L}*|memoirs?|biyografi|otobiyografi)\b/u.test(normalized(metadata.subjects.join(' '))))),uncertain:format==='unknown'||!metadata?.pages};
  }
- function candidates(books,{genre='all',seriesInfo=()=>null}={}){
+ function candidates(books,{genre='all',seriesInfo=()=>null,seriesExclusions=[],now=new Date()}={}){
   const groups=new Map();for(const book of books){const s=seriesInfo(book);if(s){const g=groups.get(s.key)||[];g.push(book);groups.set(s.key,g)}}
   const result=[];
   for(const book of books){
-   if(book.status!=='Unread'||book.collection&&book.collection!=='library'||book.readNextExcluded===true||book.sample)continue;
+   if(book.status!=='Unread'||book.collection&&book.collection!=='library'||excluded(book,{seriesInfo,seriesExclusions,now})||book.sample)continue;
    const s=seriesInfo(book),group=s?groups.get(s.key):[],reading=inferred(book,group);
    if(reading.format==='reference'||genre!=='all'&&!reading.tags.includes(genre))continue;
    let continuation=false,reason='An unread title to explore';
    if(s){
     const earlier=group.filter(b=>b!==book&&seriesInfo(b)?.volume!==null&&s.volume!==null&&seriesInfo(b).volume<s.volume);
     if(earlier.some(b=>b.status!=='Done'))continue;
-    const unread=group.filter(b=>b.status==='Unread'&&(!b.collection||b.collection==='library')&&!b.readNextExcluded).sort((a,b)=>(seriesInfo(a).volume??Infinity)-(seriesInfo(b).volume??Infinity)||a.id.localeCompare(b.id));
+    const unread=group.filter(b=>b.status==='Unread'&&(!b.collection||b.collection==='library')&&!excluded(b,{seriesInfo,seriesExclusions,now})).sort((a,b)=>(seriesInfo(a).volume??Infinity)-(seriesInfo(b).volume??Infinity)||a.id.localeCompare(b.id));
     if(unread[0]?.id!==book.id)continue;
     const last=Math.max(0,...earlier.filter(b=>b.status==='Done').map(b=>seriesInfo(b).volume));
     if(last&&s.volume>last+1)continue;
@@ -74,9 +83,9 @@
   }
   return result;
  }
- function generate(books,{mode='balanced',genre='all',previous=null,random=Math.random,seriesInfo=()=>null,id,now=new Date().toISOString()}={}){
+ function generate(books,{mode='balanced',genre='all',previous=null,random=Math.random,seriesInfo=()=>null,seriesExclusions=[],id,now=new Date().toISOString()}={}){
   if(!modes.includes(mode)||!Object.hasOwn(genres,genre))throw Error('Choose a supported reading mode and genre.');
-  const pool=candidates(books,{genre,seriesInfo}),count=Math.min(12,pool.length);
+  const pool=candidates(books,{genre,seriesInfo,seriesExclusions,now}),count=Math.min(12,pool.length);
   if(!count)return null;
   const weighted=pool.map(c=>{
    let weight=1+(c.continuation?(mode==='series'?6:2):0);
@@ -92,6 +101,6 @@
   if(previous&&chosen.every(c=>previous.entries.some(e=>e.bookId===c.book.id))&&previous.entries.length===chosen.length){const alternative=weighted.slice(count).find(c=>!previous.entries.some(e=>e.bookId===c.book.id));if(alternative)chosen[chosen.length-1]=alternative}
   return {id:id||root.crypto.randomUUID(),createdAt:now,mode,genre,entries:chosen.map(c=>({bookId:c.book.id,title:c.book.title,author:c.book.author||'',reason:c.reason,effort:c.effort}))};
  }
- function progress(list,books){const byId=new Map(books.map(b=>[b.id,b]));return (list?.entries||[]).map(entry=>{const book=byId.get(entry.bookId);return {...entry,book,status:book?.status||'Unavailable',outside:!!book&&!!book.collection&&book.collection!=='library',exclusion:book?.readNextExcluded?'manual':book&&inferred(book).format==='reference'?'reference':null}})}
- const api={formats,modes,genres,empty,isbn,validInfo,validList,validState,info,mergeInfo,inferred,candidates,generate,progress};root.QuietShelfReadNext=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ function progress(list,books,options={}){const byId=new Map(books.map(b=>[b.id,b]));return (list?.entries||[]).map(entry=>{const book=byId.get(entry.bookId);return {...entry,book,status:book?.status||'Unavailable',outside:!!book&&!!book.collection&&book.collection!=='library',exclusion:book&&(excluded(book,options)||(inferred(book).format==='reference'?'reference':null))}})}
+ const api={formats,modes,genres,empty,isbn,calendarDate,validSeriesExclusions,exclusionActive,excluded,validInfo,validList,validState,info,mergeInfo,inferred,candidates,generate,progress};root.QuietShelfReadNext=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

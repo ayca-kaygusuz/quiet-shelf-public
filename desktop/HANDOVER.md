@@ -280,3 +280,13 @@ Packaged Windows license loading uses the readable installed extraFiles beside
 the executable; electron-builder excludes those source files from app.asar.
 The Windows build compares the installed legal payload with source before
 creating an installer, then CI verifies actual native startup.
+
+Read-next exclusions: book-level readNextExcluded retains existing indefinite
+rules, with optional readNextExcludedUntil (inclusive local-calendar end date).
+readNextSeriesExclusions is an optional validated workspace preference of
+{key,name,until} rules, using seriesInfo's canonical key. Missing means no rules.
+Keep rule restoration accessible in the Read next manager; expired rules remain
+reviewable but inactive. Never remove books or rewrite a saved checklist on
+exclude/restore/expiry. Check backup/sync validation, guest/account isolation,
+future series members, non-skipping of an excluded earlier volume and native
+restart persistence. Ship all clients before syncing the new optional fields.

@@ -20,6 +20,15 @@ export async function checkReadNextUI({evaluate,capture=async()=>{},prefix='read
    window.confirm=()=>false;await QuietShelfApp.generateReadNext();result.unchanged=generated===JSON.stringify(readNextState.list);result.afterCancel=window.__nextLookups;return result;
   })()`);
   assert.equal(state.before,0);assert.equal(state.requests,2);assert.deepEqual(state.ids,['novel-qa']);assert(state.categories.includes('Kitap / Eğitim / Dil Eğitimi'));assert.equal(state.unchanged,true);assert.equal(state.afterCancel,2);
-  console.log('PASS: '+prefix+' manual checklist generation, real status progress, confirmation cancellation, backup, both palettes, demand-only exact catalog lookup and metadata-based study filtering');
+  state=await evaluate(`(()=>{
+   const b=(id,title)=>({id,title,status:'Unread',history:[]});QuietShelfApp.apply({library:[b('exclude-one','Fixture Cilt 1'),b('exclude-two','Fixture Cilt 2'),b('exclude-solo','Standalone fixture')],preferences:{autoUpdateChecks:false}});window.confirm=()=>true;QuietShelfApp.generateReadNext();const saved=JSON.stringify(readNextState.list);selected='exclude-one';detail();document.querySelector('#readNextSettings').open=true;
+   document.querySelector('#readNextExclude').click();const titleBlocked=QuietShelfReadNext.candidates(books,readNextOptions()).length===1;const staysOpen=document.querySelector('#readNextSettings').open;
+   document.querySelector('#readNextExcludeUntil').value='2099-01-01';document.querySelector('#readNextExcludeUntil').dispatchEvent(new Event('change',{bubbles:true}));const until=QuietShelfApp.backup().library[0].readNextExcludedUntil;
+   document.querySelector('#readNextExcludeSeries').click();document.querySelector('#readNextExcludeSeriesUntil').value='2099-02-01';document.querySelector('#readNextExcludeSeriesUntil').dispatchEvent(new Event('change',{bubbles:true}));const seriesUntil=QuietShelfApp.backup().preferences.readNextSeriesExclusions[0].until;
+   document.querySelector('[data-allow-next-title]').click();const seriesStillBlocked=QuietShelfReadNext.candidates(books,readNextOptions()).length===1;document.querySelector('[data-allow-next-series]').click();
+   return {titleBlocked,staysOpen,until,seriesUntil,seriesStillBlocked,restored:QuietShelfReadNext.candidates(books,readNextOptions()).length===2,unchanged:saved===JSON.stringify(readNextState.list),overflow:document.documentElement.scrollWidth>innerWidth};
+  })()`);
+  assert.equal(state.titleBlocked,true);assert.equal(state.staysOpen,true);assert.equal(state.until,'2099-01-01');assert.equal(state.seriesUntil,'2099-02-01');assert.equal(state.seriesStillBlocked,true);assert.equal(state.restored,true);assert.equal(state.unchanged,true);assert.equal(state.overflow,false);
+  console.log('PASS: '+prefix+' manual checklist generation, real status progress, confirmation cancellation, backup, both palettes, demand-only exact catalog lookup and metadata-based study filtering and reversible dated title/series exclusions');
  }finally{await evaluate(`(()=>{window.confirm=window.__nextConfirm;window.fetch=window.__nextFetch;QuietShelfApp.apply(window.__nextQA);document.querySelector('#readNextPanel').open=false;window.scrollTo(0,0);return true})()`)}
 }
