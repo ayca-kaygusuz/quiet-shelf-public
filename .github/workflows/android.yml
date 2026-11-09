@@ -49,9 +49,11 @@ jobs:
       - name: Shared regression checks
         run: npm test
       - name: Prepare Android SDK
-        run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          cmdline-tools-version: '12700392'
+          log-accepted-android-sdk-licenses: false
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
       - name: Build Android app
         env:
           QUIET_SHELF_ANDROID_KEYSTORE_BASE64: ${{ secrets.QUIET_SHELF_ANDROID_KEYSTORE_BASE64 }}
