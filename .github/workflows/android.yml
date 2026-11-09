@@ -73,7 +73,11 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            android/gradlew -p android --no-daemon --console=plain connectedDebugAndroidTest
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            adb shell am instrument -w -r com.quietshelf.android.test/androidx.test.runner.AndroidJUnitRunner > work/android/instrumentation-results.txt
+            cat work/android/instrumentation-results.txt
+            node -e "const s=require('fs').readFileSync('work/android/instrumentation-results.txt','utf8');if(!/OK \(\d+ tests?\)/.test(s)||/FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_ABORTED|shortMsg=Process crashed/.test(s))throw Error('Android instrumentation did not pass');"
             adb pull /sdcard/Android/data/com.quietshelf.android/files/previews work/android/previews
       - name: Keep Android package briefly
         uses: actions/upload-artifact@v7.0.2
@@ -95,6 +99,7 @@ jobs:
           if-no-files-found: warn
           path: |
             work/android/previews/*.png
+            work/android/instrumentation-results.txt
             android/app/build/reports/androidTests/connected/**
             android/app/build/reports/lint-results-release.html
   publish:
