@@ -3,17 +3,16 @@ import {readFileSync,mkdirSync,writeFileSync,readdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {resolve,join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
+import {googleDesktopConfiguration} from '../src/google-oauth.mjs';
 const require=createRequire(import.meta.url);
 const {build,Platform,Arch}=require('electron-builder');
 const {getMakeNsisPath}=require('app-builder-lib/out/toolsets/windows');
 const version=JSON.parse(readFileSync('package.json','utf8')).version;
-const googleClientId=process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID||'';
-const googleClientSecret=process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET||'';
-if(googleClientId&&!/^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/.test(googleClientId))throw Error('Invalid public Desktop OAuth client ID.');
-if(googleClientSecret&&(!googleClientId||!/^[a-zA-Z0-9._~-]{8,4096}$/.test(googleClientSecret)))throw Error('Invalid Desktop OAuth application configuration.');
+const configuredId=process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID||'',configuredCredential=process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET||'';
+const desktopConfig=configuredCredential?googleDesktopConfiguration({clientId:configuredId,credentialValue:configuredCredential}):{clientId:configuredId,clientSecret:''};
 // Installed-app client configuration is distributed with the native app. User
 // access/refresh tokens and Google Books keys must never enter a build.
-writeFileSync('desktop/google-client.generated.json',JSON.stringify({clientId:googleClientId,clientSecret:googleClientSecret}));
+writeFileSync('desktop/google-client.generated.json',JSON.stringify(desktopConfig));
 const output=resolve('work/windows');
 const config=process.env.QUIET_SHELF_ELECTRON_DIST?{electronDist:resolve(process.env.QUIET_SHELF_ELECTRON_DIST)}:{};
 await build({targets:Platform.WINDOWS.createTarget('dir',Arch.x64),config,publish:'never'});

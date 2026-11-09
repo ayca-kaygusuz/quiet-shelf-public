@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {exchangeGoogleCode,refreshGoogleToken,googleDesktopCredential} from '../src/google-oauth.mjs';
+import {exchangeGoogleCode,refreshGoogleToken,googleDesktopCredential,googleDesktopConfiguration} from '../src/google-oauth.mjs';
 import {checkGoogleReleaseClient} from '../scripts/check-google-release.mjs';
 
 const clientId='123456-testclient.apps.googleusercontent.com',clientSecret='test-only-desktop';
@@ -21,6 +21,12 @@ for(const [error,description,expected] of [
 }
 await assert.rejects(exchangeGoogleCode(argumentsForCode,async()=>Response.json({error:'PRIVATE-TOKEN-DO-NOT-ECHO',error_description:'private'},{status:401})),failure=>failure.oauthError==='unknown_error'&&!failure.message.includes('PRIVATE'));
 assert(!googleDesktopCredential(''));assert(!googleDesktopCredential('has whitespace'));assert(googleDesktopCredential(clientSecret));
+for(const input of [clientSecret,' \n'+clientSecret+'\n ',JSON.stringify(clientSecret),JSON.stringify({installed:{client_id:clientId,client_secret:clientSecret}})])assert.equal(googleDesktopConfiguration({clientId,credentialValue:input}).clientSecret,clientSecret);
+assert.equal(googleDesktopConfiguration({credentialValue:JSON.stringify({installed:{client_id:clientId,client_secret:clientSecret}})}).clientId,clientId);
+assert(googleDesktopCredential('test-only+/=credential'));
+assert.throws(()=>googleDesktopConfiguration({clientId,credentialValue:JSON.stringify({web:{client_id:clientId,client_secret:clientSecret}})}));
+assert.throws(()=>googleDesktopConfiguration({clientId:'123456-other.apps.googleusercontent.com',credentialValue:JSON.stringify({installed:{client_id:clientId,client_secret:clientSecret}})}));
+assert.throws(()=>googleDesktopConfiguration({clientId,credentialValue:'****'}));
 const refused=async()=>Response.json({error:'invalid_grant'},{status:400});
 await checkGoogleReleaseClient({clientId,clientSecret,fetcher:async(url,options)=>{assert.equal(options.body.get('client_secret'),clientSecret);assert.equal(options.body.get('refresh_token'),'quiet-shelf-nonexistent-release-probe');return refused()}});
 await assert.rejects(checkGoogleReleaseClient({clientId,clientSecret:'',fetcher:()=>{throw Error('Must not call Google with missing build configuration')}}));

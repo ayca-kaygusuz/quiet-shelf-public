@@ -1,6 +1,25 @@
 export const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 export const googleClientID=value=>typeof value==='string'&&/^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/.test(value);
-export const googleDesktopCredential=value=>typeof value==='string'&&value.length>=8&&value.length<=4096&&/^[a-zA-Z0-9._~-]+$/.test(value);
+export const googleDesktopCredential=value=>typeof value==='string'&&value.length>0&&value.length<=4096&&/^[\x21-\x7e]+$/.test(value)&&!/^\*+$|^(redacted|hidden|masked|null|undefined)$/i.test(value);
+export function googleDesktopConfiguration({clientId='',credentialValue=''}){
+ let value=typeof credentialValue==='string'?credentialValue.trim():'';
+ if(value.length>65536)throw Error('Desktop OAuth configuration is too large.');
+ let declaredId='';
+ if(value.startsWith('{')||value.startsWith('"')){
+  let decoded;try{decoded=JSON.parse(value)}catch{throw Error('Save the downloaded Desktop OAuth JSON or its client_secret value in the Actions secret.')}
+  if(typeof decoded==='string')value=decoded.trim();
+  else{
+   if(!decoded||typeof decoded!=='object'||Array.isArray(decoded)||decoded.web)throw Error('Use Desktop OAuth credentials, not Web credentials.');
+   const installed=decoded.installed||decoded;declaredId=installed.client_id;
+   value=typeof installed.client_secret==='string'?installed.client_secret.trim():'';
+  }
+ }
+ clientId=typeof clientId==='string'?clientId.trim():'';
+ if(declaredId&&clientId&&declaredId!==clientId)throw Error('The saved Desktop JSON belongs to a different client ID.');
+ clientId=clientId||declaredId;
+ if(!googleClientID(clientId)||!googleDesktopCredential(value))throw Error('The release needs a Desktop OAuth client ID and an unmasked client_secret value or Desktop JSON.');
+ return {clientId,clientSecret:value};
+}
 const base64url=bytes=>btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
 export async function googlePKCE(){const verifier=base64url(crypto.getRandomValues(new Uint8Array(32)));return {verifier,challenge:base64url(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)))),state:base64url(crypto.getRandomValues(new Uint8Array(32)))}}
 export function googleAuthorizationURL({clientId,redirectURI,challenge,state}){

@@ -1,9 +1,9 @@
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {googleClientID,googleDesktopCredential,refreshGoogleToken} from '../src/google-oauth.mjs';
+import {googleDesktopConfiguration,refreshGoogleToken} from '../src/google-oauth.mjs';
 
 export async function checkGoogleReleaseClient({clientId,clientSecret,fetcher=fetch}){
- if(!googleClientID(clientId)||!googleDesktopCredential(clientSecret))throw Error('The release needs its Desktop OAuth client ID and client credential in Actions settings.');
+ ({clientId,clientSecret}=googleDesktopConfiguration({clientId,credentialValue:clientSecret}));
  try{
   // No user account or real token is used. A nonexistent refresh token should
   // yield invalid_grant after Google accepts the application's client pair.
