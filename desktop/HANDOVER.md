@@ -67,7 +67,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.16.0-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.17.0-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -252,3 +252,23 @@ Blackwell’s (UK) and Better World Books (US) are direct catalog sources. Their
 search/detail fetches use the shared adapter and bounded metadata cache. Keep
 their product/image hosts in the native allowlists. They never receive Books
 API keys or Google account credentials.
+
+
+## Apache licensing (0.17.0)
+
+The original project is Apache-2.0, attributed to Alex (Ayca Kaygusuz). The app's offline About
+section displays the authoritative license/NOTICE and third-party/font notices.
+Windows ships those files inside the app and as readable installed files;
+keep Electron/Chromium's existing runtime notices. Browser ZIPs and Android
+assets carry the same original texts. Do not edit published older binaries.
+
+
+## Library view and study filtering (0.17.0)
+
+Title sorting applies to series labels and members; non-title sorts keep
+numbered volumes in reading sequence and order groups using a representative
+book under the selected sort. libraryView is a validated optional preference
+with showSeries/showStandalones/flat booleans. Plain mode temporarily includes
+both types and preserves their grouped-mode filters and expansion state.
+Language-course intent is checked before series ranking. Saved checklists
+flag newly identified study titles without implicit generation or removal.

@@ -1,3 +1,6 @@
+// Copyright 2026 Alex (Ayca Kaygusuz)
+// SPDX-License-Identifier: Apache-2.0
+
 /* On-device recommendations. No network, timers, credentials or list history. */
 (function(root){
  'use strict';
@@ -24,13 +27,26 @@
   if(!validInfo(a)||isbn(a.isbn)!==isbn(editionISBN))a=info({},'',editionISBN);
   return {version:1,isbn:isbn(editionISBN),pages:a.pages||b.pages,subjects:[...new Set([...a.subjects,...b.subjects])].slice(0,30),format:a.format!=='unknown'?a.format:b.format,sources:[...new Set([...a.sources,...b.sources])].slice(-3),checkedAt:new Date().toISOString()};
  }
+ function studyMaterial(book,metadata){
+  const title=normalized(book.title),subjects=normalized((metadata?.subjects||[]).join(' '));
+  if(metadata?.format==='reference'||/\b(foreign language study|language study|language teaching|language learning|language instruction|study aids|textbooks?|workbooks?|self instruction|phrasebooks?|conversation and phrase books)\b/.test(subjects))return true;
+  if(/\b(textbooks?|workbooks?|ders kitabi|calisma kitabi|dil bilgisi|dilbilgisi|jlpt|yds|yokdil|toefl|ielts|dele|delf|testdaf|hsk|exam preparation|test prep)\b/.test(title))return true;
+  // A catalog's explicit fiction classification helps distinguish a novel
+  // with a teaching/speaking metaphor from an actual language course.
+  const fiction=/\b(fiction|novels?|roman|romans|oyku|hikaye)\b/.test(subjects.replace(/graphic novels?/g,''));
+  if(fiction)return false;
+  if(/\b(dictionary|dictionaries|grammar|sozluk|reference)\b/.test(title))return true;
+  const language=/\b(arapca|arabic|arabe|japonca|japanese|japonais|japones|japanisch|italyanca|italian|italiano|italien|ingilizce|english|anglais|ingles|englisch|almanca|german|deutsch|allemand|aleman|fransizca|french|francais|frances|franzosisch|ispanyolca|spanish|espanol|spanisch|rusca|russian|russe|russisch|cince|chinese|chinois|chinesisch|korece|korean|coreen|portekizce|portuguese|portugues|latince|latin|yunanca|greek|grec|ibranice|hebrew|hebreu|turkce|turkish|turc|felemenkce|hollandaca|dutch|neerlandais|niederlandisch|lehce|polish|polonais|isvecce|swedish|suedois|farsca|farsi|persian|osmanlica|sanskrit)\p{L}*\b/u.test(title);
+  const learning=/\b(ogren|ogret|konus|calis|learn|teach|speak|convers|course|kurs|egitim|pratik|pratique|practice|baslangic|beginner|phrasebook|apprend|parlez|aprender|hablar|lernen|sprechen|imparare|parlare)\p{L}*\b/u.test(title)||/\b(a1|a2|b1|b2|c1|c2|dummies|assimil|jlpt|hsk)\b/.test(title);
+  return language&&learning;
+ }
  function inferred(book,seriesBooks=[]){
   const metadata=validInfo(book.readingInfo)?book.readingInfo:null;
   const subjects=metadata?.subjects.length?metadata.subjects:seriesBooks.find(b=>validInfo(b.readingInfo)&&b.readingInfo.subjects.length)?.readingInfo.subjects||[],words=normalized([book.title,...subjects].join(' '));
-  let format=formats.includes(book.readNextFormat)&&book.readNextFormat!=='unknown'?book.readNextFormat:metadata?.format||'unknown';
+  const explicit=formats.includes(book.readNextFormat)&&book.readNextFormat!=='unknown';
+  let format=explicit?book.readNextFormat:studyMaterial(book,metadata)?'reference':metadata?.format||'unknown';
   if(format==='unknown'){
-   if(/\b(textbook|workbook|dictionary|grammar|ders kitabi|calisma kitabi|sozluk|dil bilgisi|dilbilgisi|jlpt|exam preparation|test prep|language learning|language instruction|reference)\b/.test(words))format='reference';
-   else if(/\b(manga|manhwa|manhua)\b/.test(words)||book.source==='AniList')format='manga';
+   if(/\b(manga|manhwa|manhua)\b/.test(words)||book.source==='AniList')format='manga';
    else if(/\b(comic|comics|graphic novel|cizgi roman)\b/.test(words))format='comic';
    else if(/\b(novel|fiction|roman|oyku|hikaye)\b/.test(normalized(subjects.join(' '))))format='prose';
    else{const known=seriesBooks.find(b=>b!==book&&inferred(b).format!=='unknown');if(known)format=inferred(known).format}
@@ -47,7 +63,7 @@
    if(book.status!=='Unread'||book.collection&&book.collection!=='library'||book.readNextExcluded===true||book.sample)continue;
    const s=seriesInfo(book),group=s?groups.get(s.key):[],reading=inferred(book,group);
    if(reading.format==='reference'||genre!=='all'&&!reading.tags.includes(genre))continue;
-   let continuation=false,reason='A different story to try';
+   let continuation=false,reason='An unread title to explore';
    if(s){
     const earlier=group.filter(b=>b!==book&&seriesInfo(b)?.volume!==null&&s.volume!==null&&seriesInfo(b).volume<s.volume);
     if(earlier.some(b=>b.status!=='Done'))continue;
@@ -83,6 +99,6 @@
   if(previous&&chosen.every(c=>previous.entries.some(e=>e.bookId===c.book.id))&&previous.entries.length===chosen.length){const alternative=weighted.slice(count).find(c=>!previous.entries.some(e=>e.bookId===c.book.id));if(alternative)chosen[chosen.length-1]=alternative}
   return {id:id||root.crypto.randomUUID(),createdAt:now,mode,genre,entries:chosen.map(c=>({bookId:c.book.id,title:c.book.title,author:c.book.author||'',reason:c.reason,effort:c.effort}))};
  }
- function progress(list,books){const byId=new Map(books.map(b=>[b.id,b]));return (list?.entries||[]).map(entry=>{const book=byId.get(entry.bookId);return {...entry,book,status:book?.status||'Unavailable',outside:!!book&&!!book.collection&&book.collection!=='library'}})}
+ function progress(list,books){const byId=new Map(books.map(b=>[b.id,b]));return (list?.entries||[]).map(entry=>{const book=byId.get(entry.bookId);return {...entry,book,status:book?.status||'Unavailable',outside:!!book&&!!book.collection&&book.collection!=='library',exclusion:book?.readNextExcluded?'manual':book&&inferred(book).format==='reference'?'reference':null}})}
  const api={formats,modes,genres,empty,isbn,validInfo,validList,validState,info,mergeInfo,inferred,candidates,generate,progress};root.QuietShelfReadNext=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

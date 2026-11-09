@@ -1,3 +1,4 @@
+import {prepareAndroidSource} from './prepare-android-source.mjs';
 import {readFileSync,writeFileSync,mkdirSync,copyFileSync,existsSync,readdirSync} from 'node:fs';
 import {resolve,join} from 'node:path';
 import {createHash} from 'node:crypto';
@@ -14,6 +15,7 @@ const output=resolve('work/android');mkdirSync(output,{recursive:true});
 const signed=!!encoded,file=signed?'app-release.apk':'app-release-unsigned.apk',name=signed?`Quiet-Shelf-Android-${version}.apk`:`Quiet-Shelf-Android-${version}-unsigned.apk`;
 copyFileSync('android/app/build/outputs/apk/release/'+file,join(output,name));
 if(signed){const sdk=env.ANDROID_HOME||env.ANDROID_SDK_ROOT;if(!sdk)throw Error('ANDROID_HOME is required to verify the signed APK.');const versions=readdirSync(join(sdk,'build-tools')).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),tool=join(sdk,'build-tools',versions.at(-1),process.platform==='win32'?'apksigner.bat':'apksigner');const certificate=execFileSync(tool,['verify','--verbose','--print-certs',join(output,name)],{env,encoding:'utf8'});writeFileSync(join(output,'android-signing-certificate.txt'),certificate.split(/\r?\n/).filter(line=>/certificate (SHA-1|SHA-256) digest:/.test(line)).join('\n')+'\n');}
-const digest=createHash('sha256').update(readFileSync(join(output,name))).digest('hex');writeFileSync(join(output,'SHA256SUMS-Android.txt'),digest+'  '+name+'\n');
-writeFileSync(join(output,'android-build.json'),JSON.stringify({version,filename:name,sha256:digest,signed,sourceSha:env.GITHUB_SHA||''}));
+const thirdPartySource=await prepareAndroidSource(output);
+const digest=createHash('sha256').update(readFileSync(join(output,name))).digest('hex');writeFileSync(join(output,'SHA256SUMS-Android.txt'),digest+'  '+name+'\n'+thirdPartySource.sha256+'  '+thirdPartySource.filename+'\n');
+writeFileSync(join(output,'android-build.json'),JSON.stringify({version,filename:name,sha256:digest,signed,sourceSha:env.GITHUB_SHA||'',thirdPartySource}));
 console.log('Android package ready: '+join(output,name));

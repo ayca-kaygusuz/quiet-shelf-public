@@ -1,3 +1,4 @@
+import {checkLibraryViewUI} from './check-library-view-ui.mjs';
 import {checkReadNextUI} from './check-read-next-ui.mjs';
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
@@ -13,8 +14,11 @@ async function evaluate(expression){const result=await command('Runtime.evaluate
 try{
  const state=await evaluate(`(async()=>{await QuietShelfAccount.refresh();const response=await fetch('/api/account/status'),value=await response.json();return {mode:value.mode,configured:value.configured,core:!!QuietShelfSync,account:!!QuietShelfAccount,privateFile:(await fetch('/pc/google-client.generated.json')).status}})()`);
  assert.equal(state.mode,'web');assert.equal(state.configured,true);assert.equal(state.core,true);assert.equal(state.account,true);assert.equal(state.privateFile,404);
+ const legal=await evaluate(`(async()=>{for(let i=0;i<50&&!document.querySelector('#projectLicense').textContent;i++)await new Promise(resolve=>setTimeout(resolve,50));return {license:document.querySelector('#projectLicense').textContent,notice:document.querySelector('#projectNotice').textContent,font:document.querySelector('#fontLicense').textContent,third:document.querySelector('#thirdPartyNotice').textContent,credit:document.querySelector('#aboutQuietShelf').textContent}})()`);
+ assert(legal.license.includes('TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION'));assert(legal.notice.includes('Copyright 2026 Alex (Ayca Kaygusuz)'));assert(legal.font.includes('SIL OPEN FONT LICENSE'));assert(legal.third.includes('Google Play services'));assert(legal.credit.includes('Originally created by Alex (Ayca Kaygusuz).'));
  await checkUpdatePolicyUI({evaluate,prefix:'browser-update-policy',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkThemeUI({evaluate,prefix:'browser-theme',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
+ await checkLibraryViewUI({evaluate});
  await checkReadNextUI({evaluate,prefix:'browser-read-next',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkFirstSyncUI({evaluate,prefix:'browser-first-sync',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});

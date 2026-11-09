@@ -89,3 +89,12 @@ Read next uses the same on-device engine as Windows/browser and is never
 scheduled. Its current checklist and cached edition information use the shared
 backup/Drive model. Blackwell’s and Better World Books use the native HTTP
 allowlist, with no connector or retailer account.
+
+
+License notices are retained in Android assets and offline About. Release builds
+also obtain a checksum-pinned upstream source archive for desugar_jdk_libs 2.1.5
+and publish it beside the APK. Its GPLv2 + Classpath Exception license is
+separate from Quiet Shelf's Apache-2.0 license. Preserve the accompanying source
+access when redistributing Android packages; Gradle wrapper/upstream headers
+remain unchanged. The pinned archive is cached in work/android for offline
+rebuilds and is never executed as part of the application.

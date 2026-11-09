@@ -1,3 +1,6 @@
+// Copyright 2026 Alex (Ayca Kaygusuz)
+// SPDX-License-Identifier: Apache-2.0
+
 function readingInformation(pages,subjects,format,source,isbnValue){
  let f=String(format||'').toLowerCase(),tags=(Array.isArray(subjects)?subjects:[subjects]).filter(x=>typeof x==='string').map(x=>text(x).slice(0,120)).filter(Boolean).slice(0,30),words=tags.join(' ').toLowerCase();
  return {version:1,isbn:parseISBN(isbnValue)||'',pages:Number.isInteger(Number(pages))&&Number(pages)>0&&Number(pages)<=50000?Number(pages):null,subjects:tags,format:/manga|manhwa|manhua/.test(f+' '+words)?'manga':/comic|graphic novel|çizgi roman/.test(f+' '+words)?'comic':/textbook|workbook|dictionary|language instruction/.test(f+' '+words)?'reference':'unknown',sources:[source],checkedAt:new Date().toISOString()};

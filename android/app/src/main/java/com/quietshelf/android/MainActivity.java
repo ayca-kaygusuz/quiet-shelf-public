@@ -46,7 +46,7 @@ public final class MainActivity extends ComponentActivity {
     private long fileRequest;
     private ConnectivityManager connectivity;
     private ConnectivityManager.NetworkCallback networkCallback;
-    private final Set<String> assets=Set.of("index.html","read-next.js","account.js","sync-core.js","catalog.mjs","drive.mjs","releases.mjs","android-bootstrap.js","android-api.mjs","android.css");
+    private final Set<String> assets=Set.of("legal.js","index.html","read-next.js","account.js","sync-core.js","catalog.mjs","drive.mjs","releases.mjs","android-bootstrap.js","android-api.mjs","android.css");
 
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);

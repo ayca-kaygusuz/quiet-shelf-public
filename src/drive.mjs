@@ -1,3 +1,6 @@
+// Copyright 2026 Alex (Ayca Kaygusuz)
+// SPDX-License-Identifier: Apache-2.0
+
 import './sync-core.js';
 const Sync=globalThis.QuietShelfSync;
 const API='https://www.googleapis.com/drive/v3/files';

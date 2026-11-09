@@ -90,6 +90,7 @@ jobs:
             work/android/SHA256SUMS-Android.txt
             work/android/android-signing-certificate.txt
             work/android/android-build.json
+            work/android/desugar_jdk_libs-*-source.zip
       - name: Keep runtime results briefly
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -134,6 +135,7 @@ jobs:
           version=$(node -p "require('./package.json').version")
           tag="v$version"
           node --input-type=module -e "import fs from 'node:fs';import crypto from 'node:crypto';const m=JSON.parse(fs.readFileSync('release-android/android-build.json'));const version=JSON.parse(fs.readFileSync('package.json')).version;if(m.version!==version||m.filename!=='Quiet-Shelf-Android-'+version+'.apk')throw Error('Android version mismatch');if(!m.signed||m.sourceSha!==process.env.GITHUB_SHA)throw Error('Unsigned or mismatched Android artifact');const b=fs.readFileSync('release-android/'+m.filename);if(crypto.createHash('sha256').update(b).digest('hex')!==m.sha256)throw Error('APK checksum mismatch');"
+          node --input-type=module -e "import fs from 'node:fs';import crypto from 'node:crypto';const pin=JSON.parse(fs.readFileSync('assets/licenses/desugar-jdk-source.json'));const m=JSON.parse(fs.readFileSync('release-android/android-build.json'));const source=m.thirdPartySource;if(!source||source.filename!==pin.filename||source.sha256!==pin.sha256||source.revision!==pin.revision)throw Error('Android runtime source metadata mismatch');if(crypto.createHash('sha256').update(fs.readFileSync('release-android/'+pin.filename)).digest('hex')!==pin.sha256)throw Error('Android runtime source checksum mismatch');"
           ready=false
           for attempt in $(seq 1 60); do
             if gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft > release-state.json 2>/dev/null && [ "$(node -p "require('./release-state.json').isDraft")" = false ]; then
@@ -153,5 +155,5 @@ jobs:
             gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern "Quiet-Shelf-Android-$version.apk" --dir existing-android
             cmp "existing-android/Quiet-Shelf-Android-$version.apk" "release-android/Quiet-Shelf-Android-$version.apk" || { echo 'This version already has a different published Android APK. Bump the version.'; exit 1; }
           fi
-          node --input-type=module -e "import fs from 'node:fs';const name='Quiet-Shelf-Android-'+process.env.ANDROID_RELEASE_VERSION+'.apk';const file='release-android/SHA256SUMS.txt';const lines=fs.readFileSync(file,'utf8').split(/\r?\n/).filter(x=>x.trim()&&!x.trim().endsWith('  '+name));fs.writeFileSync(file,lines.join('\n')+'\n'+fs.readFileSync('release-android/SHA256SUMS-Android.txt','utf8'));"
-          gh release upload "$tag" release-android/Quiet-Shelf-Android-*.apk release-android/android-signing-certificate.txt release-android/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+          node --input-type=module -e "import fs from 'node:fs';const name='Quiet-Shelf-Android-'+process.env.ANDROID_RELEASE_VERSION+'.apk';const file='release-android/SHA256SUMS.txt';const lines=fs.readFileSync(file,'utf8').split(/\r?\n/).filter(x=>x.trim()&&!x.trim().endsWith('  '+name)&&!x.trim().endsWith('  '+JSON.parse(fs.readFileSync('assets/licenses/desugar-jdk-source.json')).filename));fs.writeFileSync(file,lines.join('\n')+'\n'+fs.readFileSync('release-android/SHA256SUMS-Android.txt','utf8'));"
+          gh release upload "$tag" release-android/Quiet-Shelf-Android-*.apk release-android/android-signing-certificate.txt release-android/desugar_jdk_libs-*-source.zip release-android/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber

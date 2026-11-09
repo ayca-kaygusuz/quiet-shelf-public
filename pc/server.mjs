@@ -4,12 +4,14 @@ import {randomBytes} from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {legalScript} from '../src/legal.mjs';
 import {catalog} from '../src/catalog.mjs';
 import {googleDesktopConfiguration} from '../src/google-oauth.mjs';
 import {createWebAccount} from '../src/web-account.mjs';
 import {createBrowserReleaseHandler} from '../src/releases.mjs';
 const html=readFileSync(new URL('../src/index.html',import.meta.url));
 const assets=Object.fromEntries(['read-next.js','sync-core.js','account.js'].map(name=>['/'+name,readFileSync(new URL('../src/'+name,import.meta.url))]));
+assets['/legal.js']=legalScript({license:readFileSync(new URL('../LICENSE',import.meta.url),'utf8'),notice:readFileSync(new URL('../NOTICE',import.meta.url),'utf8'),thirdParty:readFileSync(new URL('../THIRD_PARTY_NOTICES.md',import.meta.url),'utf8'),font:readFileSync(new URL('../assets/Manrope-OFL.txt',import.meta.url),'utf8'),desugar:['LICENSE','ASSEMBLY_EXCEPTION','ADDITIONAL_LICENSE_INFO'].map(name=>readFileSync(new URL('../assets/licenses/desugar-jdk-'+name+'.txt',import.meta.url),'utf8')).join('\n\n')});
 const host='127.0.0.1',port=8765;
 
 export function createLocalServer({accountEnvironment=process.env,desktopConfiguration,sessionKey,fetcher=fetch}={}){

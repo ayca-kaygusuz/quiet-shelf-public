@@ -26,7 +26,7 @@ const settle=()=>new Promise(resolve=>setImmediate(resolve));
  const a=launch(storage);await settle();
  assert.equal(a.run('books.length'),2);assert.equal(a.element('#googleDesktopSetup').hidden,true);
  assert.equal(a.element('#syncIndicatorLabel').textContent,'Local only');assert.equal(a.element('#quickSync').hidden,true);
- a.run('generateReadNext()');const guestList=a.run('readNextState.list.id');
+ a.element('#plainList').onclick();a.run('generateReadNext()');const guestList=a.run('readNextState.list.id');
  const localRequests=a.requests.length,localCopy=JSON.stringify(storage);a.element('#syncIndicator').onclick();assert.equal(a.element('#syncPopover').hidden,false);assert.equal(a.element('#syncIndicator').attrs['aria-expanded'],'true');assert.equal(a.requests.length,localRequests);assert.equal(JSON.stringify(storage),localCopy,'opening sync details changes neither data nor connection state');
  let prevented=false;a.events['document:keydown']({key:'Escape',preventDefault(){prevented=true}});assert.equal(a.element('#syncPopover').hidden,true);assert.equal(prevented,true);assert.equal(a.element('#syncIndicator').focused,true);
  a.element('#syncIndicator').onclick();a.events['document:click']({target:{closest:()=>null}});assert.equal(a.element('#syncPopover').hidden,true);
@@ -37,7 +37,7 @@ const settle=()=>new Promise(resolve=>setImmediate(resolve));
  assert.equal(a.ctx.QuietShelfAccount.status().setupPending,true);
  assert.equal(a.element('#syncIndicatorLabel').textContent,'Choose library');assert.notEqual(a.element('#syncIndicatorLabel').textContent,'Synced');
  await a.ctx.QuietShelfAccount.sync(true);assert.equal(a.remote.has('101'),false,'checking Drive creates no remote file and uploads no local data');
- assert.equal(a.element('#setupLocalCount').textContent,'1');assert.equal(a.element('#setupDriveCount').textContent,'0');assert.equal(a.run('readNextState.list.id'),guestList,'sign-out restores the guest checklist');assert.equal(a.run('books[0].title'),'Local title');
+ assert.equal(a.element('#setupLocalCount').textContent,'1');assert.equal(a.element('#setupDriveCount').textContent,'0');assert.equal(a.run('libraryView.flat'),true,'sign-out restores the guest display choice');assert.equal(a.run('readNextState.list.id'),guestList,'sign-out restores the guest checklist');assert.equal(a.run('books[0].title'),'Local title');
  a.run("books.push({id:'while-checking',title:'Added during setup',status:'Unread',history:[]});save()");
  await a.element('#startSyncLibrary').onclick();assert.equal(a.ctx.QuietShelfAccount.status().setupPending,false);assert.equal(a.run('books.length'),2,'sample excluded; committed edits during setup are kept');assert.equal(a.ctx.QuietShelfSync.project(a.remote.get('101')).library.length,2);
  assert.equal(a.element('#syncIndicatorLabel').textContent,'Synced');assert.equal(a.element('#syncIndicatorDetail').textContent,'Checked just now');
@@ -58,8 +58,8 @@ const settle=()=>new Promise(resolve=>setImmediate(resolve));
  // Another account is previewed without replacing the currently visible shelf.
  a.user({id:'202',email:'two@example.invalid',name:'Two'});a.remote.set('202',a.ctx.QuietShelfSync.update(a.ctx.QuietShelfSync.empty(),{library:[book('other','Other account')],preferences:{theme:'ink'}},'other'));
  await a.ctx.QuietShelfAccount.refresh();await a.ctx.QuietShelfAccount.sync(true);assert.equal(a.run('books.length'),2);assert.equal(a.element('#setupDriveCount').textContent,'1');
- await a.element('#useDriveLibrary').onclick();assert.equal(a.run('readNextState.list'),null,'another account without a checklist must not inherit the prior list');assert.equal(a.run('books[0].title'),'Other account');assert.equal(a.run('books.length'),1);
- await a.element('#googleSignOut').onclick();assert.equal(a.run('readNextState.list.id'),guestList,'sign-out restores the guest checklist');assert.equal(a.run('books[0].title'),'Local title');assert(!storage['quiet-shelf-active-account-v1']);
+ await a.element('#useDriveLibrary').onclick();assert.equal(a.run('libraryView.flat'),false,'another account does not inherit a prior workspace display');assert.equal(a.run('readNextState.list'),null,'another account without a checklist must not inherit the prior list');assert.equal(a.run('books[0].title'),'Other account');assert.equal(a.run('books.length'),1);
+ await a.element('#googleSignOut').onclick();assert.equal(a.run('libraryView.flat'),true,'sign-out restores the guest display choice');assert.equal(a.run('readNextState.list.id'),guestList,'sign-out restores the guest checklist');assert.equal(a.run('books[0].title'),'Local title');assert(!storage['quiet-shelf-active-account-v1']);
  // Previously approved accounts reopen quietly, with no repeated choice.
  a.user({id:'101',email:'one@example.invalid',name:'One'});await a.ctx.QuietShelfAccount.refresh();assert.equal(a.ctx.QuietShelfAccount.status().setupPending,false);assert.equal(a.run('books.find(b=>b.id===\"local\").status'),'Done');a.dispose();
  // Upgrade recovery: the old app's empty account must not hide the guest shelf.

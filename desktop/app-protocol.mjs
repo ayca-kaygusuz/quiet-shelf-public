@@ -42,7 +42,7 @@ export function createAppHandler({html,catalog,updates,assets={},account}){
       return new Response('Method not allowed',{status:405});
     }
     if(request.method!=='GET')return new Response('Method not allowed',{status:405,headers:{Allow:'GET'}});
-    if(['/read-next.js','/sync-core.js','/account.js'].includes(u.pathname)&&typeof assets[u.pathname]==='string')return new Response(assets[u.pathname],{headers:{'Content-Type':'application/javascript; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'no-cache'}});
+    if(['/legal.js','/read-next.js','/sync-core.js','/account.js'].includes(u.pathname)&&typeof assets[u.pathname]==='string')return new Response(assets[u.pathname],{headers:{'Content-Type':'application/javascript; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'no-cache'}});
     if(u.pathname==='/')return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':policy,'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}});
     if(u.pathname==='/api/books'||u.pathname==='/api/book'){
       const headers=new Headers(),key=request.headers.get('X-Google-Api-Key');if(key&&u.searchParams.get('source')==='google')headers.set('X-Google-Api-Key',key);

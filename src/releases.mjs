@@ -1,8 +1,11 @@
+// Copyright 2026 Alex (Ayca Kaygusuz)
+// SPDX-License-Identifier: Apache-2.0
+
 export const RELEASES_URL='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest';
 const apiURL='https://api.github.com/repos/ayca-kaygusuz/quiet-shelf-public/releases/latest';
 const downloadRoot='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/download/';
 const maxInstaller=300*1024*1024;
-export const APP_VERSION='0.16.0';
+export const APP_VERSION='0.17.0';
 export function releaseVersionParts(value){let match=String(value).match(/^v?(\d+)\.(\d+)\.(\d+)$/);if(!match)return null;let parts=match.slice(1).map(Number);return parts.every(Number.isSafeInteger)?parts:null}
 export function newerVersion(candidate,current){let a=releaseVersionParts(candidate),b=releaseVersionParts(current);if(!a||!b)return false;for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i]}return false}
 export function releaseSafeDownload(value){try{let u=new URL(value);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&(u.origin==='https://github.com'&&u.pathname.startsWith('/ayca-kaygusuz/quiet-shelf-public/releases/download/')||['release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(u.hostname))}catch{return false}}

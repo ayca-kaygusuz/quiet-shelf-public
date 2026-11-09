@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.16.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.17.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads, and optional Google Drive sync in the Windows, Android and local browser apps.
@@ -41,7 +41,7 @@ installed files, not arbitrary files added to the installation folder.
 
 ### Android app
 
-The release includes **Quiet-Shelf-Android-0.16.0.apk** for Android 8 or later
+The release includes **Quiet-Shelf-Android-0.17.0.apk** for Android 8 or later
 with an updated Android System WebView. Download the APK on your phone and open
 it; Android may ask you to allow installation from that browser. Future APKs
 install over the existing app using the same signing identity. No PC, browser
@@ -354,6 +354,26 @@ Title deletion is inside the **⋮** menu and asks for confirmation. Deleting a
 title also deletes its reading history. Sample titles can be removed together
 from the library's **⋮** menu.
 
+### Series ordering and display
+
+Title A–Z / Z–A sorts both series names and the titles inside each series,
+using natural number ordering. Other sorts order series by their first book
+under the selected ordering; numbered volumes keep their reading sequence in
+grouped view. **Show series** and **Show standalones** independently filter the
+library display. **Plain list** shows every matching title in one sorted list,
+without group headers, nesting or collapse controls. Returning to grouped view
+restores the previous visibility and expansion choices. These controls never
+remove books or change library insights. Display preferences are remembered
+locally and included in backups and Drive sync; update other clients before
+syncing the new display preference.
+
+Language-course detection recognizes study subjects and learning/speaking
+phrases together with a language name, rather than excluding books merely
+because they are in another language. If a saved checklist contains a title
+now recognized as study/reference material, it is flagged as excluded from
+future suggestions without replacing the saved list. Regeneration remains
+explicit, with the existing unfinished-list confirmation.
+
 ## Catalog search
 
 Choose one **Search source** at a time. The app remembers the last source and
@@ -589,3 +609,28 @@ them. Building and running the PC app do not require hosting configuration.
 
 Deployment identity in `.openai/hosting.json` is local and ignored by Git.
 Publishing is separate from building and is not performed by `npm run build`.
+
+
+## License and attribution
+
+Quiet Shelf's original project material is licensed under the
+[Apache License 2.0](LICENSE). This covers the original application source,
+documentation, artwork/assets, tests, build scripts and archived connector,
+including earlier revisions of that original material published in this
+repository. Original project created by **Alex (Ayca Kaygusuz)**; see [NOTICE](NOTICE).
+
+You may use, modify and redistribute the covered work, including commercially,
+under Apache-2.0. Redistribution must meet its license and notice requirements.
+Keep applicable attribution, include the license, and identify modified files
+as required by the license. This does not add a requirement to preserve a
+particular logo, footer or screen layout.
+
+Third-party material remains under its respective licenses and terms; see
+[third-party notices](THIRD_PARTY_NOTICES.md) and the
+[Manrope font license](assets/Manrope-OFL.txt). Catalog content and user data are
+not relicensed as project code. Account → About Quiet Shelf displays the
+creator credit, Apache license and retained notices offline on every platform.
+Redistributable packages include the applicable notice files. Android releases
+also provide the unmodified desugar_jdk_libs runtime's upstream source archive
+beside the APK, under its GPLv2 + Classpath Exception terms. This runtime's
+exception permits Quiet Shelf's independent original code to remain Apache-2.0.

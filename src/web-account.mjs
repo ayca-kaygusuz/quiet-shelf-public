@@ -1,3 +1,6 @@
+// Copyright 2026 Alex (Ayca Kaygusuz)
+// SPDX-License-Identifier: Apache-2.0
+
 import {googleClientID,googleDesktopCredential,googlePKCE,googleAuthorizationURL,exchangeGoogleCode,refreshGoogleToken,googleIdentity} from './google-oauth.mjs';
 import {createDriveStore,reconcileDrive,limitedJSON} from './drive.mjs';
 const WebAccountSync=globalThis.QuietShelfSync;

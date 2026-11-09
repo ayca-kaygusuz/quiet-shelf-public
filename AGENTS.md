@@ -117,3 +117,26 @@ exist. Suggest at most the next unread volume per series; never skip an
 unfinished or missing earlier volume. Registration age is not ownership age.
 Keep read-next.js in every platform's asset allowlist and package. Validate
 structured metadata and checklist preferences before backups/Drive apply them.
+
+## Licensing
+
+Quiet Shelf's original project material is Apache-2.0, with Alex (Ayca Kaygusuz) as its public
+creator credit. Preserve LICENSE, NOTICE, THIRD_PARTY_NOTICES.md, source SPDX
+headers and upstream notices. Do not replace third-party licenses with the
+project license. Keep the original Manrope OFL notice and runtime notices.
+Ship the project license/attribution and applicable third-party notices in
+every browser, Windows and Android distribution and in offline About. Never
+add extra attribution restrictions to the standard Apache license.
+Git commits still use the neutral contributor identity; publish no personal
+email, legal identity, credential or user library as part of attribution.
+
+The Android desugar_jdk_libs runtime is GPLv2 with Classpath Exception, not
+Apache-2.0. Preserve its upstream license/exception texts and publish its
+verified, pinned upstream source archive alongside each Android APK. Never
+apply project copyright/SPDX headers to those upstream files.
+
+Alphabetical library sorting must order series by their names and their
+members by title. Display filters and Plain list are view preferences, never
+book/series data edits; retain grouped expansion/filter choices when switching.
+Check language-learning intent and study metadata before recommendation
+ranking, without treating a book's language alone as textbook evidence.

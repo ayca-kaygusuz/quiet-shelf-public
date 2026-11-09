@@ -1,3 +1,4 @@
+import {legalScript} from '../src/legal.mjs';
 import {readFileSync,writeFileSync,mkdirSync,copyFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 const root='android/app/src/main/assets';mkdirSync(root,{recursive:true});
@@ -6,6 +7,11 @@ html=html.replace('</style>','</style><link rel="stylesheet" href="/android.css"
 writeFileSync(root+'/index.html',html);
 for(const file of ['read-next.js','account.js','sync-core.js','catalog.mjs','drive.mjs','releases.mjs'])copyFileSync('src/'+file,root+'/'+file);
 for(const file of ['android-bootstrap.js','android-api.mjs','android.css'])copyFileSync('android/web/'+file,root+'/'+file);
+for(const file of ['LICENSE','NOTICE','THIRD_PARTY_NOTICES.md'])copyFileSync(file,root+'/'+file);
+mkdirSync(root+'/licenses',{recursive:true});for(const name of ['LICENSE','ASSEMBLY_EXCEPTION','ADDITIONAL_LICENSE_INFO'])copyFileSync('assets/licenses/desugar-jdk-'+name+'.txt',root+'/licenses/desugar-jdk-'+name+'.txt');
+copyFileSync('assets/licenses/desugar-jdk-source.json',root+'/licenses/desugar-jdk-source.json');
+copyFileSync('assets/Manrope-OFL.txt',root+'/Manrope-OFL.txt');
+writeFileSync(root+'/legal.js',legalScript({license:readFileSync('LICENSE','utf8'),notice:readFileSync('NOTICE','utf8'),thirdParty:readFileSync('THIRD_PARTY_NOTICES.md','utf8'),font:readFileSync('assets/Manrope-OFL.txt','utf8'),desugar:['LICENSE','ASSEMBLY_EXCEPTION','ADDITIONAL_LICENSE_INFO'].map(name=>readFileSync('assets/licenses/desugar-jdk-'+name+'.txt','utf8')).join('\n\n')}));
 const script=html.match(/<script>([\s\S]*)<\/script>/)[1],digest=createHash('sha256').update(script.replace(/\r\n?/g,'\n')).digest('base64');
 writeFileSync(root+'/csp.txt',`default-src 'none'; script-src 'self' 'sha256-${digest}'; style-src 'self' 'unsafe-inline'; img-src https: data:; font-src data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'`);
 console.log('Android assets prepared from the shared interface, catalog, sync and release code.');

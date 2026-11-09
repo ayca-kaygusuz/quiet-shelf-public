@@ -1,3 +1,4 @@
+import {checkLibraryViewUI} from './check-library-view-ui.mjs';
 import {checkReadNextUI} from './check-read-next-ui.mjs';
 // Runs only against the Windows CI app launched with a loopback DevTools port.
 import assert from 'node:assert/strict';
@@ -30,8 +31,11 @@ try{
   const screenshot=await command('Page.captureScreenshot',{format:'png',clip:view.clip});
   await writeFile(`work/windows/update-preview-${theme}.png`,Buffer.from(screenshot.data,'base64'));
  }
+ const legal=await evaluate(`(async()=>{for(let i=0;i<50&&!document.querySelector('#projectLicense').textContent;i++)await new Promise(resolve=>setTimeout(resolve,50));return {license:document.querySelector('#projectLicense').textContent,notice:document.querySelector('#projectNotice').textContent,font:document.querySelector('#fontLicense').textContent,third:document.querySelector('#thirdPartyNotice').textContent,credit:document.querySelector('#aboutQuietShelf').textContent}})()`);
+ assert(legal.license.includes('TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION'));assert(legal.notice.includes('Copyright 2026 Alex (Ayca Kaygusuz)'));assert(legal.font.includes('SIL OPEN FONT LICENSE'));assert(legal.third.includes('Google Play services'));assert(legal.credit.includes('Originally created by Alex (Ayca Kaygusuz).'));
  await checkUpdatePolicyUI({evaluate,prefix:'native-update-policy',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkThemeUI({evaluate,prefix:'native-theme',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
+ await checkLibraryViewUI({evaluate});
  await checkReadNextUI({evaluate,prefix:'native-read-next',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkFirstSyncUI({evaluate,prefix:'native-first-sync',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  console.log('PASS: actual native account/assets/update bridges, configured Desktop client, Account navigation, visible download card and both themes');

@@ -1,6 +1,6 @@
 {
   "name": "quiet-shelf",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "private": true,
   "description": "A personal book, manga and comic reading library",
   "engines": {
@@ -23,7 +23,7 @@
   "build": {
     "appId": "com.quietshelf.desktop",
     "productName": "Quiet Shelf",
-    "copyright": "Copyright Quiet Shelf contributors",
+    "copyright": "Copyright 2026 Alex (Ayca Kaygusuz)",
     "directories": {
       "output": "work/windows",
       "buildResources": "desktop/assets"
@@ -39,7 +39,11 @@
       "package.json",
       "src/*.js",
       "src/*.mjs",
-      "desktop/google-client.generated.json"
+      "desktop/google-client.generated.json",
+      "LICENSE",
+      "NOTICE",
+      "THIRD_PARTY_NOTICES.md",
+      "assets/licenses/**"
     ],
     "win": {
       "target": [
@@ -54,7 +58,30 @@
       "executableName": "Quiet Shelf",
       "signExecutable": false
     },
-    "publish": null
+    "publish": null,
+    "extraFiles": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE-Quiet-Shelf.txt"
+      },
+      {
+        "from": "NOTICE",
+        "to": "NOTICE-Quiet-Shelf.txt"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      },
+      {
+        "from": "assets/Manrope-OFL.txt",
+        "to": "licenses/Manrope-OFL.txt"
+      },
+      {
+        "from": "assets/licenses",
+        "to": "licenses/android-compatibility"
+      }
+    ]
   },
-  "author": "Quiet Shelf contributors"
+  "author": "Alex (Ayca Kaygusuz)",
+  "license": "Apache-2.0"
 }

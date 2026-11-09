@@ -1,3 +1,6 @@
+// Copyright 2026 Alex (Ayca Kaygusuz)
+// SPDX-License-Identifier: Apache-2.0
+
 export const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 export const googleClientID=value=>typeof value==='string'&&/^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/.test(value);
 export const googleDesktopCredential=value=>typeof value==='string'&&value.length>0&&value.length<=4096&&/^[\x21-\x7e]+$/.test(value)&&!/^\*+$|^(redacted|hidden|masked|null|undefined)$/i.test(value);
