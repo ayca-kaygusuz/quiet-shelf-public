@@ -19,6 +19,10 @@ on:
         description: Publish the installer as a GitHub release
         type: boolean
         default: false
+      draftOnly:
+        description: Keep uploaded packages in a draft until cross-platform checks finish
+        type: boolean
+        default: false
       googleDesktopClientId:
         description: Public Desktop OAuth client ID (optional; otherwise use repository variable)
         type: string
@@ -164,7 +168,11 @@ jobs:
             gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft --target "$GITHUB_SHA" --title "Quiet Shelf $version — Windows app" --notes-file desktop/RELEASE-NOTES.md
           fi
           gh release upload "$tag" release/*.exe release/*.zip release/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
-          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --notes-file desktop/RELEASE-NOTES.md
+          if [ "${{ inputs.draftOnly }}" != true ]; then
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --notes-file desktop/RELEASE-NOTES.md
+          else
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file desktop/RELEASE-NOTES.md
+          fi
       - name: Remove temporary build artifact after publishing
         env:
           GH_TOKEN: ${{ github.token }}

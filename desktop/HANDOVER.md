@@ -228,3 +228,8 @@ label. The release parser supports the signed Android APK; Windows verification
 and installer behavior remain the same. Android CI tests the WebView/native
 message boundary on an emulator, and Android releases append their checksum to
 the matching Windows/browser manifest without replacing existing packages.
+
+For a cross-platform release, Windows Publish may use `draftOnly=true` to upload
+verified packages while Android runtime checks finish. The default publication
+behavior is unchanged. Publish the completed draft only after both checks pass,
+then promote the tested Android artifact from the identical source commit.
