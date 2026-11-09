@@ -50,6 +50,7 @@ public final class MainActivity extends ComponentActivity {
 
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),false);
         getWindow().getDecorView().setBackgroundColor(0xff17181d);
         preferences=getSharedPreferences("quiet-shelf-account",MODE_PRIVATE);
         try{account=new JSONObject(preferences.getString("public_account",""));}catch(Exception ignored){}
@@ -120,9 +121,11 @@ public final class MainActivity extends ComponentActivity {
                 if(method.equals("http")){if(httpTasks.size()>=32)throw new IOException("Too many requests");FutureTask<Void> task=new FutureTask<Void>(work,null){@Override protected void done(){httpTasks.remove(id);HttpURLConnection c=httpConnections.remove(id);if(c!=null)c.disconnect();}};httpTasks.put(id,task);workers.execute(task);}else workers.execute(work);
             }catch(Exception error){send(reply,requestId,null,"The Android request could not be completed. Check your connection and try again.","ANDROID_REQUEST_ERROR");}
         });
-        setContentView(web);web.loadUrl(ORIGIN+"/");
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(web,(view,insets)->{androidx.core.graphics.Insets bars=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()|androidx.core.view.WindowInsetsCompat.Type.displayCutout()|androidx.core.view.WindowInsetsCompat.Type.ime());view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return androidx.core.view.WindowInsetsCompat.CONSUMED;});
-        androidx.core.view.ViewCompat.requestApplyInsets(web);
+        android.widget.FrameLayout content=new android.widget.FrameLayout(this);
+        content.addView(web,new android.widget.FrameLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT,android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(content);web.loadUrl(ORIGIN+"/");
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(content,(view,insets)->{androidx.core.graphics.Insets bars=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()|androidx.core.view.WindowInsetsCompat.Type.displayCutout()|androidx.core.view.WindowInsetsCompat.Type.ime());view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return androidx.core.view.WindowInsetsCompat.CONSUMED;});
+        androidx.core.view.ViewCompat.requestApplyInsets(content);
         getOnBackPressedDispatcher().addCallback(this,new OnBackPressedCallback(true){@Override public void handleOnBackPressed(){web.evaluateJavascript("!!globalThis.QuietShelfAndroid?.back?.()",value->{if(!"true".equals(value))finish();});}});
         networkCallback=new ConnectivityManager.NetworkCallback(){@Override public void onAvailable(Network network){refresh();}@Override public void onLost(Network network){refresh();}@Override public void onCapabilitiesChanged(Network network,NetworkCapabilities capabilities){refresh();}};
         connectivity.registerDefaultNetworkCallback(networkCallback);

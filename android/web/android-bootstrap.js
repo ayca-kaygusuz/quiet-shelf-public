@@ -17,7 +17,7 @@
   document.documentElement.dataset.platform='android';document.body.dataset.platform='android';
   const configure=async()=>{
    const App=globalThis.QuietShelfApp;if(!App){setTimeout(configure,25);return}
-   const download=async(document,prefix='quiet-shelf')=>{const value=App.readBackup({format:'quiet-shelf-backup',version:2,...document});await rpc('backup.save',{document:{format:'quiet-shelf-backup',version:2,exportedAt:new Date().toISOString(),...value}})};
+   const download=async(document,prefix='quiet-shelf')=>{const value=App.readBackup({format:'quiet-shelf-backup',version:2,...document});return await rpc('backup.save',{document:{format:'quiet-shelf-backup',version:2,exportedAt:new Date().toISOString(),...value}})};
    App.downloadBackup=(document,prefix)=>void download(document,prefix).then(saved=>{if(saved)App.message('Backup saved.')}).catch(e=>App.message(e.message));
    document.querySelector('#export').onclick=()=>void download(App.backup()).then(saved=>{if(saved)App.message('Backup saved.')}).catch(e=>App.message(e.message));
    document.querySelector('#restore').onclick=async()=>{try{const value=await rpc('backup.open');if(value===null)return;const backup=App.readBackup(value);if(confirm('Replace this library with the selected backup? Back up your current library first if you want to keep it.')){App.apply(backup);App.changed?.();App.message('Backup restored.')}}catch(e){App.message(e.message||'That backup could not be imported. Your current library is unchanged.')}};

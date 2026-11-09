@@ -27,7 +27,11 @@ public class LibraryRuntimeTest {
         for(int i=0;i<150;i++){if("true".equals(evaluate(scenario,"!!globalThis.QuietShelfApp && !!globalThis.QuietShelfAccount && !!globalThis.QuietShelfAndroid?.back")))return;Thread.sleep(100);}
         fail("The Android app did not finish loading its shared interface");
     }
-    private void screenshot(String name)throws Exception{
+    private void screenshot(ActivityScenario<MainActivity> scenario,String name)throws Exception{
+        CountDownLatch drawn=new CountDownLatch(1);
+        scenario.onActivity(activity->activity.web.postVisualStateCallback(1,new WebView.VisualStateCallback(){@Override public void onComplete(long id){drawn.countDown();}}));
+        assertTrue("WebView did not finish drawing",drawn.await(15,TimeUnit.SECONDS));
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();Thread.sleep(250);
         android.graphics.Bitmap bitmap=InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
         File folder=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"previews");folder.mkdirs();
         try(FileOutputStream out=new FileOutputStream(new File(folder,name+".png"))){bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();
@@ -41,13 +45,14 @@ public class LibraryRuntimeTest {
             assertEquals("true",evaluate(app,"QuietShelfAndroid.back()"));
             for(String theme:new String[]{"ink","sage","tide","rosewood","porcelain","apricot"}){
                 assertEquals("true",evaluate(app,"(()=>{document.querySelector('#theme').value='"+theme+"';document.querySelector('#theme').dispatchEvent(new Event('change',{bubbles:true}));return document.documentElement.dataset.theme==='"+theme+"'&&QuietShelfApp.backup().preferences.theme==='"+theme+"'&&QuietShelfApp.snapshot().library[0].history.length===1&&document.documentElement.scrollWidth<=innerWidth})()"));
-                Thread.sleep(150);screenshot("android-theme-"+theme);
+                screenshot(app,"android-theme-"+theme);
             }
             assertEquals("true",evaluate(app,"(()=>{const b=QuietShelfApp.backup();return b.format==='quiet-shelf-backup'&&b.version===2&&b.preferences.autoUpdateChecks===false&&QuietShelfApp.readBackup(b).library[0].history.length===1})()"));
             app.recreate();ready(app);
             assertEquals("true",evaluate(app,"QuietShelfApp.snapshot().library.length===1&&QuietShelfApp.snapshot().library[0].history.length===1&&QuietShelfApp.backup().preferences.theme==='apricot'&&QuietShelfApp.backup().preferences.autoUpdateChecks===false"));
             assertEquals("true",evaluate(app,"(()=>{document.querySelector('#accountButton').click();return !document.querySelector('#accountPage').hidden&&!document.querySelector('#autoUpdateChecks').checked})()"));
-            screenshot("android-account");
+            screenshot(app,"android-account");
+            app.onActivity(activity->{int[] position=new int[2];activity.web.getLocationOnScreen(position);androidx.core.graphics.Insets bars=androidx.core.view.ViewCompat.getRootWindowInsets(activity.web).getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());assertTrue("App content overlaps the status bar",position[1]>=bars.top);assertTrue("App content overlaps navigation controls",position[1]+activity.web.getHeight()<=activity.getWindow().getDecorView().getHeight()-bars.bottom);});
             // Probe the actual native message boundary without granting a real account.
             evaluate(app,"window.__androidProbe='waiting';QuietShelfAndroid.rpc('account.status').then(s=>window.__androidProbe=s.mode==='android'&&!JSON.stringify(s).includes('access_token')?'passed':'failed');true");
             for(int i=0;i<50&&!"\"passed\"".equals(evaluate(app,"window.__androidProbe"));i++)Thread.sleep(100);
