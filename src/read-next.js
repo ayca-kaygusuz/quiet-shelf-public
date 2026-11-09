@@ -28,17 +28,10 @@
   return {version:1,isbn:isbn(editionISBN),pages:a.pages||b.pages,subjects:[...new Set([...a.subjects,...b.subjects])].slice(0,30),format:a.format!=='unknown'?a.format:b.format,sources:[...new Set([...a.sources,...b.sources])].slice(-3),checkedAt:new Date().toISOString()};
  }
  function studyMaterial(book,metadata){
-  const title=normalized(book.title),subjects=normalized((metadata?.subjects||[]).join(' '));
-  if(metadata?.format==='reference'||/\b(foreign language study|language study|language teaching|language learning|language instruction|study aids|textbooks?|workbooks?|self instruction|phrasebooks?|conversation and phrase books)\b/.test(subjects))return true;
-  if(/\b(textbooks?|workbooks?|ders kitabi|calisma kitabi|dil bilgisi|dilbilgisi|jlpt|yds|yokdil|toefl|ielts|dele|delf|testdaf|hsk|exam preparation|test prep)\b/.test(title))return true;
-  // A catalog's explicit fiction classification helps distinguish a novel
-  // with a teaching/speaking metaphor from an actual language course.
-  const fiction=/\b(fiction|novels?|roman|romans|oyku|hikaye)\b/.test(subjects.replace(/graphic novels?/g,''));
-  if(fiction)return false;
-  if(/\b(dictionary|dictionaries|grammar|sozluk|reference)\b/.test(title))return true;
-  const language=/\b(arapca|arabic|arabe|japonca|japanese|japonais|japones|japanisch|italyanca|italian|italiano|italien|ingilizce|english|anglais|ingles|englisch|almanca|german|deutsch|allemand|aleman|fransizca|french|francais|frances|franzosisch|ispanyolca|spanish|espanol|spanisch|rusca|russian|russe|russisch|cince|chinese|chinois|chinesisch|korece|korean|coreen|portekizce|portuguese|portugues|latince|latin|yunanca|greek|grec|ibranice|hebrew|hebreu|turkce|turkish|turc|felemenkce|hollandaca|dutch|neerlandais|niederlandisch|lehce|polish|polonais|isvecce|swedish|suedois|farsca|farsi|persian|osmanlica|sanskrit)\p{L}*\b/u.test(title);
-  const learning=/\b(ogren|ogret|konus|calis|learn|teach|speak|convers|course|kurs|egitim|pratik|pratique|practice|baslangic|beginner|phrasebook|apprend|parlez|aprender|hablar|lernen|sprechen|imparare|parlare)\p{L}*\b/u.test(title)||/\b(a1|a2|b1|b2|c1|c2|dummies|assimil|jlpt|hsk)\b/.test(title);
-  return language&&learning;
+  // Only catalog classifications or an explicit user choice establish study
+  // material. Titles and the edition language cannot reliably do that.
+  const subjects=normalized((metadata?.subjects||[]).join(' '));
+  return metadata?.format==='reference'||/\b(foreign language study|language study|language teaching|language learning|language instruction|study aids|textbooks?|workbooks?|self instruction|phrasebooks?|conversation and phrase books|dil egitimi|yabanci dil|ders kitaplari|ders kitabi|calisma kitabi|dil bilgisi|dilbilgisi|sozlukler|sozluk|grammaire|sprachlehrbuch)\b/.test(subjects);
  }
  function inferred(book,seriesBooks=[]){
   const metadata=validInfo(book.readingInfo)?book.readingInfo:null;
@@ -54,7 +47,7 @@
   const tags=Object.keys(patterns).filter(k=>patterns[k].test(words));
   const minutes=metadata?.pages?metadata.pages*({manga:.22,comic:.65,prose:1.6,unknown:1.6,reference:2}[format]):null;
   const effort=minutes===null?'Reading effort unknown':minutes<=180?'Shorter read · estimate':minutes<=480?'Medium read · estimate':'Longer read · estimate';
-  return {format,tags,minutes,effort,uncertain:format==='unknown'||!metadata?.pages};
+  return {format,tags,minutes,effort,typeConfirmed:!!(explicit||metadata&&(metadata.format!=='unknown'||metadata.subjects.length)),uncertain:format==='unknown'||!metadata?.pages};
  }
  function candidates(books,{genre='all',seriesInfo=()=>null}={}){
   const groups=new Map();for(const book of books){const s=seriesInfo(book);if(s){const g=groups.get(s.key)||[];g.push(book);groups.set(s.key,g)}}

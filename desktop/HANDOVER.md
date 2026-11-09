@@ -238,7 +238,8 @@ then promote the tested Android artifact from the identical source commit.
 ## Read next (0.16.0)
 
 The shared read-next.js engine runs on-device. Generation is only explicit;
-metadata enrichment is a separate explicit ISBN request, never scheduled.
+generation now enriches missing metadata on demand; the separate Refresh control
+enriches without replacing a list. Neither is scheduled.
 readNext is an atomic workspace preference, not a list history. Statuses are
 read from the real book records; finished/archived/removed entries stay visible.
 Sequential replacement discards the old list; concurrent replacement is a
@@ -270,5 +271,12 @@ numbered volumes in reading sequence and order groups using a representative
 book under the selected sort. libraryView is a validated optional preference
 with showSeries/showStandalones/flat booleans. Plain mode temporarily includes
 both types and preserves their grouped-mode filters and expansion state.
-Language-course intent is checked before series ranking. Saved checklists
+Catalog study classifications are checked before series ranking; title/language
+alone cannot exclude a book. Lookup uses exact ISBNs or saved edition links,
+with two workers and visible progress. Unknown types stay eligible and labeled. Saved checklists
 flag newly identified study titles without implicit generation or removal.
+
+Packaged Windows license loading uses the readable installed extraFiles beside
+the executable; electron-builder excludes those source files from app.asar.
+The Windows build compares the installed legal payload with source before
+creating an installer, then CI verifies actual native startup.

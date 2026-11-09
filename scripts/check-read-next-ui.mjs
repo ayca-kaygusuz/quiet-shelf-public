@@ -12,6 +12,14 @@ export async function checkReadNextUI({evaluate,capture=async()=>{},prefix='read
   }
   state=await evaluate(`(()=>{window.confirm=()=>true;document.querySelector('#nextGenerate').click();return {different:window.__nextFirst!==JSON.stringify(readNextState.list),network:window.__nextLookups}})()`);
   assert.equal(state.different,true);assert.equal(state.network,0);
-  console.log('PASS: '+prefix+' manual checklist generation, real status progress, confirmation cancellation, backup, both palettes and no network lookup');
+  state=await evaluate(`(async()=>{
+   const edition='https://www.kitapyurdu.com/kitap/fixture-course/999.html';window.__nextLookups=0;
+   window.fetch=async(input,options)=>{const url=String(input);if(!url.startsWith('/api/book'))return window.__nextFetch(input,options);window.__nextLookups++;const course=url.startsWith('/api/book?');return Response.json(course?{sourceUrl:edition,isbn:'9780140328721',readingInfo:QuietShelfReadNext.info({pages:180,subjects:['Kitap / Eğitim / Dil Eğitimi']},'Kitapyurdu','9780140328721')}:{results:[{isbn:'9780306406157',readingInfo:QuietShelfReadNext.info({pages:240,subjects:['Fiction / Literary']},'Open Library','9780306406157')}]})};
+   QuietShelfApp.apply({library:[{id:'course-qa',title:'A book with an ambiguous name',isbn:'9780140328721',sourceUrl:edition,status:'Unread',history:[]},{id:'novel-qa',title:'The Dictionary Workbook',isbn:'9780306406157',status:'Unread',history:[]}],preferences:{autoUpdateChecks:false}});
+   const before=window.__nextLookups;await QuietShelfApp.generateReadNext();const generated=JSON.stringify(readNextState.list);const result={before,requests:window.__nextLookups,ids:readNextState.list.entries.map(e=>e.bookId),categories:books.find(b=>b.id==='course-qa').readingInfo.subjects};
+   window.confirm=()=>false;await QuietShelfApp.generateReadNext();result.unchanged=generated===JSON.stringify(readNextState.list);result.afterCancel=window.__nextLookups;return result;
+  })()`);
+  assert.equal(state.before,0);assert.equal(state.requests,2);assert.deepEqual(state.ids,['novel-qa']);assert(state.categories.includes('Kitap / Eğitim / Dil Eğitimi'));assert.equal(state.unchanged,true);assert.equal(state.afterCancel,2);
+  console.log('PASS: '+prefix+' manual checklist generation, real status progress, confirmation cancellation, backup, both palettes, demand-only exact catalog lookup and metadata-based study filtering');
  }finally{await evaluate(`(()=>{window.confirm=window.__nextConfirm;window.fetch=window.__nextFetch;QuietShelfApp.apply(window.__nextQA);document.querySelector('#readNextPanel').open=false;window.scrollTo(0,0);return true})()`)}
 }

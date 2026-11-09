@@ -138,5 +138,6 @@ apply project copyright/SPDX headers to those upstream files.
 Alphabetical library sorting must order series by their names and their
 members by title. Display filters and Plain list are view preferences, never
 book/series data edits; retain grouped expansion/filter choices when switching.
-Check language-learning intent and study metadata before recommendation
-ranking, without treating a book's language alone as textbook evidence.
+Use catalog study metadata before recommendation ranking. A title or language
+alone is never proof of a textbook. Generation may look up missing information
+only on explicit demand; retain cached offline generation and label unknown types.

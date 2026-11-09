@@ -1,4 +1,4 @@
-import {legalScript} from '../src/legal.mjs';
+import {desktopLegalScript} from './legal.mjs';
 import {app,BrowserWindow,Menu,protocol,shell,dialog,safeStorage,net} from 'electron';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {join,dirname} from 'node:path';
@@ -36,7 +36,7 @@ else{
     const assets=Object.fromEntries(['read-next.js','sync-core.js','account.js'].map(name=>['/'+name,readFileSync(join(here,'..','src',name),'utf8')]));
     googleAccount=createGoogleAccount({profile,safeStorage,developerControls:!app.isPackaged,...(app.isPackaged?{defaultClientId:'',defaultClientSecret:''}:{}),openExternal:url=>shell.openExternal(url)});
     updates=createUpdateController({app,dialog,getWindow:()=>window,enabled:process.platform==='win32'&&app.isPackaged,network:async()=>({...await googleAccount.network(),online:net.isOnline()})});
-    assets['/legal.js']=legalScript({license:readFileSync(join(here,'..','LICENSE'),'utf8'),notice:readFileSync(join(here,'..','NOTICE'),'utf8'),thirdParty:readFileSync(join(here,'..','THIRD_PARTY_NOTICES.md'),'utf8'),font:readFileSync(join(here,'..','assets','Manrope-OFL.txt'),'utf8'),desugar:['LICENSE','ASSEMBLY_EXCEPTION','ADDITIONAL_LICENSE_INFO'].map(name=>readFileSync(join(here,'..','assets','licenses','desugar-jdk-'+name+'.txt'),'utf8')).join('\n\n')});
+    assets['/legal.js']=desktopLegalScript({root:app.isPackaged?dirname(app.getPath('exe')):join(here,'..'),packaged:app.isPackaged});
     protocol.handle('quiet-shelf',createAppHandler({html,catalog,updates,assets,account:googleAccount}));
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'File',submenu:[{role:'quit'}]},

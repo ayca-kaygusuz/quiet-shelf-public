@@ -4,6 +4,7 @@ import {execFileSync} from 'node:child_process';
 import {resolve,join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
 import {googleDesktopConfiguration} from '../src/google-oauth.mjs';
+import {desktopLegalScript} from '../desktop/legal.mjs';
 const require=createRequire(import.meta.url);
 const {build,Platform,Arch}=require('electron-builder');
 const {getMakeNsisPath}=require('app-builder-lib/out/toolsets/windows');
@@ -18,6 +19,7 @@ const config=process.env.QUIET_SHELF_ELECTRON_DIST?{electronDist:resolve(process
 await build({targets:Platform.WINDOWS.createTarget('dir',Arch.x64),config,publish:'never'});
 const nsis=await getMakeNsisPath('1.2.1');
 const appDir=join(output,'win-unpacked'),files=[],directories=[];
+if(desktopLegalScript({root:appDir,packaged:true})!==desktopLegalScript({root:process.cwd()}))throw Error('Installed license files differ from the source notices.');
 function walk(dir,relative=''){for(let entry of readdirSync(dir,{withFileTypes:true})){let local=relative?relative+'/'+entry.name:entry.name;if(entry.isDirectory()){directories.push(local);walk(join(dir,entry.name),local)}else files.push(local)}}
 walk(appDir);
 const quote=value=>value.replaceAll('$','$$').replaceAll('"','$\\"').replaceAll('/','\\');

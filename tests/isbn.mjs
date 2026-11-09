@@ -8,6 +8,10 @@ assert.equal(parseISBN('0-306-40615-2'),'0306406152');
 assert.equal(parseISBN('0-8044-2957-X'),'080442957X');
 for(let value of ['9786054782368','0306406153','1234567890128','9786054782369 unrelated'])assert.equal(parseISBN(value),null);
 assert.equal(parseBook(fixture,product).language,'en');
+// Product category labels are authoritative metadata, not the title or global navigation.
+const categorized=fixture+'<nav><a class="category">Textbooks</a></nav><a href="/kategori/one" class="ky-pd-attributes__category-link"><span>Kitap</span><i></i><span>Eğitim</span><span>Dil Eğitimi</span></a>';
+assert.deepEqual(parseBook(categorized,product).readingInfo.subjects,['Kitap Eğitim Dil Eğitimi']);
+assert.deepEqual(parseBook(fixture+'<nav><a>Foreign Language Study</a></nav>',product).readingInfo.subjects,[]);
 let generation=0;const fresh=async()=>(await import('../src/catalog.mjs?isbn-test='+generation++)).catalog;
 let calls=[];
 globalThis.fetch=async(url,options)=>{calls.push({url:String(url),options});return new Response('<div id="searchFilters">Aradım Bulamadım</div>')};

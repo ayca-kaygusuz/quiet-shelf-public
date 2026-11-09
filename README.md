@@ -94,14 +94,18 @@ list requires confirmation. There is no suggestion-list history. Removed and
 archived titles remain recognizable in the current checklist. Open a title to
 change its real reading status, without a second set of completion records.
 
-**Refresh missing book information** explicitly looks up uncached ISBNs in Open
-Library and Google Books, in bounded batches. Only exact ISBN matches are saved;
-failed or missing metadata never prevents offline generation. The optional
-Google Books key stays on this device. No AI service, background generation or
-background metadata refresh is used. Effort estimates combine known page count
-and format; unknown data remains labeled. Study/reference titles are normally
-skipped. Title details → Read next preferences allows a reversible exclusion or
-format override, without requiring every book to be categorized.
+Generating a list checks missing catalog information **only on demand**, using
+saved edition links and exact ISBNs in Open Library and Google Books. Two requests
+run at a time; progress is shown. **Refresh catalog information** does the same
+lookup without replacing the list. Catalog categories (including Kitapyurdu's
+product categories) identify study/reference books; titles and language alone
+never exclude a book. Unconfirmed types remain eligible and clearly labeled.
+Offline generation uses cached information. Metered connections ask before
+lookup, and declining uses the cache. Failed lookups do not block generation.
+The optional Google Books key stays on this device. No AI service, background
+generation or background metadata refresh is used. Effort estimates combine
+known page count and format. Title details → Read next preferences allows a
+reversible exclusion or format override.
 
 The current checklist, settings, exclusions and cached information are included
 in backups and optional Drive sync, separately for guest/account workspaces.
