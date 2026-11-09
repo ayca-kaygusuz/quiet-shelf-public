@@ -41,7 +41,7 @@
    else if(failed){phase='error';label='Sync failed';detail='Changes kept on this device';explanation=notice||'Drive could not be reached. Try Sync now or review Account.'}
    else if(!linked){phase='attention';label='Choose library';detail=checked?checkedAgo(checked):'Waiting to check Drive';explanation='Your current shelf is still open. Review the library choices in Account before connecting.'}
    else if(conflicts){phase='attention';label='Review sync changes';detail=conflicts+' conflicting '+(conflicts===1?'change':'changes');explanation='Changes are saved, but some values differ between devices. Open Account to choose which values to keep.'}
-   else if(draftBlocked&&App.hasDraft?.()){phase='paused';label='Finish editing to sync';detail='Your draft stays open';explanation='Save your series changes or close Add title before syncing incoming changes.'}
+   else if(draftBlocked&&App.hasDraft?.()){phase='paused';label=App.readNextBusy?.()?'Refreshing book information':'Finish editing to sync';detail=App.readNextBusy?.()?'Sync will resume afterwards':'Your draft stays open';explanation=App.readNextBusy?.()?'The manual lookup finishes before incoming sync changes load.':'Save your series changes or close Add title before syncing incoming changes.'}
    else if(networkMetered()||!settings.auto){phase='paused';label='Sync paused';detail=networkMetered()?'Metered connection':'Automatic sync is off';explanation=(dirty?'Unsynced changes are saved on this device. ':'Automatic sync is paused. ')+'Sync now is available whenever you choose.'}
    else if(dirty){phase='waiting';label='Changes waiting to sync';detail='Saved on this device';explanation='Local changes are queued for Google Drive.'}
    else if(!lastSync){phase='waiting';label='Waiting to check Drive';detail='Saved on this device';explanation='This library has not completed its first sync on this device.'}
@@ -123,7 +123,7 @@
   $('#libraryPage').inert=false;$('#add').disabled=false;
  }
  async function sync(manual=false){
-  if(linked&&App.hasDraft?.()){draftBlocked=true;notice='Save your series changes or close the Add title form before syncing.';renderAccount();return false}
+  if(linked&&App.hasDraft?.()){draftBlocked=true;notice=App.readNextBusy?.()?'Book information is being refreshed. Sync will resume when it finishes.':'Save your series changes or close the Add title form before syncing.';renderAccount();return false}
   if(!account||syncing){if(syncing)queued=true;return false}if(!online()||!manual&&!canAuto()){renderAccount();return false}
   clearTimeout(syncTimer);syncing=true;failed=false;draftBlocked=false;notice='';const identity=account.id,revision=epoch,readOnly=!linked,sent=linked?state:S.empty();renderAccount();
   try{
@@ -131,7 +131,7 @@
    if(account?.id!==identity||epoch!==revision)return false;if(response.account?.id!==identity)throw Error('The sync response belongs to a different account.');
    const returned=S.validate(response.state);validated(S.project(returned));
    if(readOnly){preview={state:returned,checkedAt:new Date().toISOString()};persist();notice='Drive checked. Choose which library to connect; your current books stay here.';return true}
-   const merged=S.merge(state,returned),document=S.project(merged);validated(document);if(App.hasDraft?.()){draftBlocked=true;notice='Drive was checked. Incoming changes will load after you finish editing.';return false}
+   const merged=S.merge(state,returned),document=S.project(merged);validated(document);if(App.hasDraft?.()){draftBlocked=true;notice=App.readNextBusy?.()?'Book information is being refreshed. Incoming changes will load afterwards.':'Drive was checked. Incoming changes will load after you finish editing.';return false}
    state=merged;dirty=!S.covers(returned,merged);lastSync=new Date().toISOString();firstPull=true;persist();apply(document);authRequired=false;notice=document.conflicts.length?'Sync completed. Review the conflicting changes below.':'Sync completed.';return true;
   }catch(e){if(epoch!==revision)return false;failed=true;notice=e.message;if(e.code==='SIGN_IN_REQUIRED')authRequired=true;try{persist()}catch{saveFailed=true;notice+=' Download a backup before closing.'}return false}
   finally{syncing=false;renderAccount();if(linked&&(queued||dirty&&!failed)){queued=false;schedule(2000)}}
@@ -180,6 +180,6 @@
  if(new URL(location.href).searchParams.has('account')){accountPage();history.replaceState(null,'',location.pathname)}
  indicatorTimer=setInterval(()=>{if(!document.hidden)renderSyncIndicator()},30000);
  const headerObserver=root.ResizeObserver?new root.ResizeObserver(entries=>{document.documentElement.style.setProperty('--app-header-height',Math.ceil(entries[0].target.getBoundingClientRect().height)+'px')}):null;headerObserver?.observe($('.app-header'));
- root.QuietShelfAccount={refresh:refreshConnection,sync,status:()=>({account,dirty,lastSync,firstPull,syncing,online:online(),metered:networkMetered(),auto:settings.auto,setupPending:!!account&&!linked,setupReady:!!preview}),dispose(){clearTimeout(syncTimer);clearTimeout(authTimer);clearInterval(periodicTimer);clearInterval(indicatorTimer);headerObserver?.disconnect()}};
+ root.QuietShelfAccount={refresh:refreshConnection,sync,resume(){renderAccount();schedule(100)},status:()=>({account,dirty,lastSync,firstPull,syncing,online:online(),metered:networkMetered(),auto:settings.auto,setupPending:!!account&&!linked,setupReady:!!preview}),dispose(){clearTimeout(syncTimer);clearTimeout(authTimer);clearInterval(periodicTimer);clearInterval(indicatorTimer);headerObserver?.disconnect()}};
  renderAccount();void refreshConnection();
 })(globalThis);
