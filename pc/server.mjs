@@ -7,6 +7,7 @@ import {pathToFileURL} from 'node:url';
 import {catalog} from '../src/catalog.mjs';
 import {googleDesktopConfiguration} from '../src/google-oauth.mjs';
 import {createWebAccount} from '../src/web-account.mjs';
+import {createBrowserReleaseHandler} from '../src/releases.mjs';
 const html=readFileSync(new URL('../src/index.html',import.meta.url));
 const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync(new URL('../src/'+name,import.meta.url))]));
 const host='127.0.0.1',port=8765;
@@ -22,9 +23,11 @@ export function createLocalServer({accountEnvironment=process.env,desktopConfigu
     }
   }
   const account=createWebAccount(accountEnvironment,{desktopConfiguration,sessionKey,fetcher});
+  const releaseCheck=createBrowserReleaseHandler({fetcher});
   const server=http.createServer(async(req,res)=>{try{
     const address=server.address(),origin=`http://${host}:${address.port}`,u=new URL(req.url,origin);
     if(req.headers.host!==`${host}:${address.port}`){res.writeHead(403);return res.end('Invalid host')}
+    if(u.pathname==='/api/update-check'){const response=await releaseCheck(new Request(u,{method:req.method,headers:req.headers}));res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(await response.text())}
     if(u.pathname.startsWith('/api/account/')){
       const limit=10*1024*1024+2048;if(Number(req.headers['content-length'])>limit){req.resume();res.writeHead(413);return res.end('Account request too large')}
       const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>limit)throw Error('Account request too large');chunks.push(chunk)}

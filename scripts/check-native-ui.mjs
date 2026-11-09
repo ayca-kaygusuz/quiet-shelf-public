@@ -1,5 +1,6 @@
 // Runs only against the Windows CI app launched with a loopback DevTools port.
 import assert from 'node:assert/strict';
+import {checkUpdatePolicyUI} from './check-update-policy-ui.mjs';
 import {checkFirstSyncUI} from './check-first-sync-ui.mjs';
 import {writeFile} from 'node:fs/promises';
 
@@ -12,7 +13,7 @@ socket.addEventListener('message',event=>{const message=JSON.parse(event.data),e
 function command(method,params={}){return new Promise((resolve,reject)=>{const id=++nextId,timer=setTimeout(()=>{pending.delete(id);reject(Error('Native UI check timed out: '+method))},20000);pending.set(id,{resolve,reject,timer});socket.send(JSON.stringify({id,method,params}))})}
 async function evaluate(expression){const result=await command('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});assert(!result.exceptionDetails,JSON.stringify(result.exceptionDetails));return result.result.value}
 try{
- const bridge=await evaluate(`(async()=>{const status=await fetch('/api/update-status');const state=await status.json();const action=await fetch('/api/update-action?action=check',{method:'POST',headers:{'X-Quiet-Shelf-Update':'1'}});const accountResponse=await fetch('/api/account/status');const account=await accountResponse.json();document.querySelector('#accountButton').click();return {status:status.status,action:action.status,enabled:state.enabled,visible:!document.querySelector('#desktopUpdates').hidden&&!document.querySelector('#accountPage').hidden,accountStatus:accountResponse.status,accountMode:account.mode,configured:account.configured,accountLoaded:!!globalThis.QuietShelfAccount}})()`);
+ const bridge=await evaluate(`(async()=>{const status=await fetch('/api/update-status');const state=await status.json();const action=await fetch('/api/update-action?action=check',{method:'POST',headers:{'X-Quiet-Shelf-Update':'1'}});const accountResponse=await fetch('/api/account/status');const account=await accountResponse.json();document.querySelector('#accountButton').click();return {status:status.status,action:action.status,enabled:state.enabled,visible:!document.querySelector('#checkUpdates').hidden&&!document.querySelector('#accountPage').hidden,accountStatus:accountResponse.status,accountMode:account.mode,configured:account.configured,accountLoaded:!!globalThis.QuietShelfAccount}})()`);
  assert.equal(bridge.status,200);assert.equal(bridge.action,202);assert.equal(bridge.enabled,true);assert.equal(bridge.visible,true);
  assert.equal(bridge.accountStatus,200);assert.equal(bridge.accountMode,'desktop');assert.equal(bridge.accountLoaded,true);
  if(process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID&&process.env.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET)assert.equal(bridge.configured,true);
@@ -27,6 +28,7 @@ try{
   const screenshot=await command('Page.captureScreenshot',{format:'png',clip:view.clip});
   await writeFile(`work/windows/update-preview-${theme}.png`,Buffer.from(screenshot.data,'base64'));
  }
+ await checkUpdatePolicyUI({evaluate,prefix:'native-update-policy',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkFirstSyncUI({evaluate,prefix:'native-first-sync',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  console.log('PASS: actual native account/assets/update bridges, configured Desktop client, Account navigation, visible download card and both themes');
 }finally{socket.close();for(const entry of pending.values())clearTimeout(entry.timer)}

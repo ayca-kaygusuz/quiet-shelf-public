@@ -67,7 +67,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.13.1-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.14.0-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -188,3 +188,22 @@ the exact last successful sync, manual sync and Account navigation. Opening it
 does not start a network request or change data. Escape restores trigger focus.
 The details sidebar stays below the measured header height. Both packaged native
 and browser CI checks exercise the indicator/disclosure in both themes.
+
+## Quiet update policy and aligned controls (0.14.0)
+
+Shared App updates controls show available/ready status, the last successful
+check and offline/metered/user-disabled reasons. `autoUpdateChecks` is a boolean
+workspace preference in local settings, version-2 backups and the sync model.
+A private native `updates/check.json` mirror stores only update policy, timestamp
+and validated public release metadata. Automatic checks are silent and daily;
+a minute timer refreshes network conditions, with failed-check backoff. Manual
+checks bypass the automatic toggle and metered pause, but never start downloads.
+Download is explicit; restart/install still requires confirmation. Changes to
+policy abort an in-flight automatic metadata check. Browser checks use the same
+trusted release parser and offer the current browser ZIP through the public
+release page. Keep browser and native copies updated when syncing the new
+preference; older clients reject unknown sync fields without changing the shelf.
+
+Windows CI checks both themes, saved/restored update choices and inline pause
+messages in the packaged app and extracted browser ZIP. Header controls now have
+matching heights; the shared interface check measures them at runtime.

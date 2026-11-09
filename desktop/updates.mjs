@@ -6,37 +6,9 @@ import {Readable} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
 import {spawn} from 'node:child_process';
 
-export const RELEASES_URL='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest';
-const apiURL='https://api.github.com/repos/ayca-kaygusuz/quiet-shelf-public/releases/latest';
-const downloadRoot='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/download/';
+import {RELEASES_URL,latestUpdate,releaseVersionParts as versionParts,releaseSafeDownload as safeDownload,releaseGet as get,newerVersion} from '../src/releases.mjs';
+export {RELEASES_URL,latestUpdate,newerVersion} from '../src/releases.mjs';
 const maxInstaller=300*1024*1024;
-function versionParts(value){let match=String(value).match(/^v?(\d+)\.(\d+)\.(\d+)$/);if(!match)return null;let parts=match.slice(1).map(Number);return parts.every(Number.isSafeInteger)?parts:null}
-export function newerVersion(candidate,current){let a=versionParts(candidate),b=versionParts(current);if(!a||!b)return false;for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i]}return false}
-function safeDownload(value){try{let u=new URL(value);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&(u.origin==='https://github.com'&&u.pathname.startsWith('/ayca-kaygusuz/quiet-shelf-public/releases/download/')||['release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(u.hostname))}catch{return false}}
-async function get(url,fetcher,signal,installer=false){
-  for(let redirects=0;redirects<5;redirects++){
-    if(url!==apiURL&&!safeDownload(url))throw Error('Untrusted update download');
-    const response=await fetcher(url,{redirect:'manual',headers:{Accept:url===apiURL?'application/vnd.github+json':'application/octet-stream','User-Agent':'QuietShelf updater'},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(installer?600000:20000)]):AbortSignal.timeout(installer?600000:20000)});
-    if(response.status>=300&&response.status<400){url=new URL(response.headers.get('Location'),url).href;continue}
-    if(!response.ok)throw Error('Update service unavailable');return response;
-  }
-  throw Error('Too many update redirects');
-}
-async function limitedText(response,limit){let length=0,chunks=[];for await(const chunk of response.body){length+=chunk.length;if(length>limit)throw Error('Update metadata too large');chunks.push(chunk)}return Buffer.concat(chunks).toString('utf8')}
-export async function latestUpdate(current,{fetcher=fetch,signal}={}){
-  let release=JSON.parse(await limitedText(await get(apiURL,fetcher,signal),256*1024));
-  if(release.draft||release.prerelease||!newerVersion(release.tag_name,current))return null;
-  let version=versionParts(release.tag_name).join('.'),filename=`Quiet-Shelf-Setup-${version}-x64.exe`;
-  let asset=(release.assets||[]).find(a=>a.name===filename),checksum=(release.assets||[]).find(a=>a.name==='SHA256SUMS.txt');
-  let expectedRoot=downloadRoot+encodeURIComponent(release.tag_name)+'/';
-  if(!asset||!checksum||asset.browser_download_url!==expectedRoot+filename||checksum.browser_download_url!==expectedRoot+'SHA256SUMS.txt'||!Number.isSafeInteger(asset.size)||asset.size<2||asset.size>maxInstaller)throw Error('The release has no valid Windows installer');
-  let manifest=await limitedText(await get(checksum.browser_download_url,fetcher,signal),20*1024);
-  let entries=manifest.split(/\r?\n/).map(line=>line.match(/^([a-f0-9]{64})\s+\*?(.+)$/i)).filter(m=>m&&m[2]===filename);
-  if(entries.length!==1)throw Error('The installer checksum is missing or ambiguous');
-  let sha256=entries[0][1].toLowerCase();
-  if(asset.digest&&asset.digest!=='sha256:'+sha256)throw Error('The release checksums disagree');
-  return {version,filename,url:asset.browser_download_url,size:asset.size,sha256};
-}
 async function validFile(path,update){try{let hash=createHash('sha256'),size=0,header=Buffer.alloc(0);for await(let chunk of createReadStream(path)){size+=chunk.length;if(size>update.size)return false;if(header.length<2)header=Buffer.concat([header,chunk]).subarray(0,2);hash.update(chunk)}return size===update.size&&header.toString()==='MZ'&&hash.digest('hex')===update.sha256}catch{return false}}
 export async function downloadUpdate(update,directory,{fetcher=fetch,signal,onProgress=()=>{},onVerifying=()=>{}}={}){
   if(!versionParts(update.version)||update.filename!==`Quiet-Shelf-Setup-${update.version}-x64.exe`||!safeDownload(update.url)||!/^[a-f0-9]{64}$/.test(update.sha256)||!Number.isSafeInteger(update.size)||update.size<2||update.size>maxInstaller)throw Error('Invalid update');
@@ -53,56 +25,46 @@ export async function downloadUpdate(update,directory,{fetcher=fetch,signal,onPr
   }finally{await rm(partial,{force:true})}
 }
 
-export function createUpdateController({app,dialog,shell,getWindow,fetcher=fetch,spawnInstaller=spawn,clock=Date.now,enabled=true}){
-  const folder=join(app.getPath('userData'),'updates'),stateFile=join(folder,'check.json');
-  const abort=new AbortController();let running=null,pendingInstall=null;
-  let status={phase:'idle',version:'',progress:null,downloaded:0,total:0,visible:false};
-  function report(phase,values={}){status={phase,version:'',progress:null,downloaded:0,total:0,visible:true,...values}}
-  async function message(options){const window=getWindow();if(!window)return {response:1};return dialog.showMessageBox(window,{title:'Quiet Shelf updates',...options})}
-  async function confirmInstall(){
-    if(!pendingInstall||status.phase!=='ready')return;
-    const restart=await message({message:'Your update is ready.',detail:'Restart Quiet Shelf to install it. Finish any unsaved title entry first.',buttons:['Restart and update','Later'],defaultId:0,cancelId:1});
-    if(restart.response!==0)return;
-    const {installer,update}=pendingInstall;
-    report('installing',{version:update.version,progress:1,downloaded:update.size,total:update.size});
-    if(!await validFile(installer,update))throw Error('Installer verification failed');
-    const child=spawnInstaller(installer,['/S',`/UPDATEPID=${process.pid}`,'/RESTARTAPP'],{detached:true,stdio:'ignore',windowsHide:true});
-    await new Promise((resolve,reject)=>{child.once('error',reject);child.once('spawn',resolve)});
-    child.unref();app.quit();
-  }
-  async function failed(interactive){
-    getWindow()?.setProgressBar(-1);
-    if(abort.signal.aborted)return;
-    report(interactive?'error':'idle',{visible:interactive});
-    if(interactive){
-      const answer=await message({message:'The update could not be completed.',detail:'Your current installation is unchanged. Try again later or download the installer from GitHub.',buttons:['Open downloads','Close'],defaultId:1,cancelId:1});
-      if(answer.response===0)await shell.openExternal(RELEASES_URL);
-    }
-  }
-  async function run(manual){
-    let interactive=manual;
-    if(manual)report('checking');
-    let last=0;try{last=JSON.parse(await readFile(stateFile,'utf8')).checkedAt}catch{}
-    if(!manual&&last>0&&Number.isFinite(last)&&clock()>=last&&clock()-last<24*60*60*1000)return;
-    try{
-      report('checking',{visible:manual});
-      let update=await latestUpdate(app.getVersion(),{fetcher,signal:abort.signal});
-      await mkdir(folder,{recursive:true,mode:0o700});await writeFile(stateFile,JSON.stringify({checkedAt:clock()}),{mode:0o600});
-      if(!update){report(manual?'up-to-date':'idle',{visible:manual});if(manual)await message({message:'Quiet Shelf is up to date.',buttons:['OK']});return}
-      report('available',{version:update.version,total:update.size});
-      const choice=await message({message:`Quiet Shelf ${update.version} is available.`,detail:'Download the update now? Your library and saved settings will stay on this computer.',buttons:['Download update','Later'],defaultId:0,cancelId:1});
-      if(choice.response!==0)return;interactive=true;
-      report('downloading',{version:update.version,progress:0,total:update.size});
-      const installer=await downloadUpdate(update,folder,{fetcher,signal:abort.signal,onProgress:(progress,bytes)=>{report('downloading',{version:update.version,progress,...bytes});getWindow()?.setProgressBar(progress)},onVerifying:()=>report('verifying',{version:update.version,progress:1,downloaded:update.size,total:update.size})});
-      getWindow()?.setProgressBar(-1);
-      pendingInstall={installer,update};
-      report('ready',{version:update.version,progress:1,downloaded:update.size,total:update.size});
-      await confirmInstall();
-    }catch(error){
-      // Startup checks remain quiet when offline. An explicitly requested update gets feedback.
-      await failed(interactive);
-    }
-  }
-  function enqueue(work){if(!running)running=work().finally(()=>{running=null});return running}
-  return {getStatus(){return {...status,enabled}},check({manual=false}={}){return enabled?enqueue(()=>run(manual)):Promise.resolve()},install(){return enabled?enqueue(()=>confirmInstall().catch(()=>failed(true))):Promise.resolve()},dispose(){abort.abort()}};
+export function createUpdateController({app,dialog,getWindow,fetcher=fetch,spawnInstaller=spawn,clock=Date.now,enabled=true,network=async()=>({online:true,metered:false})}){
+ const folder=join(app.getPath('userData'),'updates'),stateFile=join(folder,'check.json'),abort=new AbortController();
+ let running=null,pendingInstall=null,available=null,lastChecked=0,lastAttempt=0,autoCheck=true,reportedNetwork={online:true,metered:false},observedNetwork={},saveQueue=Promise.resolve(),activeAutomaticCheck=null;
+ let status={phase:'idle',version:'',progress:null,downloaded:0,total:0,visible:false};
+ const ready=(async()=>{try{const saved=JSON.parse(await readFile(stateFile,'utf8'));if(typeof saved.autoCheck==='boolean')autoCheck=saved.autoCheck;if(Number.isFinite(saved.checkedAt)&&saved.checkedAt>0)lastChecked=saved.checkedAt;const u=saved.available;if(u&&newerVersion(u.version,app.getVersion())&&u.filename===`Quiet-Shelf-Setup-${u.version}-x64.exe`&&u.url==='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/download/v'+u.version+'/'+u.filename&&Number.isSafeInteger(u.size)&&u.size>=2&&u.size<=300*1024*1024&&/^[a-f0-9]{64}$/.test(u.sha256)){available=u;status={...status,phase:'available',version:u.version,total:u.size}}else if(lastChecked)status={...status,phase:'up-to-date'}}catch{}})();
+ const paused=()=>!autoCheck?'disabled':observedNetwork.online===false||reportedNetwork.online===false?'offline':observedNetwork.metered===true||reportedNetwork.metered===true?'metered':null;
+ const snapshot=()=>({...status,enabled,autoCheck,lastChecked,pausedReason:paused()});
+ function report(phase,values={}){status={phase,version:'',progress:null,downloaded:0,total:0,visible:false,...values}}
+ function persist(){const data=JSON.stringify({checkedAt:lastChecked,autoCheck,available});saveQueue=saveQueue.catch(()=>{}).then(async()=>{await mkdir(folder,{recursive:true,mode:0o700});await writeFile(stateFile+'.tmp',data,{mode:0o600});await rename(stateFile+'.tmp',stateFile)});return saveQueue}
+ async function inspectNetwork(){try{observedNetwork=await network()}catch{observedNetwork={}}}
+ async function confirmInstall(){
+  if(!pendingInstall||status.phase!=='ready')return;
+  const window=getWindow();if(!window)return;
+  const answer=await dialog.showMessageBox(window,{title:'Quiet Shelf updates',message:'Your update is ready.',detail:'Restart Quiet Shelf to install it. Finish any unsaved title entry first.',buttons:['Restart and update','Later'],defaultId:0,cancelId:1});
+  if(answer.response!==0)return;
+  const {installer,update}=pendingInstall;
+  if(!await validFile(installer,update))throw Error('Installer verification failed');
+  report('installing',{version:update.version,progress:1,downloaded:update.size,total:update.size,visible:true});
+  const child=spawnInstaller(installer,['/S',`/UPDATEPID=${process.pid}`,'/RESTARTAPP'],{detached:true,stdio:'ignore',windowsHide:true});
+  await new Promise((resolve,reject)=>{child.once('error',reject);child.once('spawn',resolve)});child.unref();app.quit();
+ }
+ function failed(){getWindow()?.setProgressBar(-1);if(!abort.signal.aborted)report('error',{visible:false})}
+ async function run(manual){
+  await ready;await inspectNetwork();
+  if(observedNetwork.online===false||reportedNetwork.online===false||!manual&&paused())return;
+  if(pendingInstall&&status.phase!=='error')return;if(status.phase==='error')pendingInstall=null;
+  if(!manual&&(lastChecked>0&&clock()>=lastChecked&&clock()-lastChecked<86400000||lastAttempt>0&&clock()>=lastAttempt&&clock()-lastAttempt<300000))return;
+  lastAttempt=clock();const before=status,requestAbort=new AbortController();if(!manual)activeAutomaticCheck=requestAbort;report('checking');
+  try{const found=await latestUpdate(app.getVersion(),{fetcher,signal:AbortSignal.any([abort.signal,requestAbort.signal])});if(requestAbort.signal.aborted){status=before;lastAttempt=0;return}available=found;lastChecked=clock();await persist();report(available?'available':'up-to-date',available?{version:available.version,total:available.size}:{})}catch{if(requestAbort.signal.aborted){status=before;lastAttempt=0}else failed()}finally{if(activeAutomaticCheck===requestAbort)activeAutomaticCheck=null}
+ }
+ async function download(){
+  await ready;await inspectNetwork();if(observedNetwork.online===false||reportedNetwork.online===false)return;
+  if(pendingInstall){report('ready',{version:pendingInstall.update.version,progress:1,downloaded:pendingInstall.update.size,total:pendingInstall.update.size,visible:true});return}
+  if(!available)await run(true);if(!available||abort.signal.aborted)return;
+  const update=available;report('downloading',{version:update.version,progress:0,total:update.size,visible:true});
+  try{
+   const installer=await downloadUpdate(update,folder,{fetcher,signal:abort.signal,onProgress:(progress,bytes)=>{report('downloading',{version:update.version,progress,...bytes,visible:true});getWindow()?.setProgressBar(progress)},onVerifying:()=>report('verifying',{version:update.version,progress:1,downloaded:update.size,total:update.size,visible:true})});
+   getWindow()?.setProgressBar(-1);pendingInstall={installer,update};report('ready',{version:update.version,progress:1,downloaded:update.size,total:update.size,visible:true});
+  }catch{failed()}
+ }
+ function enqueue(work){if(!running)running=work().finally(()=>{running=null});return running}
+ return {ready,getStatus:snapshot,async configure({autoCheck:next,online,metered}){await ready;if(typeof next!=='boolean')throw Error('Invalid update preference');const wasPaused=paused();if(typeof online==='boolean')reportedNetwork.online=online;if(typeof metered==='boolean')reportedNetwork.metered=metered;if(autoCheck!==next){autoCheck=next;if(paused())activeAutomaticCheck?.abort();await persist()}await inspectNetwork();if(paused())activeAutomaticCheck?.abort();else if(wasPaused&&enabled)void enqueue(()=>run(false));return snapshot()},check({manual=false}={}){return enabled?enqueue(()=>run(manual)):Promise.resolve()},download(){return enabled?enqueue(download):Promise.resolve()},install(){return enabled?enqueue(()=>confirmInstall().catch(failed)):Promise.resolve()},dispose(){abort.abort()}};
 }

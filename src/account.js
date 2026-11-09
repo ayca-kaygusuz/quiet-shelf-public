@@ -98,7 +98,7 @@
   const conflicts=account&&linked?localDocument().conflicts:[];$('#syncConflictsSection').hidden=!conflicts.length;
   $('#syncConflicts').innerHTML=conflicts.map((conflict,i)=>{const p=conflict.parts,book=localDocument().library.find(b=>b.id===p[1]),label=p[0]==='p'?'View preference · '+p.slice(1).join(' / '):(book?.title||'Title '+p[1])+' · '+(p[2]==='field'?p[3]:p[2]);return '<div class="sync-conflict"><strong>'+App.esc(label)+'</strong><label class="sr-only" for="conflict-'+i+'">Value to keep</label><select id="conflict-'+i+'">'+conflict.choices.map((value,n)=>'<option value="'+n+'">'+App.esc(p[2]==='present'?value?'Keep this title':'Keep deleted':value===null?'Remove this value':typeof value==='string'?value:JSON.stringify(value))+'</option>').join('')+'</select><button data-resolve-conflict="'+i+'" type="button">Keep selected value</button></div>'}).join('');
   const options=recoveryOptions(),selected=$('#recoveryChoice').value;$('#recoverySection').hidden=!options.length;$('#recoveryChoice').innerHTML=options.map(option=>'<option value="'+App.esc(option.value)+'">'+App.esc(option.label)+'</option>').join('');if(options.some(o=>o.value===selected))$('#recoveryChoice').value=selected;
-  renderSetup();renderSyncIndicator();
+  renderSetup();renderSyncIndicator();root.QuietShelfUpdates?.connectionChanged();
  }
  function recordChange(){
   if(applying||!workspaceReady)return;

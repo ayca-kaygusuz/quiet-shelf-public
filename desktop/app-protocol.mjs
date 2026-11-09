@@ -27,9 +27,16 @@ export function createAppHandler({html,catalog,updates,assets={},account}){
       if(u.pathname==='/api/update-action'&&request.method==='POST'){
         if(updates.getStatus().enabled===false||request.headers.get('X-Quiet-Shelf-Update')!=='1')return new Response('Invalid update request',{status:403});
         const action=u.searchParams.get('action');
-        if(!['check','install'].includes(action))return new Response('Invalid update action',{status:400});
+        if(!['check','install','download','configure'].includes(action))return new Response('Invalid update action',{status:400});
+        if(action==='configure'){
+          if(Number(request.headers.get('Content-Length'))>1024)return new Response('Update settings too large',{status:413});
+          const text=await request.text();if(text.length>1024)return new Response('Update settings too large',{status:413});
+          let value;try{value=JSON.parse(text)}catch{return new Response('Invalid update settings',{status:400})}
+          if(!value||typeof value.autoCheck!=='boolean'||Object.keys(value).some(k=>!['autoCheck','online','metered'].includes(k))||['online','metered'].some(k=>value[k]!==undefined&&typeof value[k]!=='boolean'))return new Response('Invalid update settings',{status:400});
+          try{return Response.json(await updates.configure(value),{headers:{'Cache-Control':'no-store'}})}catch{return new Response('Update preference could not be saved',{status:500})}
+        }
         if(action==='install'&&updates.getStatus().phase!=='ready')return new Response('The update is not ready',{status:409});
-        void (action==='install'?updates.install():updates.check({manual:true})).catch(()=>{});
+        void (action==='install'?updates.install():action==='download'?updates.download():updates.check({manual:true})).catch(()=>{});
         return Response.json(updates.getStatus(),{status:202,headers:{'Cache-Control':'no-store'}});
       }
       return new Response('Method not allowed',{status:405});

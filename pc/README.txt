@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.13.1
+QUIET SHELF — PC VERSION 0.14.0
 
 THIS PACKAGE IS THE LOCAL BROWSER VERSION
 A separate installable Windows app is also available from the public repository's
@@ -120,3 +120,9 @@ browser cookies. Each browser profile has its own Google connection.
 Public web deployments use their server's Web OAuth configuration instead;
 those credentials are never bundled into this local browser ZIP. Android/iOS
 native apps and public hosting deployment remain future work.
+
+Account → App updates now shows quiet release-check status and a saved Automatic
+update checks toggle. Offline/metered connections pause automatic checks; manual
+checks remain available when online. A newer browser release links to its ZIP.
+The toggle is included in JSON backups and optional Drive preferences. Browser
+updates still require replacing the local files and restarting this server.

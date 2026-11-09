@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.13.1.**
+A personal reading tracker for books, manga and comics. **Current version: 0.14.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads, and optional Google Drive sync in the Windows app.
@@ -41,9 +41,26 @@ installed files, not arbitrary files added to the installation folder.
 
 ### Windows updates
 
-From version 0.11.0, the installed Windows app checks the public GitHub releases
-on startup and daily while open. Only newer stable releases are offered. You
-can also press **Alt**, then choose **Help → Check for updates…**.
+Open **Account → App updates** for a quiet runtime status: a newer version,
+a downloaded update, the last successful check, or a check failure. Automatic
+checks are on by default and run at startup and at most once per day while open.
+They pause while offline, on a metered connection, or when **Automatic update
+checks** is switched off. The card explains the current pause reason. Network
+conditions are rechecked while the app stays open, so eligible checks resume
+without restarting.
+
+**Check for updates** works independently of the automatic-check toggle and can
+be used on a metered connection. Finding an update never opens a prompt or
+starts a download. The toggle is saved with library preferences, included in
+version-2 JSON backups and shared through optional Drive sync. Runtime check
+history and connection cost stay local. On Windows, a profile-local mirror lets
+the background updater honor the preference before the interface opens. Legacy
+backups default to automatic checks on.
+
+The browser version has the same status, toggle and manual check, with a link
+to the matching browser package when newer source is released. It does not
+replace its own running files or install a Windows executable. Hosted browser
+code still updates when deployed. The native Help menu also has a manual check.
 
 Choose **Download update** and, when ready, **Restart and update**. The app
 verifies the installer checksum, closes, installs the update and reopens.
@@ -54,7 +71,7 @@ the download. A ready update can be installed from the card without downloading
 it again. The indicator follows Dark Ink or Paper Grove and complements the
 Windows taskbar progress bar.
 
-Choosing **Later** leaves the current version running. Updates keep library
+Download only when you choose; confirming **Restart and update** is required to install. Updates keep library
 records, reading history, theme preferences and the separately saved Google key.
 Offline startup stays quiet. Checks send no library records or Google key to GitHub.
 
@@ -444,7 +461,8 @@ Main files:
 | `pc/server.mjs` | Local browser HTTP server |
 | `desktop/main.mjs` | Separate Windows app window and local profile |
 | `desktop/app-protocol.mjs` | In-process app/catalog routing and navigation policy |
-| `desktop/updates.mjs` | GitHub release checks and verified Windows update downloads |
+| `desktop/updates.mjs` | Saved background-check policy and verified Windows update downloads |
+| `src/releases.mjs` | Shared trusted release metadata and browser update-check adapter |
 | `scripts/check-windows-update.ps1` | Installed Windows upgrade/restart smoke check |
 | `scripts/build-windows.mjs` | Windows installer packaging |
 | `desktop/installer.nsi` | Per-user installation and data-preserving uninstall |

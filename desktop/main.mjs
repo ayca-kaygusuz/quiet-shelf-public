@@ -1,4 +1,4 @@
-import {app,BrowserWindow,Menu,protocol,shell,dialog,safeStorage} from 'electron';
+import {app,BrowserWindow,Menu,protocol,shell,dialog,safeStorage,net} from 'electron';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -33,8 +33,8 @@ else{
     app.setAppUserModelId('com.quietshelf.desktop');
     const html=readFileSync(join(here,'..','src','index.html'),'utf8');
     const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync(join(here,'..','src',name),'utf8')]));
-    updates=createUpdateController({app,dialog,shell,getWindow:()=>window,enabled:process.platform==='win32'&&app.isPackaged});
     googleAccount=createGoogleAccount({profile,safeStorage,developerControls:!app.isPackaged,...(app.isPackaged?{defaultClientId:'',defaultClientSecret:''}:{}),openExternal:url=>shell.openExternal(url)});
+    updates=createUpdateController({app,dialog,getWindow:()=>window,enabled:process.platform==='win32'&&app.isPackaged,network:async()=>({...await googleAccount.network(),online:net.isOnline()})});
     protocol.handle('quiet-shelf',createAppHandler({html,catalog,updates,assets,account:googleAccount}));
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       {label:'File',submenu:[{role:'quit'}]},
@@ -43,7 +43,7 @@ else{
       {label:'Help',submenu:[{label:'Check for updates…',enabled:process.platform==='win32'&&app.isPackaged,click:()=>void updates.check({manual:true}).catch(()=>{})}]}
     ]));
     createWindow();
-    if(process.platform==='win32'&&app.isPackaged){updateTimer=setTimeout(()=>void updates.check().catch(()=>{}),15000);updateTimer.unref?.();updateInterval=setInterval(()=>void updates.check().catch(()=>{}),24*60*60*1000);updateInterval.unref?.()}
+    if(process.platform==='win32'&&app.isPackaged){updateTimer=setTimeout(()=>void updates.check().catch(()=>{}),15000);updateTimer.unref?.();updateInterval=setInterval(()=>void updates.check().catch(()=>{}),60000);updateInterval.unref?.()}
     app.on('before-quit',()=>{clearTimeout(updateTimer);clearInterval(updateInterval);updates.dispose();googleAccount.dispose()});
     const session=window.webContents.session;
     session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));

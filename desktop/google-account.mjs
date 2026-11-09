@@ -64,5 +64,5 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
    return new Response('Not found',{status:404});
   }catch(e){return Response.json({error:e.message,code:e.code||'ACCOUNT_ERROR'},{status:e.code==='SIGN_IN_REQUIRED'?401:400,headers:{'Cache-Control':'no-store'}})}
  }
- return {handle,ready,status,dispose:closePending};
+ return {handle,ready,status,network,dispose:closePending};
 }

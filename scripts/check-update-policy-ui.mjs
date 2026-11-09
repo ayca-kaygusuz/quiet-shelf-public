@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+export async function checkUpdatePolicyUI({evaluate,capture,prefix}){
+ const off=await evaluate(`(async()=>{window.__quietShelfUpdateQA={snapshot:QuietShelfApp.snapshot(),status:{...desktopUpdateState},accountHidden:document.querySelector('#accountPage').hidden};if(document.querySelector('#accountPage').hidden)document.querySelector('#accountButton').click();document.querySelector('#autoUpdateChecks').checked=false;document.querySelector('#autoUpdateChecks').dispatchEvent(new Event('change',{bubbles:true}));await updateSettingsQueue;return {saved:QuietShelfApp.backup().preferences.autoUpdateChecks,policy:document.querySelector('#updateCheckPolicy').textContent}})()`);
+ assert.equal(off.saved,false);assert.match(off.policy,/checks are off/);
+ const restored=await evaluate(`(async()=>{QuietShelfApp.apply({...QuietShelfApp.snapshot(),preferences:{...QuietShelfApp.snapshot().preferences,autoUpdateChecks:false}});await updateSettingsQueue;const kept=!document.querySelector('#autoUpdateChecks').checked;document.querySelector('#autoUpdateChecks').checked=true;document.querySelector('#autoUpdateChecks').dispatchEvent(new Event('change',{bubbles:true}));await updateSettingsQueue;renderUpdateStatus({phase:'idle',pausedReason:'offline',lastChecked:Date.now(),enabled:true});const offline=document.querySelector('#updateCheckPolicy').textContent;renderUpdateStatus({phase:'available',version:'0.99.0',pausedReason:'metered',lastChecked:Date.now(),visible:false,enabled:true});return {kept,offline,policy:document.querySelector('#updateCheckPolicy').textContent,available:document.querySelector('#updateInlineStatus').textContent,quiet:document.querySelector('#updateCard').hidden}})()`);
+ assert.equal(restored.kept,true);assert.match(restored.offline,/paused while offline/);assert.match(restored.policy,/metered connection/);assert.match(restored.available,/0.99.0 is available/);assert.equal(restored.quiet,true);
+ for(const theme of ['ink','sage']){
+  await evaluate(`document.querySelector('#theme').value=${JSON.stringify(theme)};document.querySelector('#theme').dispatchEvent(new Event('change',{bubbles:true}));window.scrollTo(0,0);true`);
+  await capture(prefix+'-'+theme);
+ }
+ await evaluate(`(async()=>{const before=window.__quietShelfUpdateQA;QuietShelfApp.apply(before.snapshot);await updateSettingsQueue;renderUpdateStatus(before.status);if(before.accountHidden)document.querySelector('#backToLibrary').click();delete window.__quietShelfUpdateQA;return true})()`);
+ console.log('PASS: '+prefix+' quiet inline update availability, offline/metered/disabled policy, saved/restored preference and both themes');
+}

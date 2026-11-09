@@ -3,7 +3,7 @@
  'use strict';
  const SCHEMA=1,MAX_BYTES=10*1024*1024;
  const fields=new Set(['title','author','description','color','collection','seriesMode','seriesName','seriesId','seriesVolume','createdAt','addedOrder','cover','publisher','publicationYear','binding','language','translator','isbn','source','sourceUrl','sourceId','recordKind','sample']);
- const prefs=new Set(['theme','includeArchive','includeWishlist','sort','search','collectionView','filter']);
+ const prefs=new Set(['theme','includeArchive','includeWishlist','autoUpdateChecks','sort','search','collectionView','filter']);
  const clone=v=>JSON.parse(JSON.stringify(v)),same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
  const key=parts=>JSON.stringify(parts),dotKey=h=>h.dot.join(':');
  function empty(){return {schema:SCHEMA,clock:{},registers:[]}}
@@ -18,7 +18,7 @@
    if(p[2]==='history')return plain(v)&&v.id===p[3]&&calendarDate(v.date)&&calendarDate(v.startDate)&&v.startDate<=v.date&&typeof v.startDateFromFinish==='boolean';
    return p[3]==='sample'?typeof v==='boolean':['seriesVolume','addedOrder'].includes(p[3])?Number.isFinite(v)&&v>=0:typeof v==='string'&&v.length<=10000&&(p[3]!=='title'||!!v.trim());
   }
-  if(v===null)return true;if(p[1]==='seriesState'||['includeArchive','includeWishlist'].includes(p[1]))return typeof v==='boolean';
+  if(v===null)return true;if(p[1]==='seriesState'||['includeArchive','includeWishlist','autoUpdateChecks'].includes(p[1]))return typeof v==='boolean';
   if(p[1]==='theme')return ['ink','sage'].includes(v);
   if(p[1]==='sort')return ['addedAsc','addedDesc','titleAsc','titleDesc','authorAsc','status','finishedDesc'].includes(v);
   if(p[1]==='collectionView')return ['library','archive','wishlist'].includes(v);

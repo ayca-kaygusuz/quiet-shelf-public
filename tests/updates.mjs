@@ -44,21 +44,30 @@ try{
  let prompts=[],spawned=[],quits=0,answers=[0,0],opened=[];
  const options={app:{getPath:name=>{assert.equal(name,'userData');return controllerRoot},getVersion:()=>'0.10.1',quit:()=>quits++},getWindow:()=>({setProgressBar(){}}),dialog:{showMessageBox:async(_window,options)=>{prompts.push(options);return {response:answers.shift()??1}}},shell:{openExternal:async u=>opened.push(u)},fetcher,clock:()=>2000000000000,spawnInstaller:(file,args,opts)=>{spawned.push({file,args,opts});const child=new EventEmitter();child.unref=()=>{};queueMicrotask(()=>child.emit('spawn'));return child}};
  let controller=createUpdateController(options);const first=controller.check({manual:true});assert.equal(controller.check({manual:true}),first,'overlapping requests share one update flow');await first;
- assert.equal(prompts.length,2);assert.equal(spawned.length,1);assert.equal(quits,1);assert(spawned[0].args.includes('/RESTARTAPP'));assert(spawned[0].args.some(a=>a.startsWith('/UPDATEPID=')));assert.equal(spawned[0].opts.detached,true);
+ assert.equal(controller.getStatus().phase,'available');assert.equal(prompts.length,0,'finding an update stays inline, even for manual checks');assert.equal(spawned.length,0);
+ await controller.download();assert.equal(controller.getStatus().phase,'ready');assert.equal(prompts.length,0,'downloading does not interrupt with a restart prompt');await controller.install();
+ assert.equal(prompts.length,1);assert.equal(spawned.length,1);assert.equal(quits,1);assert(spawned[0].args.includes('/RESTARTAPP'));assert(spawned[0].args.some(a=>a.startsWith('/UPDATEPID=')));assert.equal(spawned[0].opts.detached,true);
  assert.equal(await readFile(sentinel,'utf8'),'existing personal data');
- const after=calls.length;await controller.check();assert.equal(calls.length,after,'automatic checks are limited to daily');
- answers=[1];await controller.check({manual:true});assert.equal(spawned.length,1,'Later never installs');
- controller.dispose();
-
- prompts=[];const offline=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'offline')},fetcher:async()=>{throw Error('Offline')}});
- await offline.check();assert.equal(prompts.length,0,'offline startup is quiet');await offline.check({manual:true});assert.equal(prompts.length,1);assert.equal(spawned.length,1);offline.dispose();
- prompts=[];answers=[0,1];badBytes=true;
- const damaged=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'damaged')}});await damaged.check({manual:true});assert.equal(spawned.length,1,'unverified installers never execute');assert.equal(quits,1);assert(prompts.some(p=>p.message==='The update could not be completed.'));damaged.dispose();
+ const after=calls.length;await controller.check();assert.equal(calls.length,after,'automatic checks are limited to daily');controller.dispose();
+ let online=true,metered=true;prompts=[];
+ const paused=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'paused')},network:async()=>({online,metered})});
+ let before=calls.length;await paused.check();assert.equal(calls.length,before);assert.equal(paused.getStatus().pausedReason,'metered');
+ await paused.check({manual:true});assert.equal(paused.getStatus().phase,'available');assert.equal(prompts.length,0);assert.equal(spawned.length,1,'metadata checks never download or install');
+ await paused.configure({autoCheck:false});assert.equal(paused.getStatus().pausedReason,'disabled');before=calls.length;await paused.check();assert.equal(calls.length,before);paused.dispose();
+ const remembered=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'paused')},network:async()=>({online,metered})});await remembered.ready;assert.equal(remembered.getStatus().autoCheck,false);assert.equal(remembered.getStatus().phase,'available','last-known availability survives restart');
+ await remembered.configure({autoCheck:true});online=false;await remembered.check({manual:true});assert.equal(remembered.getStatus().pausedReason,'offline');remembered.dispose();
+ let startedCheck;const beganCheck=new Promise(resolve=>startedCheck=resolve);
+ const interrupted=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'interrupted')},fetcher:async(_url,{signal})=>{startedCheck();return new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>reject(Error('Cancelled')),{once:true}))}});
+ const checking=interrupted.check();await beganCheck;await interrupted.configure({autoCheck:false});await checking;assert.equal(interrupted.getStatus().pausedReason,'disabled');assert.notEqual(interrupted.getStatus().phase,'error','stopping an automatic check is not reported as a failure');assert.equal(interrupted.getStatus().lastChecked,0);interrupted.dispose();
+ const offline=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'offline')},fetcher:async()=>{throw Error('Offline')}});
+ await offline.check();assert.equal(prompts.length,0,'unreachable update service stays quiet');assert.equal(offline.getStatus().phase,'error');await offline.check({manual:true});assert.equal(prompts.length,0);assert.equal(spawned.length,1);assert.equal(offline.getStatus().lastChecked,0);offline.dispose();
+ prompts=[];badBytes=true;
+ const damaged=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'damaged')}});await damaged.check({manual:true});await damaged.download();assert.equal(damaged.getStatus().phase,'error');assert.equal(spawned.length,1,'unverified installers never execute');assert.equal(quits,1);assert.equal(prompts.length,0);damaged.dispose();
  // A paused stream lets the renderer read real download state before completion.
- badBytes=false;answers=[0,1];let stream,visible,downloadStarted,phases=[];
+ badBytes=false;answers=[1];let stream,visible,downloadStarted,phases=[];
  const started=new Promise(resolve=>downloadStarted=resolve);
  visible=createUpdateController({...options,app:{...options.app,getPath:()=>join(root,'visible')},fetcher:async(u,o)=>u.endsWith('.exe')?new Response(new ReadableStream({start(controller){stream=controller;controller.enqueue(bytes.subarray(0,4))}})):fetcher(u,o),getWindow:()=>({setProgressBar(progress){phases.push(visible.getStatus().phase);if(progress>0&&progress<1)downloadStarted()}})});
- const flow=visible.check({manual:true});await started;
+ await visible.check({manual:true});const flow=visible.download();await started;
  const state=visible.getStatus();assert.equal(state.phase,'downloading');assert.equal(state.downloaded,4);assert.equal(state.total,bytes.length);assert.equal(state.progress,4/bytes.length);
  state.phase='tampered';assert.equal(visible.getStatus().phase,'downloading','state snapshots are read-only copies');
  const indicator=createAppHandler({html:readFileSync('src/index.html','utf8'),catalog:()=>{throw Error('Updates must not call a book source')},updates:visible});
@@ -66,6 +75,10 @@ try{
  let response=await indicator(new Request(statusURL));assert.equal(response.status,200);assert.equal(response.headers.get('Cache-Control'),'no-store');
  const payload=await response.json();assert.equal(payload.downloaded,4);assert(!JSON.stringify(payload).includes(root));assert(!JSON.stringify(payload).includes('test-only-key'));
  const headers={'X-Quiet-Shelf-Update':'1',Origin:APP_ORIGIN};
+ assert.equal((await indicator(new Request(actionURL+'?action=configure',{method:'POST',headers,body:JSON.stringify({autoCheck:'false'})}))).status,400);
+ assert.equal((await indicator(new Request(actionURL+'?action=configure',{method:'POST',headers,body:JSON.stringify({autoCheck:false,library:[]})}))).status,400);
+ assert.equal((await indicator(new Request(actionURL+'?action=configure',{method:'POST',headers,body:JSON.stringify({autoCheck:false,online:true,metered:false})}))).status,200);
+ assert.equal(visible.getStatus().autoCheck,false);
  assert.equal((await indicator(new Request(actionURL+'?action=install',{method:'POST',headers}))).status,409);
  assert.equal((await indicator(new Request(actionURL+'?action=check',{method:'POST'}))).status,403);
  assert.equal((await indicator(new Request(actionURL+'?action=check',{method:'POST',headers:{...headers,Origin:'https://evil.com'}}))).status,403);
@@ -74,8 +87,8 @@ try{
  assert.equal((await indicator(new Request(actionURL,{method:'OPTIONS'}))).status,405);
  assert.equal((await indicator(new Request(actionURL+'?action=execute-file',{method:'POST',headers}))).status,400);
  stream.enqueue(bytes.subarray(4));stream.close();await flow;
- assert(phases.includes('verifying'));assert.equal(visible.getStatus().phase,'ready');assert.equal(spawned.length,1,'Later keeps the verified update ready without installation');
+ assert(phases.includes('verifying'));assert.equal(visible.getStatus().phase,'ready');assert.equal(spawned.length,1,'downloads keep the verified update ready without installation');
  const beforeRestart=calls.length;answers=[0];response=await indicator(new Request(actionURL+'?action=install',{method:'POST',headers}));assert.equal(response.status,202);await visible.install();
  assert.equal(spawned.length,2);assert.equal(calls.length,beforeRestart,'ready updates install without another download');assert.equal(visible.getStatus().phase,'installing');visible.dispose();
- console.log('PASS: stable GitHub versions/assets, trusted URLs/redirects, bounded verified downloads, tampered cache recovery, no unverified execution, restart consent, daily/overlapping checks, offline behavior and preserved local data');
+ console.log('PASS: quiet availability, saved automatic-check preference, offline/metered pauses, manual metadata checks, explicit downloads/restart, stable GitHub versions/assets, trusted URLs/redirects, bounded verified downloads, tampered cache recovery, no unverified execution, restart consent, daily/overlapping checks, offline behavior and preserved local data');
 }finally{await rm(root,{recursive:true,force:true})}
