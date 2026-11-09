@@ -67,7 +67,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.15.0-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.16.0-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -233,3 +233,22 @@ For a cross-platform release, Windows Publish may use `draftOnly=true` to upload
 verified packages while Android runtime checks finish. The default publication
 behavior is unchanged. Publish the completed draft only after both checks pass,
 then promote the tested Android artifact from the identical source commit.
+
+
+## Read next (0.16.0)
+
+The shared read-next.js engine runs on-device. Generation is only explicit;
+metadata enrichment is a separate explicit ISBN request, never scheduled.
+readNext is an atomic workspace preference, not a list history. Statuses are
+read from the real book records; finished/archived/removed entries stay visible.
+Sequential replacement discards the old list; concurrent replacement is a
+reviewable whole-list sync conflict, never a union of both sets of entries.
+readingInfo/readNextExcluded/readNextFormat are validated book fields. Source
+adapters, backups and Drive share the same validation. Ship updated clients
+together; older clients reject unfamiliar fields without changing their shelf.
+All catalog sources now default to Any language; deliberate choices persist.
+
+Blackwell’s (UK) and Better World Books (US) are direct catalog sources. Their
+search/detail fetches use the shared adapter and bounded metadata cache. Keep
+their product/image hosts in the native allowlists. They never receive Books
+API keys or Google account credentials.

@@ -32,7 +32,7 @@ else{
     // A stable profile keeps this app's records separate from every browser profile.
     app.setAppUserModelId('com.quietshelf.desktop');
     const html=readFileSync(join(here,'..','src','index.html'),'utf8');
-    const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync(join(here,'..','src',name),'utf8')]));
+    const assets=Object.fromEntries(['read-next.js','sync-core.js','account.js'].map(name=>['/'+name,readFileSync(join(here,'..','src',name),'utf8')]));
     googleAccount=createGoogleAccount({profile,safeStorage,developerControls:!app.isPackaged,...(app.isPackaged?{defaultClientId:'',defaultClientSecret:''}:{}),openExternal:url=>shell.openExternal(url)});
     updates=createUpdateController({app,dialog,getWindow:()=>window,enabled:process.platform==='win32'&&app.isPackaged,network:async()=>({...await googleAccount.network(),online:net.isOnline()})});
     protocol.handle('quiet-shelf',createAppHandler({html,catalog,updates,assets,account:googleAccount}));

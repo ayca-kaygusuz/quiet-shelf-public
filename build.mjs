@@ -6,7 +6,7 @@ if(JSON.parse(readFileSync('package.json','utf8')).version!==APP_VERSION)throw E
 mkdirSync('work',{recursive:true});
 let desktopConfiguration;try{const generated=JSON.parse(readFileSync('desktop/google-client.generated.json','utf8'));desktopConfiguration=googleDesktopConfiguration({clientId:generated.clientId,credentialValue:generated.clientSecret})}catch(error){if(error.code!=='ENOENT'&&process.env.CI)throw Error('The browser package requires valid installed-app configuration.')}
 if(desktopConfiguration)writeFileSync('pc/google-client.generated.json',JSON.stringify(desktopConfiguration));
-const files=['src/index.html','src/catalog.mjs','src/sync-core.js','src/account.js','src/drive.mjs','src/google-oauth.mjs','src/web-account.mjs','src/releases.mjs','pc/server.mjs','pc/start-windows.bat','pc/start-mac.command','pc/README.txt','assets/Manrope-OFL.txt',...(desktopConfiguration?['pc/google-client.generated.json']:[])];
+const files=['src/index.html','src/catalog.mjs','src/read-next.js','src/sync-core.js','src/account.js','src/drive.mjs','src/google-oauth.mjs','src/web-account.mjs','src/releases.mjs','pc/server.mjs','pc/start-windows.bat','pc/start-mac.command','pc/README.txt','assets/Manrope-OFL.txt',...(desktopConfiguration?['pc/google-client.generated.json']:[])];
 execFileSync(process.platform==='win32'?'python':'python3',['-c',`import zipfile,json
 files=json.loads(${JSON.stringify(JSON.stringify(files))})
 with zipfile.ZipFile('work/quiet-shelf-pc.zip','w',zipfile.ZIP_DEFLATED) as z:
@@ -16,9 +16,9 @@ with zipfile.ZipFile('work/quiet-shelf-update.zip','w',zipfile.ZIP_DEFLATED) as 
   if name not in ['pc/start-mac.command','pc/README.txt']:z.write(name,name)
 `]);
 const html=readFileSync('src/index.html','utf8'),api=readFileSync('src/catalog.mjs','utf8');
-const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync('src/'+name,'utf8')]));
+const assets=Object.fromEntries(['read-next.js','sync-core.js','account.js'].map(name=>['/'+name,readFileSync('src/'+name,'utf8')]));
 const downloads={'/download/quiet-shelf-update.zip':readFileSync('work/quiet-shelf-update.zip').toString('base64'),'/download/quiet-shelf-pc.zip':readFileSync('work/quiet-shelf-pc.zip').toString('base64')};
-const sharedServer=['src/sync-core.js','src/google-oauth.mjs','src/drive.mjs','src/web-account.mjs','src/releases.mjs'].map(name=>readFileSync(name,'utf8').replace(/^import .*;\r?\n/gm,'')).join('\n');
+const sharedServer=['src/read-next.js','src/sync-core.js','src/google-oauth.mjs','src/drive.mjs','src/web-account.mjs','src/releases.mjs'].map(name=>readFileSync(name,'utf8').replace(/^import .*;\r?\n/gm,'')).join('\n');
 const worker=`
 const browserReleaseCheck=createBrowserReleaseHandler();
 export default {async fetch(request,env={}){

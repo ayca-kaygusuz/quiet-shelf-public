@@ -5,7 +5,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  const book={title:'Gachiakuta 1',author:'Kei Urana',publisher:'Athica Yayınları',publicationYear:'2025',binding:'Karton Kapaklı',language:'tr',source:'Nadir Kitap',sourceUrl:'https://www.nadirkitap.com/gachiakuta-1-kitap123.html',cover:'https://static.nadirkitap.com/fotograf/1/cover.jpg'};
  return {ok:true,json:async()=>String(url).startsWith('/api/book?')?book:{results:[book]}};
 }return {ok:true,json:async()=>String(url).startsWith('/api/book?')?{title:'The Valley Of Fear',isbn:'9786054782369',language:'en',source:'Kitapyurdu',sourceUrl:'https://www.kitapyurdu.com/kitap/the-valley-of-fear/318719.html'}:{results:[],isbnNotice:'This catalog did not return that ISBN. Paste its link.'}}}};vm.createContext(ctx);vm.runInContext(source,ctx);
-(async()=>{assert.equal(elements['#lookupSource'].value,'kitapyurdu');assert.equal(elements['#lookupLanguage'].value,'tr');elements['#lookup'].value='Gachiakuta';elements['#lookupSource'].value='openlibrary';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'en');await scheduled.pop()();assert(fetches.at(-1).includes('source=openlibrary&lang=en'));elements['#lookupLanguage'].value='fr';elements['#lookupLanguage'].onchange();await scheduled.pop()();assert(fetches.at(-1).includes('lang=fr'));assert.equal(JSON.parse(storage['quiet-shelf-search-v1']).lang,'fr');elements['#lookupSource'].value='google';elements['#lookupSource'].onchange();await scheduled.pop()();assert(fetches.at(-1).includes('source=google&lang=en'));
+(async()=>{assert.equal(elements['#lookupSource'].value,'kitapyurdu');assert.equal(elements['#lookupLanguage'].value,'');elements['#lookup'].value='Gachiakuta';elements['#lookupSource'].value='openlibrary';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'');await scheduled.pop()();assert(fetches.at(-1).includes('source=openlibrary&lang='));elements['#lookupLanguage'].value='fr';elements['#lookupLanguage'].onchange();await scheduled.pop()();assert(fetches.at(-1).includes('lang=fr'));assert.equal(JSON.parse(storage['quiet-shelf-search-v1']).lang,'fr');elements['#lookupSource'].value='google';elements['#lookupSource'].onchange();await scheduled.pop()();assert(fetches.at(-1).includes('source=google&lang='));
 // Pasting a key retries the failed query without editing the title; details and links retain it.
 assert.match(elements['#lookupStatus'].textContent,/quota/);
 const query=elements['#lookup'].value;
@@ -27,7 +27,7 @@ assert.equal(requests.at(-1).options.headers['X-Google-Api-Key'],'test-only-key'
 assert.match(elements['#lookupStatus'].textContent,/Exact edition/);
 assert.equal(storage['quiet-shelf-google-key-v1'],'test-only-key');
 for(const [key,value] of Object.entries(storage))if(key!=='quiet-shelf-google-key-v1')assert(!value.includes('test-only-key'));
-elements['#lookup'].value=query;elements['#lookupSource'].value='bkm';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'tr');assert.equal(elements['#lookupLanguage'].disabled,false);await scheduled.pop()();assert(fetches.at(-1).includes('source=bkm&lang=tr'));
+elements['#lookup'].value=query;elements['#lookupSource'].value='bkm';elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'');assert.equal(elements['#lookupLanguage'].disabled,false);await scheduled.pop()();assert(fetches.at(-1).includes('source=bkm&lang='));
 assert.equal(requests.at(-1).options.headers['X-Google-Api-Key'],undefined);
 const pending=scheduled.length;elements['#googleApiKey'].oninput();assert.equal(scheduled.length,pending);
 // A pasted catalog URL chooses its matching source and stays inside the app.
@@ -35,8 +35,8 @@ elements['#lookupSource'].value='openlibrary';elements['#lookupSource'].onchange
 elements['#lookup'].value='9786054782369';elements['#lookup'].oninput();await scheduled.pop()();assert.match(elements['#lookupStatus'].textContent,/Paste its link/);
 assert.equal(vm.runInContext("lookupLink('https://evil.com/kitap/title/318719.html')",ctx),null);assert.equal(vm.runInContext("lookupLink('http://www.kitapyurdu.com/kitap/title/318719.html')",ctx),null);
 elements['#lookupSource'].value='nadir';elements['#lookupSource'].onchange();await scheduled.pop()();
-assert.equal(elements['#lookupLanguage'].value,'tr');assert.equal(elements['#googleSettings'].hidden,true);
-assert(fetches.at(-1).includes('source=nadir&lang=tr'));assert.equal(requests.at(-1).options.headers['X-Google-Api-Key'],undefined);
+assert.equal(elements['#lookupLanguage'].value,'');assert.equal(elements['#googleSettings'].hidden,true);
+assert(fetches.at(-1).includes('source=nadir&lang='));assert.equal(requests.at(-1).options.headers['X-Google-Api-Key'],undefined);
 assert.equal(JSON.parse(storage['quiet-shelf-search-v1']).source,'nadir');
 elements['#lookup'].value='https://nadirkitap.com/gachiakuta-1-kitap123.html?ref=search#cover';elements['#lookup'].oninput();await scheduled.pop()();
 assert.match(fetches.at(-1),/^\/api\/book\?source=nadir&url=/);assert(!fetches.at(-1).includes('ref%3D'));
@@ -45,4 +45,6 @@ await elements['#lookupResults'].onclick({target:{closest:()=>({dataset:{result:
 assert.equal(elements['#title'].value,'Gachiakuta 1');assert.match(elements['#editionPreview'].innerHTML,/View edition on Nadir Kitap/);
 for(const url of ['https://user@www.nadirkitap.com/a-kitap123.html','https://www.nadirkitap.com:444/a-kitap123.html','https://evil.com/a-kitap123.html'])assert.equal(vm.runInContext('lookupLink('+JSON.stringify(url)+')',ctx),null);
 vm.runInContext('resetLookup()',ctx);assert.equal(elements['#googleApiKey'].value,'test-only-key');
+for(const value of ['kitapyurdu','bkm','nadir','openlibrary','google','blackwells','betterworld','anilist']){elements['#lookupSource'].value=value;elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'')}
+assert.equal(vm.runInContext("lookupLink('https://blackwells.co.uk/bookshop/product/a-title/9798225031299').source",ctx),'blackwells');assert.equal(vm.runInContext("lookupLink('https://www.betterworldbooks.com/product/detail/a-title-9781338878929').source",ctx),'betterworld');
 console.log('PASS: provider selection, default languages, remembered preference, selected-source requests, direct source selection, source changes restore controls')})().catch(e=>{console.error(e);process.exitCode=1});

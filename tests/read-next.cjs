@@ -1,0 +1,67 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const R=require('../src/read-next.js'),S=require('../src/sync-core.js');
+const book=(id,extra={})=>({id,title:'Story '+id,author:'Author',status:'Unread',history:[],...extra});
+const seriesInfo=b=>b.volume?{key:'series',volume:b.volume}:null;
+const shelf=Array.from({length:25},(_,i)=>book('solo-'+i));
+const random=seed=>()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)+1)/4294967297;
+const generate=(books,options={})=>R.generate(books,{random:random(9),id:'list',now:'2026-11-10T00:00:00.000Z',...options});
+const series=Array.from({length:19},(_,i)=>book('volume-'+(i+1),{volume:i+1,status:i<7?'Done':'Unread'}));
+let list=generate([...series,...shelf],{seriesInfo});
+assert(R.validList(list));assert.equal(list.entries.length,12);assert.equal(list.entries.filter(e=>e.bookId.startsWith('volume-')).length,1);
+assert(list.entries.some(e=>e.bookId==='volume-8'));assert(!list.entries.some(e=>e.bookId==='volume-9'));
+const frozen=JSON.stringify(list);series[7].status='Done';assert.equal(R.progress(list,series).find(e=>e.bookId==='volume-8').status,'Done');assert.equal(JSON.stringify(list),frozen,'finishing a volume must not advance or rewrite the saved list');
+list=generate([...series,...shelf],{seriesInfo,mode:'series'});assert(list.entries.some(e=>e.bookId==='volume-9'));assert(!list.entries.some(e=>e.bookId==='volume-10'));
+series[7].status='In progress';assert(!R.candidates([...series,...shelf],{seriesInfo}).some(e=>e.book.id.startsWith('volume-')),'never skip a volume currently being read');
+assert.equal(R.candidates([book('v7',{volume:7,status:'Done'}),book('v9',{volume:9})],{seriesInfo}).length,0,'missing volume 8 must not lead to volume 9');
+const first=generate(shelf),second=generate(shelf,{previous:first,random:random(9)});
+assert.notDeepEqual(new Set(second.entries.map(e=>e.bookId)),new Set(first.entries.map(e=>e.bookId)),'even a repeated RNG stream must change membership when alternatives exist');
+const small=generate(shelf.slice(0,4));assert.equal(small.entries.length,4);assert.equal(new Set(small.entries.map(e=>e.bookId)).size,4);
+assert.equal(generate([]),null);
+assert.equal(R.progress(first,[]).length,12);assert(R.progress(first,[]).every(e=>e.status==='Unavailable'),'removed titles remain recognizable in the checklist');
+
+const info=(pages,subjects=[],format='unknown')=>R.info({pages,subjects,format},'Fixture','9780140328721');
+const manga=book('manga',{readingInfo:info(200,['Comics & Graphic Novels / Manga'])});
+const novel=book('novel',{readingInfo:info(300,['Fiction / Fantasy'])});
+const giant=book('giant',{readingInfo:info(1600,['Graphic novels'])});
+assert(R.inferred(manga).minutes<R.inferred(novel).minutes);assert(R.inferred(giant).minutes>R.inferred(novel).minutes,'a giant comic must not always count as quicker than a novel');
+assert.equal(R.inferred(giant).effort,'Longer read · estimate');assert.equal(R.inferred(book('unknown')).effort,'Reading effort unknown');
+const unsuitable=[book('textbook',{title:'Japanese Grammar Workbook'}),book('dictionary',{title:'Japonca Türkçe Sözlük'}),book('excluded',{readNextExcluded:true}),book('wishlist',{collection:'wishlist'}),book('archive',{collection:'archive'}),book('done',{status:'Done'}),book('active',{status:'In progress'})];
+assert.equal(R.candidates(unsuitable).length,0);assert.equal(R.candidates([book('japanese-story',{title:'A Japanese Mystery'})]).length,1,'Japanese language alone does not make a book a textbook');
+assert.equal(R.candidates([novel,manga],{genre:'fantasy'}).length,1);assert.equal(R.candidates([book('reference',{readNextFormat:'reference'})]).length,0);
+const mergedInfo=R.mergeInfo({...info(null,['Fiction / Fantasy']),sources:['Kitapyurdu']},{...info(250),sources:['Open Library']},'9780140328721');assert.equal(mergedInfo.pages,250);assert.equal(mergedInfo.subjects[0],'Fiction / Fantasy');assert.deepEqual(mergedInfo.sources,['Kitapyurdu','Open Library']);
+assert.equal(R.isbn('0-14-032872-6'),'9780140328721');assert.equal(R.isbn('9780140328722'),'');
+assert(!R.validInfo({...info(100),access_token:'secret'}));assert(!R.validState({...R.empty(),history:[list]}));assert(!R.validList({...list,entries:[list.entries[0],list.entries[0]]}));
+const readingState={list:first,mode:'balanced',genre:'all'};
+let state=S.update(S.empty(),{library:[manga,...shelf],preferences:{readNext:readingState}},'initial');
+let doc=S.project(state);assert.deepEqual(doc.preferences.readNext,readingState);assert.deepEqual(doc.library.find(b=>b.id==='manga').readingInfo,manga.readingInfo);
+const replacement={...readingState,list:second};state=S.update(state,{...doc,preferences:{readNext:replacement}},'replace');assert.equal(state.registers.filter(([k])=>k==='["p","readNext"]').length,1);assert.equal(new Map(state.registers).get('["p","readNext"]').length,1,'only the current list remains after sequential replacement');
+const other=S.update(S.empty(),{library:shelf,preferences:{readNext:{...readingState,list:generate(shelf,{random:random(18),id:'other'})}}},'other');
+const merged=S.project(S.merge(state,other));assert(merged.conflicts.some(c=>c.parts[1]==='readNext'));assert.equal(merged.preferences.readNext.list.entries.length,12,'concurrent lists must not be concatenated');
+assert.throws(()=>S.update(S.empty(),{library:shelf,preferences:{readNext:{...R.empty(),list:{...first,entries:[...first.entries,...first.entries]}}}},'bad'));
+// Exercise the real shared interface, including storage, confirmation and manual-only fetch.
+const html=fs.readFileSync('src/index.html','utf8'),inline=html.match(/<script>([\s\S]*)<\/script>/)[1];
+function launch(records=shelf,storage={}){
+ const els={},requests=[],prompts=[];let accept=true,failWrite=false,respond=null;
+ storage['quiet-shelf-v1']??=JSON.stringify(records);
+ const element=s=>els[s]??={value:'',checked:false,innerHTML:'',textContent:'',hidden:false,disabled:false,style:{},setAttribute(){},addEventListener(){},querySelector:()=>({disabled:false}),focus(){},setCustomValidity(){}};
+ const ctx={console,URL,Blob,AbortController,crypto:require('node:crypto').webcrypto,location:{protocol:'http:',hostname:'localhost'},navigator:{onLine:true},setTimeout:()=>0,clearTimeout(){},confirm:q=>{prompts.push(q);return accept},localStorage:{getItem:k=>storage[k]??null,setItem:(k,v)=>{if(failWrite)throw Error('full');storage[k]=v},removeItem:k=>delete storage[k]},document:{documentElement:{setAttribute(){}},querySelector:element,querySelectorAll:()=>[],addEventListener(){}},fetch:async(url,options)=>{requests.push({url,options});return respond?respond(url,options):Response.json({results:[]})}};
+ vm.createContext(ctx);vm.runInContext(fs.readFileSync('src/read-next.js','utf8'),ctx);vm.runInContext(inline,ctx);
+ return {ctx,storage,requests,prompts,element,run:s=>vm.runInContext(s,ctx),accept:v=>accept=v,fail:v=>failWrite=v,respond:fn=>respond=fn};
+}
+(async()=>{
+ const a=launch();assert.equal(a.run('readNextState.list'),null);assert.equal(a.requests.length,0);
+ a.element('#nextGenerate').onclick();const before=a.run('JSON.stringify(readNextState.list)');assert.equal(a.requests.length,0,'generation cannot use the network');
+ a.accept(false);a.element('#nextGenerate').onclick();assert.equal(a.run('JSON.stringify(readNextState.list)'),before);assert.match(a.prompts[0],/unfinished/);
+ a.accept(true);a.element('#nextGenerate').onclick();assert.notEqual(a.run('JSON.stringify(readNextState.list)'),before);assert.equal(a.requests.length,0);
+ const chosen=a.run('readNextState.list.entries[0].bookId');a.run(`selected=${JSON.stringify(chosen)};setStatus('In progress')`);assert.match(a.element('#readNextEntries').innerHTML,/next-active/);a.run("setStatus('Done')");assert.match(a.element('#readNextEntries').innerHTML,/next-done/);assert.match(a.element('#nextSummary').textContent,/1 of 12 done/);
+ assert.equal(a.run('QuietShelfApp.backup().preferences.readNext.list.entries.length'),12);
+ const b=launch(shelf,a.storage);assert.equal(b.run('JSON.stringify(readNextState.list)'),a.run('JSON.stringify(readNextState.list)'));assert.equal(b.requests.length,0);assert.match(b.element('#nextSummary').textContent,/1 of 12 done/);
+ const saved=b.run('JSON.stringify(readNextState.list)');b.fail(true);b.element('#nextGenerate').onclick();assert.equal(b.run('JSON.stringify(readNextState.list)'),saved);b.fail(false);
+ const c=launch([book('isbn',{isbn:'9780140328721'}),book('no-isbn')]);c.respond(async url=>Response.json({results:[{isbn:'9780140328721',readingInfo:{...info(320,['Fiction / Fantasy']),isbn:'0140328726'}}]}));
+ c.element('#nextGenerate').onclick();const current=c.run('readNextState.list.id');await c.element('#nextRefresh').onclick();assert.equal(c.requests.length,1);assert.equal(c.run('books[0].readingInfo.pages'),320);assert.equal(c.run('readNextState.list.id'),current,'enrichment must not regenerate');
+ await c.element('#nextRefresh').onclick();assert.equal(c.requests.length,1,'successful enrichment is cached and not repeatedly requested');
+ c.ctx.navigator.onLine=false;await c.element('#nextRefresh').onclick();assert.equal(c.requests.length,1);c.element('#nextGenerate').onclick();assert.equal(c.requests.length,1,'offline generation still never requests metadata');
+ c.run('QuietShelfApp.apply({library:[],preferences:{}})');assert.equal(c.run('readNextState.list'),null,'switching workspace must not inherit another list');
+ const finished=launch();finished.element('#nextGenerate').onclick();finished.run("for(const e of readNextState.list.entries)books.find(b=>b.id===e.bookId).status='Done';render()");const countBefore=finished.prompts.length;finished.accept(false);finished.element('#nextGenerate').onclick();assert.equal(finished.prompts.length,countBefore,'a complete checklist can be replaced without confirmation');
+ console.log('PASS: weighted varied lists, one sequential volume per series, no skipped volumes, format-aware effort, study exclusions, atomic sync, frozen checklists, confirmations, offline persistence and explicit cached ISBN refresh');
+})().catch(e=>{console.error(e);process.exitCode=1});

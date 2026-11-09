@@ -23,9 +23,10 @@ const origin='https://appassets.androidplatform.net';
 const call=(path,body,headers={})=>api.handle(new Request(origin+path,{method:body===undefined?'GET':'POST',headers:{...headers,...(body===undefined?{}:{'Content-Type':'application/json','X-Quiet-Shelf-Account':'1'})},...(body===undefined?{}:{body:JSON.stringify(body)})}));
 try{
  assert.equal((await(await call('/api/account/status')).json()).mode,'android');
- const S=globalThis.QuietShelfSync,state=S.update(S.empty(),{library:[{id:'local',title:'Phone title',status:'Unread',history:[]}],preferences:{theme:'rosewood',autoUpdateChecks:false}},'phone');
+ const R=globalThis.QuietShelfReadNext,library=[{id:'local',title:'Phone title',status:'Unread',history:[]}],checklist=R.generate(library,{id:'android-checklist'});
+ const S=globalThis.QuietShelfSync,state=S.update(S.empty(),{library,preferences:{theme:'rosewood',autoUpdateChecks:false,readNext:{list:checklist,mode:'balanced',genre:'all'}}},'phone');
  let response=await call('/api/account/sync',{accountId:'101',state,readOnly:true,manual:true});assert.equal((await response.json()).state.registers.length,0);assert.equal(creates,0,'first check sends no phone data to Drive');assert.equal(removes,0);
- response=await call('/api/account/sync',{accountId:'101',state,manual:true});assert.equal(S.project((await response.json()).state).library[0].title,'Phone title');assert.equal(creates,1);
+ response=await call('/api/account/sync',{accountId:'101',state,manual:true});const synced=S.project((await response.json()).state);assert.equal(synced.library[0].title,'Phone title');assert.equal(synced.preferences.readNext.list.id,'android-checklist');assert.equal(creates,1);
  assert.equal((await call('/api/account/sync',{accountId:'202',state,manual:true})).status,401,'another account cannot use this connection');
  response=await call('/api/books?source=google&lang=en&q=Android',{},{'X-Google-Api-Key':'test-only-books-key'});assert.equal(response.status,405);
  response=await call('/api/books?source=google&lang=en&q=Android',undefined,{'X-Google-Api-Key':'test-only-books-key'});assert.equal(response.status,200);assert.equal((await response.json()).results[0].title,'An Android catalog result');

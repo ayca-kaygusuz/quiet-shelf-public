@@ -105,3 +105,15 @@ run of this exact workflow and source commit. Keep published APKs immutable;
 merge their checksums into the matching Windows/browser release manifest.
 Report real-device Google consent and file-picker checks separately from
 mocked adapter tests and emulator checks.
+
+## Read next
+
+Keep generation and metadata refresh strictly on demand. Sync transfers the
+latest atomic checklist and cached metadata; it never generates or advances a
+list. Keep completed entries visible, derive checks from actual reading status,
+and confirm replacement of an unfinished list. Do not add list history.
+Use weighted randomness and ensure different membership when alternatives
+exist. Suggest at most the next unread volume per series; never skip an
+unfinished or missing earlier volume. Registration age is not ownership age.
+Keep read-next.js in every platform's asset allowlist and package. Validate
+structured metadata and checklist preferences before backups/Drive apply them.

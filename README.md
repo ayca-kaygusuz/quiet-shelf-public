@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.15.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.16.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads, and optional Google Drive sync in the Windows, Android and local browser apps.
@@ -41,7 +41,7 @@ installed files, not arbitrary files added to the installation folder.
 
 ### Android app
 
-The release includes **Quiet-Shelf-Android-0.15.0.apk** for Android 8 or later
+The release includes **Quiet-Shelf-Android-0.16.0.apk** for Android 8 or later
 with an updated Android System WebView. Download the APK on your phone and open
 it; Android may ask you to allow installation from that browser. Future APKs
 install over the existing app using the same signing identity. No PC, browser
@@ -61,6 +61,53 @@ checks and the saved preference remain available. Android updates link to the
 release APK and require the normal Android install confirmation. The release
 checksum manifest covers the APK alongside the Windows/browser packages.
 See [Android development and signing](android/README.md).
+
+### Additional English-language edition sources
+
+**Blackwell’s (UK)** and **Better World Books (US)** appear in the search-source
+menu. Search and import their edition results directly in Quiet Shelf, including
+ISBN, publisher, binding and listed language. Blackwell’s also supplies page
+counts when available. A pasted product link opens its exact edition. No
+browser connector, retailer account or extra API key is needed. Any language is
+the default; explicit language filters check edition details rather than assuming
+a language from the store’s country. Availability depends on the retailers’
+public pages; source failures are shown in the app.
+
+### Read next
+
+Open **Read next** above Library insights to generate a saved checklist of up to
+12 suitable unread titles from My library. Choose a balanced mix, quicker reads
+or series continuations, with an optional genre filter. Weighted randomness
+varies each new mix; when enough alternatives exist, replacement changes the
+books rather than merely shuffling them. Small eligible shelves may contain
+fewer than 12 suggestions or require repeats.
+
+Each series contributes at most its next unread volume. Unfinished or missing
+earlier volumes prevent skipping ahead. Finishing a suggested volume checks it
+off; the next volume can appear only after another explicit generation. Series
+progress, unread volumes owned and time since registration influence priority.
+Dates never claim to represent purchase time.
+
+In-progress and finished entries look different, with a completion counter and
+progress bar. The checklist remains fixed until replaced; replacing an unfinished
+list requires confirmation. There is no suggestion-list history. Removed and
+archived titles remain recognizable in the current checklist. Open a title to
+change its real reading status, without a second set of completion records.
+
+**Refresh missing book information** explicitly looks up uncached ISBNs in Open
+Library and Google Books, in bounded batches. Only exact ISBN matches are saved;
+failed or missing metadata never prevents offline generation. The optional
+Google Books key stays on this device. No AI service, background generation or
+background metadata refresh is used. Effort estimates combine known page count
+and format; unknown data remains labeled. Study/reference titles are normally
+skipped. Title details → Read next preferences allows a reversible exclusion or
+format override, without requiring every book to be categorized.
+
+The current checklist, settings, exclusions and cached information are included
+in backups and optional Drive sync, separately for guest/account workspaces.
+Update Windows, Android and browser copies before sharing these new fields;
+older clients safely reject unfamiliar sync data. Every search source starts
+with **Any language**, while manually chosen language filters remain remembered.
 
 ### Themes
 
@@ -339,7 +386,8 @@ not return ISBN **9786054782369**, although its *The Valley Of Fear* page exists
 
 Paste a product/edition link into the same search field to load that exact
 listing inside the app, then select it and save. Supported links are Kitapyurdu,
-BKM Kitap, Nadir Kitap, Open Library edition pages and Google Books volume pages. The source
+BKM Kitap, Nadir Kitap, Open Library edition pages, Google Books volume pages,
+Blackwell’s and Better World Books product pages. The source
 selector switches to the link's catalog; normal source access restrictions still
 apply. Kitapyurdu imports also read the page's displayed language when its
 structured metadata omits it.
@@ -351,6 +399,8 @@ structured metadata omits it.
 | Nadir Kitap | Title/author and exact ISBN search, plus listing-link import. Details are read directly without a browser connector. Seller copies with matching valid ISBN and edition details are combined; conflicting years, bindings, languages or missing identifiers remain separate. |
 | Open Library | International edition search/import with language filtering. Coverage varies by title and language. |
 | Google Books | Volume search/import with language filtering. Shared unauthenticated requests have hit quota limits; an optional personal API key is supported. |
+| Blackwell’s (UK) | In-app edition search and product-link import from public pages, without a connector or API key. Explicit language filters read edition details. Live search and import succeeded during 0.16.0 verification. |
+| Better World Books (US) | In-app edition search and product-link import from public pages, without a connector or API key. ISBN, publisher, binding and actual language are checked. Live search and import succeeded during 0.16.0 verification. |
 | AniList | Manga series search/import, rather than a specific translated print edition. Edition-language filtering is disabled for this source. API access has failed from the cloud environment. |
 
 Nadir Kitap suggestions include publication year and binding when supplied.

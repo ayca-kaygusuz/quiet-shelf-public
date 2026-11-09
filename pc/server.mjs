@@ -9,7 +9,7 @@ import {googleDesktopConfiguration} from '../src/google-oauth.mjs';
 import {createWebAccount} from '../src/web-account.mjs';
 import {createBrowserReleaseHandler} from '../src/releases.mjs';
 const html=readFileSync(new URL('../src/index.html',import.meta.url));
-const assets=Object.fromEntries(['sync-core.js','account.js'].map(name=>['/'+name,readFileSync(new URL('../src/'+name,import.meta.url))]));
+const assets=Object.fromEntries(['read-next.js','sync-core.js','account.js'].map(name=>['/'+name,readFileSync(new URL('../src/'+name,import.meta.url))]));
 const host='127.0.0.1',port=8765;
 
 export function createLocalServer({accountEnvironment=process.env,desktopConfiguration,sessionKey,fetcher=fetch}={}){

@@ -83,3 +83,9 @@ hosts/permissions. CI captures real Android screenshots and test reports.
 Real Google consent, account switching across two physical devices, and the
 system backup/restore pickers still need interactive device verification. Do
 not describe them as verified by the emulator or mock-provider tests.
+
+
+Read next uses the same on-device engine as Windows/browser and is never
+scheduled. Its current checklist and cached edition information use the shared
+backup/Drive model. Blackwell’s and Better World Books use the native HTTP
+allowlist, with no connector or retailer account.

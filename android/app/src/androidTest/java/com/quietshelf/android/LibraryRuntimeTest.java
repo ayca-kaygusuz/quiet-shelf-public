@@ -60,6 +60,11 @@ public class LibraryRuntimeTest {
             evaluate(app,"window.__blockedProbe='waiting';QuietShelfAndroid.rpc('http',{url:'https://example.com/private',method:'GET',headers:{},body:null}).then(()=>window.__blockedProbe='failed').catch(()=>window.__blockedProbe='passed');true");
             for(int i=0;i<50&&!"\"passed\"".equals(evaluate(app,"window.__blockedProbe"));i++)Thread.sleep(100);
             assertEquals("\"passed\"",evaluate(app,"window.__blockedProbe"));
+            assertEquals("true",evaluate(app,"(()=>{QuietShelfApp.apply({library:Array.from({length:20},(_,i)=>({id:'next-qa-'+i,title:'Android checklist story '+i+' — standalone',author:'Library author',status:'Unread',history:[]})),preferences:{theme:'ink',autoUpdateChecks:false}});document.querySelector('#backToLibrary').click();document.querySelector('#readNextPanel').open=true;document.querySelector('#nextGenerate').click();window.__savedList=JSON.stringify(readNextState.list);selected=readNextState.list.entries[0].bookId;setStatus('In progress');selected=readNextState.list.entries[1].bookId;setStatus('Done');return document.querySelectorAll('.next-entry').length===12&&document.querySelectorAll('.next-done').length===1&&document.querySelectorAll('.next-active').length===1&&JSON.stringify(readNextState.list)===window.__savedList})()"));
+            assertEquals("true",evaluate(app,"(()=>{document.querySelector('[data-next-book]').click();return document.body.classList.contains('android-detail-open')&&QuietShelfAndroid.back()})()"));
+            screenshot(app,"android-read-next");
+            app.recreate();ready(app);
+            assertEquals("true",evaluate(app,"readNextState.list.entries.length===12&&QuietShelfApp.backup().preferences.readNext.list.id===readNextState.list.id"));
             app.onActivity(activity->{assertFalse(activity.web.getSettings().getAllowFileAccess());assertFalse(activity.web.getSettings().getAllowContentAccess());assertEquals(android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW,activity.web.getSettings().getMixedContentMode());});
         }
         PackageInfo info=InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageManager().getPackageInfo("com.quietshelf.android",android.content.pm.PackageManager.GET_PERMISSIONS);
