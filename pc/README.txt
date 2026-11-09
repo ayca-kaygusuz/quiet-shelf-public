@@ -1,4 +1,4 @@
-QUIET SHELF — PC VERSION 0.14.0
+QUIET SHELF — PC VERSION 0.14.1
 
 THIS PACKAGE IS THE LOCAL BROWSER VERSION
 A separate installable Windows app is also available from the public repository's

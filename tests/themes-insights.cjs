@@ -34,3 +34,24 @@ let ring=app(Array.from({length:132},(_,i)=>({id:'entry-'+i,title:'Entry '+i,sta
 const arcs=[...ring.element('#statusDonut').innerHTML.matchAll(/stroke-dasharray="([0-9.]+) ([0-9.]+)"/g)];assert.equal(arcs.length,3);assert(arcs.every(m=>Number(m[1])>0));
 assert(arcs.some(m=>Number(m[1])<4),'a small In progress segment must stay visible with separators');
 let single=app([{id:'only',title:'One entry',status:'Done',history:[]}]);assert.equal([...single.element('#statusDonut').innerHTML.matchAll(/stroke-dasharray=/g)].length,1);
+
+const sync=require('../src/sync-core.js'),themeNames=a.run('JSON.stringify(themes)');
+for(const [theme,name] of Object.entries(JSON.parse(themeNames))){
+ const themed=app();themed.element('#theme').value=theme;themed.element('#theme').onchange();
+ assert.equal(themed.attributes['data-theme'],theme);assert.equal(app(records,themed.storage).attributes['data-theme'],theme);
+ const backup=themed.run('QuietShelfApp.backup()');const restored=app();restored.run('QuietShelfApp.apply('+JSON.stringify(backup)+')');assert.equal(restored.attributes['data-theme'],theme);
+ const shared=sync.update(sync.empty(),backup,'theme_check');assert.equal(sync.project(shared).preferences.theme,theme,'Drive accepts '+name);
+ assert.equal(themed.storage['quiet-shelf-v1'],JSON.stringify(records),'changing '+name+' preserves library records');
+}
+function tokens(rule){return Object.fromEntries([...rule.matchAll(/--([\w-]+):\s*(#[\da-f]{3,6})\b/gi)].map(m=>[m[1],m[2]]))}
+function luminance(hex){if(hex.length===4)hex='#'+[...hex.slice(1)].map(c=>c+c).join('');return hex.slice(1).match(/../g).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0)}
+function contrast(a,b){const [low,high]=[luminance(a),luminance(b)].sort((a,b)=>a-b);return (high+.05)/(low+.05)}
+const base=tokens(html.match(/:root\{([^}]+)\}/)[1]);
+for(const theme of Object.keys(JSON.parse(themeNames))){
+ const override=html.match(new RegExp(':root\\[data-theme="'+theme+'"\\]\\{([^}]+)\\}')),palette={...base,...(override?tokens(override[1]):{})};
+ for(const foreground of ['text','muted','accent','unread','progress','done','danger'])for(const background of ['canvas','surface','raised','input','selected'])assert(contrast(palette[foreground],palette[background])>=4.5,theme+' '+foreground+' on '+background+' needs readable contrast');
+ for(const background of ['accent','accent-hover'])assert(contrast(palette['on-accent'],palette[background])>=4.5,theme+' primary button text');
+ assert(contrast(palette.danger,palette['danger-surface'])>=4.5,theme+' danger actions');
+ assert.equal(new Set(['unread','progress','done'].map(k=>palette[k])).size,3,theme+' uses distinct status colors');
+}
+console.log('PASS: all six theme selections persist, restore and sync without changing books; text, chart labels, status badges and primary actions meet 4.5:1 contrast');

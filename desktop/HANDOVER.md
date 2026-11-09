@@ -67,7 +67,7 @@ npm test
 npm run build:windows
 ```
 
-Output: `work/windows/Quiet-Shelf-Setup-0.14.0-x64.exe` and `SHA256SUMS.txt`.
+Output: `work/windows/Quiet-Shelf-Setup-0.14.1-x64.exe` and `SHA256SUMS.txt`.
 The unpacked app is `work/windows/win-unpacked/Quiet Shelf.exe`.
 
 Have the app launched on Windows and verify startup, adding a title, recording
@@ -207,3 +207,14 @@ preference; older clients reject unknown sync fields without changing the shelf.
 Windows CI checks both themes, saved/restored update choices and inline pause
 messages in the packaged app and extracted browser ZIP. Header controls now have
 matching heights; the shared interface check measures them at runtime.
+
+## Additional palettes (0.14.1)
+
+The shared interface adds Midnight Tide, Rosewood, Porcelain and Apricot Hour,
+with Dark/Light groups in the selector. IDs tide/rosewood/porcelain/apricot are
+accepted by the sync validator, local preferences and backups. All six themes
+have tested 4.5:1 contrast for text, muted labels, status labels and primary
+actions on their relevant surfaces. Packaged Windows and browser checks switch
+each new palette, verify real three-status chart counts and preference retention,
+then capture library/account views. New theme choices require a current client;
+older clients reject unknown preference values without replacing their shelf.

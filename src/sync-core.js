@@ -19,7 +19,7 @@
    return p[3]==='sample'?typeof v==='boolean':['seriesVolume','addedOrder'].includes(p[3])?Number.isFinite(v)&&v>=0:typeof v==='string'&&v.length<=10000&&(p[3]!=='title'||!!v.trim());
   }
   if(v===null)return true;if(p[1]==='seriesState'||['includeArchive','includeWishlist','autoUpdateChecks'].includes(p[1]))return typeof v==='boolean';
-  if(p[1]==='theme')return ['ink','sage'].includes(v);
+  if(p[1]==='theme')return ['ink','sage','tide','rosewood','porcelain','apricot'].includes(v);
   if(p[1]==='sort')return ['addedAsc','addedDesc','titleAsc','titleDesc','authorAsc','status','finishedDesc'].includes(v);
   if(p[1]==='collectionView')return ['library','archive','wishlist'].includes(v);
   if(p[1]==='filter')return ['All','Unread','In progress','Done'].includes(v);

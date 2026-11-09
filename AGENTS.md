@@ -24,7 +24,8 @@ explicitly requested. Run the active checks with `npm test`.
 
 ## Interface
 
-Preserve the approved rounded, flat design in both Dark Ink and Paper Grove.
+Preserve the approved rounded, flat design across Dark Ink, Paper Grove, Midnight
+Tide, Rosewood, Porcelain and Apricot Hour.
 Use solid color tokens, without gradients, bevels or shadows. Themes share the
 same functions and charts. Keep appearance/chart-scope preferences separate
 from book records; they are included in versioned backups and optional native Drive sync.
@@ -52,7 +53,7 @@ versioned installer from the same current source. Keep the installed executable
 current with new features; the browser launcher remains `pc/start-windows.bat`.
 GitHub updates use stable public releases, verify the installer checksum before
 execution, and ask before restarting. Preserve the in-app progress/status
-indicator alongside taskbar progress, with both themes supported. Never include library records or saved
+indicator alongside taskbar progress, with all themes supported. Never include library records or saved
 user access/refresh tokens or Google Books keys in update checks, installers or
 release assets. The app’s distributable Desktop OAuth configuration is generated
 from release settings and packaged with the native app; never track its values.

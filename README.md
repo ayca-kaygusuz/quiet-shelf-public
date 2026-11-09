@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.14.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.14.1.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Internet access is used for catalog searches, cover images and Windows
 update checks/downloads, and optional Google Drive sync in the Windows app.
@@ -38,6 +38,16 @@ browser storage, survives app upgrades, and is preserved when uninstalling the
 application. Keep JSON backups. The installer refuses a non-empty destination
 unless it is an existing Quiet Shelf installation; uninstall removes only its
 installed files, not arbitrary files added to the installation folder.
+
+### Themes
+
+Choose a palette in the header’s Theme menu. Dark options are **Dark Ink**,
+**Midnight Tide** (navy/sea-glass) and **Rosewood** (plum/dusty rose). Light options
+are **Paper Grove**, **Porcelain** (cool white/blue) and **Apricot Hour**
+(warm cream/terracotta). Every palette keeps the same rounded, flat layout,
+readable status colors and chart separators. Theme choices stay on this device,
+travel with JSON backups and optional Drive sync, and never change book records.
+Use current browser and Windows versions when syncing the new palette names.
 
 ### Windows updates
 
