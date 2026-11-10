@@ -1,0 +1,24 @@
+{
+  "content": [
+    {
+      "id": 1523237141,
+      "titleId": 1759914184,
+      "title": "Die unendliche Geschichte",
+      "isbn": "9783522202602",
+      "language": "ger",
+      "mediumType": "BOOK",
+      "bookTypeDescription": "Gebundenes Buch",
+      "publisher": "Thienemann in der Thienemann-Esslinger Verlag GmbH",
+      "numberOfPages": 0,
+      "genre": null,
+      "currentEditionPublicationDate": "2019-01-14T23:00:00.000Z",
+      "author": {
+        "name": "Michael Ende"
+      },
+      "cover": {
+        "url": "https://images.lovelybooks.de/img/265x/lb-cover/9783522202602_1724930854000.jpg"
+      }
+    }
+  ],
+  "totalElements": 1
+}

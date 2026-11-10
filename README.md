@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.20.1.**
+A personal reading tracker for books, manga and comics. **Current version: 0.21.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Windows, Linux, Android, iPhone/iPad and browser versions share the same library format
 and features. Internet access is used for catalog searches, cover images,
@@ -45,11 +45,11 @@ installed files, not arbitrary files added to the installation folder.
 [Download Quiet Shelf for Linux](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
 The first native Linux release targets **x86-64 / amd64**:
 
-- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.20.1-linux-amd64.deb` with your
+- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.21.0-linux-amd64.deb` with your
   package installer, then open **Quiet Shelf** from the applications menu.
   The `quiet-shelf` command is also available. For terminal installation:
-  `sudo apt install ./Quiet-Shelf-0.20.1-linux-amd64.deb`.
-- **Other Linux desktops:** extract `Quiet-Shelf-0.20.1-linux-x64.tar.gz`, then
+  `sudo apt install ./Quiet-Shelf-0.21.0-linux-amd64.deb`.
+- **Other Linux desktops:** extract `Quiet-Shelf-0.21.0-linux-x64.tar.gz`, then
   open the `quiet-shelf` executable in the extracted folder. Keep the entire
   folder together. The portable build needs the usual Electron/GTK/NSS system
   libraries and working Chromium sandbox support (unprivileged user namespaces).
@@ -84,7 +84,7 @@ package checks compare the portable binary/assets with the tested installed app.
 
 ### Android app
 
-The release includes **Quiet-Shelf-Android-0.20.1.apk** for Android 8 or later
+The release includes **Quiet-Shelf-Android-0.21.0.apk** for Android 8 or later
 with an updated Android System WebView. Download the APK on your phone and open
 it; Android may ask you to allow installation from that browser. Future APKs
 install over the existing app using the same signing identity. No PC, browser
@@ -143,6 +143,26 @@ covers, and bookstore result cards load fuller metadata when selected. Catalog
 subjects, where supplied, are cached for on-demand Read next information.
 Live ISBN/title searches and imports were verified for all four during 0.20.0
 verification. Availability and metadata coverage can change independently.
+
+### LovelyBooks
+
+**LovelyBooks** is available in Add title for title, author and ISBN search,
+without a login, API key or browser connector. It uses the site's anonymous
+catalog interface; this is not a documented public API, so site changes may
+require adapter maintenance.
+
+Title searches show the featured editions supplied by LovelyBooks. Search by
+ISBN for an exact edition, or paste a LovelyBooks book link. Imports and later
+metadata refreshes use the selected edition's title ID, with ISBN verification,
+instead of switching to the grouped work page's featured edition. A pasted
+work link loads its currently featured edition and is labelled accordingly.
+The external **View book on LovelyBooks** link may show the grouped book page.
+
+Any language remains the default. Explicit filters use the recorded language;
+unknown page counts, genres or ISBNs stay unknown. ASINs are not stored as ISBNs,
+and audiobook results are excluded. Catalog metadata is cached for on-demand
+Read next lookups. Live title/author/ISBN searches and edition imports were
+verified during 0.21.0 development.
 
 ### Additional English-language edition sources
 
@@ -522,6 +542,7 @@ structured metadata omits it.
 | K10plus | Library union catalog SRU edition records with international coverage, ISBN and record-link import. No API key. |
 | Thalia | In-app search and edition import from public German bookstore pages, with actual edition language, ISBN and pagination. No connector or API key. |
 | Hugendubel | In-app search and edition import from public German bookstore pages, with actual edition language, ISBN and pagination. No connector or API key. |
+| LovelyBooks | In-app title/author/ISBN search through anonymous catalog requests. Selected editions retain their title ID and ISBN; work links load the featured edition with an explicit notice. Some metadata is unavailable. |
 | AniList | Manga series search/import, rather than a specific translated print edition. Edition-language filtering is disabled for this source. API access has failed from the cloud environment. |
 
 Nadir Kitap suggestions include publication year and binding when supplied.

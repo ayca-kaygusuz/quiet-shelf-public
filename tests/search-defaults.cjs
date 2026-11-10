@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const html=fs.readFileSync('src/index.html','utf8'),inline=html.match(/<script>([\s\S]*)<\/script>/)[1],core=fs.readFileSync('src/sync-core.js','utf8');
-const providers=['kitapyurdu','bkm','nadir','openlibrary','google','blackwells','betterworld','dnb','k10plus','thalia','hugendubel','anilist'];
+const providers=['kitapyurdu','bkm','nadir','openlibrary','google','blackwells','betterworld','dnb','k10plus','thalia','hugendubel','lovelybooks','anilist'];
 assert.match(html,/<select id="lookupLanguage">\s*<option value="" selected>Any language<\/option>/);
 function launch(preferences){
  const storage={'quiet-shelf-search-v1':JSON.stringify(preferences)},elements={};

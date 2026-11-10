@@ -112,10 +112,14 @@ final class RuntimeTests: XCTestCase {
     }
     func testNativeNetworkAndAssetBoundaries() {
         XCTAssertTrue(NetworkPolicy.allowed(URL(string: "https://www.kitapyurdu.com/index.php?route=product/search")!, method: "GET"))
-        for address in ["https://services.dnb.de/sru/dnb?operation=searchRetrieve", "https://sru.k10plus.de/opac-de-627", "https://www.thalia.de/suche?sq=Ende", "https://www.hugendubel.de/de/search?q=Ende"] {
+        for address in ["https://www.lovelybooks.de/mapi/search/detail/books?q=Ende", "https://www.lovelybooks.de/mapi/books/byTitle/1759914184", "https://www.lovelybooks.de/mapi/books/1523237141/details", "https://services.dnb.de/sru/dnb?operation=searchRetrieve", "https://sru.k10plus.de/opac-de-627", "https://www.thalia.de/suche?sq=Ende", "https://www.hugendubel.de/de/search?q=Ende"] {
             XCTAssertTrue(NetworkPolicy.allowed(URL(string: address)!, method: "GET"))
             XCTAssertFalse(NetworkPolicy.allowed(URL(string: address)!, method: "POST"))
         }
+        XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://www.lovelybooks.de/mapi/user/library")!, method: "GET"))
+        XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://www.lovelybooks.de/mapi/auth/login")!, method: "POST"))
+        XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://www.lovelybooks.de/profil/private/")!, method: "GET"))
+        XCTAssertTrue(NetworkPolicy.external(URL(string: "https://www.lovelybooks.de/autor/Michael-Ende/Die-unendliche-Geschichte-1759914184-t/")!))
         XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://services.dnb.de/private")!, method: "GET"))
         XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://sru.k10plus.de/private")!, method: "GET"))
         XCTAssertTrue(NetworkPolicy.external(URL(string: "https://d-nb.info/1168641489")!))

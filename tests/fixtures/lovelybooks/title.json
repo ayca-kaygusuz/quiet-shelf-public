@@ -1,0 +1,100 @@
+{
+  "content": [
+    {
+      "id": 1523237141,
+      "titleId": 2000475177,
+      "title": "Die unendliche Geschichte",
+      "isbn": "9783522202503",
+      "language": "ger",
+      "mediumType": "BOOK",
+      "bookTypeDescription": "Gebundenes Buch",
+      "publisher": "Thienemann in der Thienemann-Esslinger Verlag GmbH",
+      "numberOfPages": 0,
+      "genre": null,
+      "currentEditionPublicationDate": "2019-08-14T22:00:00.000Z",
+      "author": {
+        "name": "Michael Ende"
+      },
+      "cover": {
+        "url": "https://images.lovelybooks.de/img/265x/lb-cover/9783522202503_1662042219000.jpg"
+      }
+    },
+    {
+      "id": 46572942,
+      "titleId": 1874939848,
+      "title": "Die unendliche Geschichte - Jubiläumsausgabe",
+      "isbn": "9783745600926",
+      "language": "ger",
+      "mediumType": "AUDIOBOOK",
+      "bookTypeDescription": "Hörbuch",
+      "publisher": "Silberfisch",
+      "numberOfPages": 0,
+      "genre": null,
+      "currentEditionPublicationDate": "2019-01-30T23:00:00.000Z",
+      "author": {
+        "name": "Michael Ende"
+      },
+      "cover": {
+        "url": "https://images.lovelybooks.de/img/265x/lb-cover/9783745600926_1733139146000.jpg"
+      }
+    },
+    {
+      "id": 285082474,
+      "titleId": 77537496,
+      "title": "Die unendliche Geschichte",
+      "isbn": "9783522200509",
+      "language": "ger",
+      "mediumType": "BOOK",
+      "bookTypeDescription": "Gebundenes Buch",
+      "publisher": "Thienemann in der Thienemann-Esslinger Verlag GmbH",
+      "numberOfPages": 0,
+      "genre": null,
+      "currentEditionPublicationDate": "2009-03-10T23:00:00.000Z",
+      "author": {
+        "name": "Roman Hocke"
+      },
+      "cover": {
+        "url": "https://images.lovelybooks.de/img/265x/lb-cover/9783522200509_1557222604000.jpg"
+      }
+    },
+    {
+      "id": 25691016491,
+      "titleId": 25691016481,
+      "title": "Die unendliche Geschichte: DER Fantasybestseller",
+      "isbn": "B0G1YRW3PJ",
+      "language": "ger",
+      "mediumType": "AUDIOBOOK",
+      "bookTypeDescription": "Hörbuch",
+      "publisher": "Silberfisch",
+      "numberOfPages": 0,
+      "genre": null,
+      "currentEditionPublicationDate": "2026-06-03T22:00:00.000Z",
+      "author": {
+        "name": "Michael Ende"
+      },
+      "cover": {
+        "url": "https://images.lovelybooks.de/img/265x/lb-cover/O2_B0G1YRW3PJ_1780905108884_500_500.jpg"
+      }
+    },
+    {
+      "id": 25860887284,
+      "titleId": 25860887274,
+      "title": "Die unendliche Geschichte zweier Liebender",
+      "isbn": "9783830193289",
+      "language": "ger",
+      "mediumType": "BOOK",
+      "bookTypeDescription": "Taschenbuch",
+      "publisher": "Fischer, R. G.",
+      "numberOfPages": 0,
+      "genre": null,
+      "currentEditionPublicationDate": "2026-06-28T22:00:00.000Z",
+      "author": {
+        "name": "Stefan von Hofen"
+      },
+      "cover": {
+        "url": "https://images.lovelybooks.de/img/265x/lb-cover/S1_9783830193289_1781661338000_530_795.jpg"
+      }
+    }
+  ],
+  "totalElements": 16
+}

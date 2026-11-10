@@ -267,9 +267,56 @@ async function germanAPI(source,search,query,target,lang){
  }catch(error){return Response.json({error:config.name+' could not return usable book data. Try again or choose another source.',code:error.upstreamStatus===403?'SOURCE_BLOCKED':'CATALOG_UNAVAILABLE'},{status:502})}
 }
 
+// LovelyBooks' anonymous read-only catalog. Edition/title IDs are distinct from work IDs.
+const lovelyRoot='https://www.lovelybooks.de';
+export function lovelyURL(value){try{const u=new URL(value);if(u.protocol!=='https:'||u.port||u.username||u.password||!['www.lovelybooks.de','lovelybooks.de'].includes(u.hostname)||!/^\/autor\/[^/]+\/[^/]+-[1-9]\d{0,13}-[tw]\/?$/.test(u.pathname))return '';return lovelyRoot+u.pathname.replace(/\/?$/,'/')}catch{return ''}}
+function lovelyIdentity(url){return lovelyURL(url).match(/-([1-9]\d{0,13})-([tw])\/$/)?.slice(1)||[]}
+function lovelySlug(value,fallback){return encodeURIComponent(text(value).normalize('NFC').replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-|-$/g,'').slice(0,100)||fallback)}
+function lovelyCover(value){try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='images.lovelybooks.de'&&!u.port&&!u.username&&!u.password&&u.pathname.startsWith('/img/')?u.href:''}catch{return ''}}
+export function parseLovelyBook(book,target='',expectedISBN=''){
+ if(!book||!['BOOK','EBOOK'].includes(book.mediumType))return null;
+ if(!text(book.title||'')||!String(book.id||'').match(/^[1-9]\d{0,13}$/)||!String(book.titleId||'').match(/^[1-9]\d{0,13}$/))throw Error('LovelyBooks book metadata unavailable');
+ const isbn=parseISBN(book.isbn)||'',validTarget=lovelyURL(target),[id,kind]=lovelyIdentity(validTarget);
+ if(target&&(!validTarget||String(kind==='t'?book.titleId:book.id)!==id)||expectedISBN&&comparableISBN(isbn)!==comparableISBN(expectedISBN)){const error=Error('LovelyBooks edition identity changed');error.code='EDITION_MISMATCH';throw error}
+ // Preserve a verified title/edition link. A work link is resolved once to its featured edition.
+ const sourceUrl=kind==='t'?validTarget:lovelyRoot+'/autor/'+lovelySlug(book.author?.name,'-')+'/'+lovelySlug(book.title,'Book')+'-'+book.titleId+'-t/';
+ const subjects=germanSubjects(typeof book.genre==='string'?[book.genre]:[]);
+ return {title:text(book.title),author:text(book.author?.name||''),publisher:text(book.publisher||''),isbn,language:normalizeLanguage(book.language||''),binding:text(book.bookTypeDescription||''),publicationYear:String(book.currentEditionPublicationDate||'').match(/^([12]\d{3})(?:-|$)/)?.[1]||'',cover:lovelyCover(book.cover?.url),sourceUrl,source:'LovelyBooks',recordKind:'edition',readingInfo:readingInformation(book.numberOfPages,subjects,book.bookTypeDescription,'LovelyBooks',isbn)};
+}
+export function parseLovelySearch(data,lang=''){
+ if(!data||!Array.isArray(data.content)||!Number.isSafeInteger(data.totalElements)||data.totalElements<0||data.totalElements<data.content.length||data.content.some(b=>!b||typeof b.mediumType!=='string'))throw Error('LovelyBooks search data unavailable');
+ const seen=new Set();return data.content.slice(0,40).map(b=>parseLovelyBook(b)).filter(b=>b&&(!lang||b.language===lang)&&!seen.has(b.sourceUrl)&&seen.add(b.sourceUrl));
+}
+const lovelyPending=new Map();let lovelyActive=0;const lovelyQueue=[];
+async function lovelyBook(url,expectedISBN){
+ const [id,kind]=lovelyIdentity(url),key=JSON.stringify(['lovelybooks',kind,id]);let cached=memory.get(key),book;
+ if(cached&&cached.until>Date.now())book=cached.data;
+ else{
+  if(!lovelyPending.has(key)){
+   const pending=(async()=>{if(lovelyActive>=3)await new Promise(resolve=>lovelyQueue.push(resolve));else lovelyActive++;try{
+    const path=kind==='t'?'/mapi/books/byTitle/'+id:'/mapi/books/'+id+'/details',data=JSON.parse(await publicFetch(lovelyRoot+path,lovelyRoot)),raw=kind==='t'?data:data?.book;
+    if(!parseLovelyBook(raw,url))throw Error('Not a usable book edition');cacheCatalog(key,raw);return raw;
+   }finally{const next=lovelyQueue.shift();if(next)next();else lovelyActive--}})();lovelyPending.set(key,pending);
+  }
+  const pending=lovelyPending.get(key);try{book=await pending}finally{if(lovelyPending.get(key)===pending)lovelyPending.delete(key)}
+ }
+ const record=parseLovelyBook(book,url,expectedISBN);if(!record)throw Error('Edition not found');return record;
+}
+async function lovelyAPI(request,search,query,target,lang){
+ const valid=search?'':lovelyURL(target),rawExpected=new URL(request.url).searchParams.get('isbn')||'',expected=rawExpected?parseISBN(rawExpected):'';
+ if(!search&&!valid||rawExpected&&!expected)return Response.json({error:'Choose a valid LovelyBooks edition or ISBN.'},{status:400});
+ try{
+  if(!search)return Response.json(await lovelyBook(valid,expected));
+  const key=JSON.stringify(['lovelybooks',lang,query]),cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);
+  const url=new URL('/mapi/search/detail/books',lovelyRoot);url.searchParams.set('q',query);url.searchParams.set('size','40');url.searchParams.set('page','0');
+  const json=JSON.parse(await publicFetch(url.href,lovelyRoot)),results=parseLovelySearch(json,lang);
+  const data={results,...(lang&&!results.length&&json.content.length?{searchNotice:'No featured editions in this result set have that recorded language. Try the title in that language, search its ISBN, or choose Any language.'}:{})};cacheCatalog(key,data);return Response.json(data);
+ }catch(error){return Response.json({error:error.code==='EDITION_MISMATCH'?'LovelyBooks returned a different edition. Search its ISBN again to verify it.':'LovelyBooks could not return usable book data. Retry or choose another source.',code:error.code==='EDITION_MISMATCH'?error.code:error.upstreamStatus===403?'SOURCE_BLOCKED':'CATALOG_UNAVAILABLE'},{status:502})}
+}
+
 const memory=new Map();
 function cacheCatalog(key,data){if(memory.size>=100)memory.delete(memory.keys().next().value);memory.set(key,{data,until:Date.now()+300000})}
-async function catalogOnce(request){let u=new URL(request.url);if(request.method!=='GET')return Response.json({error:'Method not allowed'},{status:405});let source=u.searchParams.get('source')||'kitapyurdu';let lang=u.searchParams.get('lang')||'';if(!['kitapyurdu','bkm','nadir','openlibrary','google','anilist','blackwells','betterworld','dnb','k10plus','thalia','hugendubel'].includes(source)||lang&&!languages[lang])return Response.json({error:'Choose a supported source and language.'},{status:400});let query=(u.searchParams.get('q')||'').trim(),target=u.searchParams.get('url')||'',search=u.pathname==='/api/books';if(search&&(query.length<2||query.length>300))return Response.json({error:'Use 2–300 characters.'},{status:400});if(germanSources[source])return germanAPI(source,search,query,target,lang);if(retailSources[source])return retailAPI(source,search,query,target,lang);if(apiSources[source])return extraAPI(request,source,search,query,target,source==='anilist'?'':lang);if(!search){let valid=source==='kitapyurdu'?bookURL(target):source==='bkm'?bkmURL(target):source==='nadir'?nadirURL(target):/^https:\/\/openlibrary\.org\/books\/OL\d+M$/.test(target)?target:'';if(!valid)return Response.json({error:'Choose a valid result from the selected source.'},{status:400});target=valid}let key=JSON.stringify([source,lang,search?query:target]);let cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);let name={kitapyurdu:'Kitapyurdu',bkm:'BKM Kitap',nadir:'Nadir Kitap',openlibrary:'Open Library'}[source];try{let data;
+async function catalogOnce(request){let u=new URL(request.url);if(request.method!=='GET')return Response.json({error:'Method not allowed'},{status:405});let source=u.searchParams.get('source')||'kitapyurdu';let lang=u.searchParams.get('lang')||'';if(!['kitapyurdu','bkm','nadir','openlibrary','google','anilist','blackwells','betterworld','dnb','k10plus','thalia','hugendubel','lovelybooks'].includes(source)||lang&&!languages[lang])return Response.json({error:'Choose a supported source and language.'},{status:400});let query=(u.searchParams.get('q')||'').trim(),target=u.searchParams.get('url')||'',search=u.pathname==='/api/books';if(search&&(query.length<2||query.length>300))return Response.json({error:'Use 2–300 characters.'},{status:400});if(source==='lovelybooks')return lovelyAPI(request,search,query,target,lang);if(germanSources[source])return germanAPI(source,search,query,target,lang);if(retailSources[source])return retailAPI(source,search,query,target,lang);if(apiSources[source])return extraAPI(request,source,search,query,target,source==='anilist'?'':lang);if(!search){let valid=source==='kitapyurdu'?bookURL(target):source==='bkm'?bkmURL(target):source==='nadir'?nadirURL(target):/^https:\/\/openlibrary\.org\/books\/OL\d+M$/.test(target)?target:'';if(!valid)return Response.json({error:'Choose a valid result from the selected source.'},{status:400});target=valid}let key=JSON.stringify([source,lang,search?query:target]);let cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);let name={kitapyurdu:'Kitapyurdu',bkm:'BKM Kitap',nadir:'Nadir Kitap',openlibrary:'Open Library'}[source];try{let data;
 if(source==='kitapyurdu'){let url=search?root+'/index.php?route=product/list&filter_name='+encodeURIComponent(query)+(lang?'&filter_language='+encodeURIComponent(languages[lang].ky):''):target;let html=await upstream(url);data=search?{results:parseSearch(html)}:parseBook(html,target);if(search&&!data.results.length&&!/searchFilters|Aradım Bulamadım|Aramanız|sonuç bulunamadı/i.test(html))throw Error('Search unavailable')}
 else if(source==='nadir'){data=search?await nadirSearch(query,lang):await nadirBook(target)}
 else if(source==='bkm'){let html=await publicFetch(search?'https://www.bkmkitap.com/arama?q='+encodeURIComponent(query):target,'https://www.bkmkitap.com');let results=parseBkm(html,search?lang:'');if(search){if(!graphs(html).length)throw Error('Search unavailable');data={results}}else{data=results.find(x=>x.sourceUrl===target);if(!data)throw Error('Edition details unavailable')}}

@@ -15,6 +15,7 @@ enum NetworkPolicy {
             return ["GET", "POST", "DELETE"].contains(method) && (path == "/drive/v3/files" || path.range(of: "^/drive/v3/files/[A-Za-z0-9_-]+$", options: .regularExpression) != nil || path == "/upload/drive/v3/files")
         }
         if host == "www.googleapis.com" { return method == "GET" && url.path.hasPrefix("/books/v1/volumes") }
+        if host == "www.lovelybooks.de" { return method == "GET" && (url.path == "/mapi/search/detail/books" || url.path.range(of: "^/mapi/books/(?:byTitle/[1-9][0-9]{0,13}|[1-9][0-9]{0,13}/details)$", options: .regularExpression) != nil) }
         if host == "services.dnb.de" { return method == "GET" && url.path == "/sru/dnb" }
         if host == "sru.k10plus.de" { return method == "GET" && url.path == "/opac-de-627" }
         if catalogHosts.contains(host) { return method == "GET" }
@@ -25,7 +26,7 @@ enum NetworkPolicy {
     }
     static func external(_ url: URL) -> Bool {
         guard secure(url), let host = url.host else { return false }
-        return catalogHosts.contains(host) || ["books.google.com", "anilist.co", "d-nb.info", "opac.k10plus.de"].contains(host) || host == "github.com" && url.path.hasPrefix("/ayca-kaygusuz/quiet-shelf-public/releases/")
+        return catalogHosts.contains(host) || ["www.lovelybooks.de", "books.google.com", "anilist.co", "d-nb.info", "opac.k10plus.de"].contains(host) || host == "github.com" && url.path.hasPrefix("/ayca-kaygusuz/quiet-shelf-public/releases/")
     }
 }
 

@@ -87,3 +87,10 @@ Hugendubel (https://www.hugendubel.de). Their catalog data, covers and site
 content remain subject to their respective terms. Small public-record/parser
 fixtures exercise compatibility; no storefront access tokens or user data are
 included. Catalog metadata is not relicensed by the application license.
+
+The LovelyBooks integration reads anonymous catalog search and edition data
+from https://www.lovelybooks.de and covers from https://images.lovelybooks.de.
+Its interface is not a documented public API. Book metadata and covers retain
+their respective rights and terms; user reviews, ratings, profiles and account
+libraries are not imported. Sanitized public metadata fixtures contain no
+storefront tokens, affiliate templates or account data.
