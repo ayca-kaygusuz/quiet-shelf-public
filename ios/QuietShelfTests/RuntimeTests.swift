@@ -65,7 +65,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(actual3, "Tablet test title")
         let actual4 = try await evaluate("document.documentElement.dataset.theme", in: web) as? String
         XCTAssertEqual(actual4, "sage")
-        let dimensions = try await evaluate("({width:innerWidth,content:document.documentElement.scrollWidth,columns:getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length,detail:getComputedStyle(document.querySelector('#detail')).display})", in: web) as? [String: Any]
+        let dimensions = try await evaluate("({width:document.documentElement.clientWidth,visualWidth:innerWidth,content:document.documentElement.scrollWidth,columns:getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length,detail:getComputedStyle(document.querySelector('#detail')).display})", in: web) as? [String: Any]
         let width = dimensions?["width"] as? Int ?? 0
         XCTAssertLessThanOrEqual(dimensions?["content"] as? Int ?? 99999, width + 1)
         if width >= 720 { XCTAssertEqual(dimensions?["columns"] as? Int, 2); XCTAssertNotEqual(dimensions?["detail"] as? String, "none") }
@@ -88,11 +88,12 @@ final class RuntimeTests: XCTestCase {
                     try await Task.sleep(nanoseconds: 100_000_000)
                 }
                 _ = try await evaluate("document.querySelector('#list .titlebutton').click()", in: web)
-                let layout = try await evaluate("({width:innerWidth,content:document.documentElement.scrollWidth,columns:getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length,detail:getComputedStyle(document.querySelector('#detail')).display})", in: web) as? [String: Any]
+                let layout = try await evaluate("({width:document.documentElement.clientWidth,visualWidth:innerWidth,content:document.documentElement.scrollWidth,columns:getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length,detail:getComputedStyle(document.querySelector('#detail')).display})", in: web) as? [String: Any]
                 // The native view must fill its window. WebKit may preserve a
                 // separate CSS page scale while transitioning between sizes.
                 XCTAssertEqual(web.bounds.width, CGFloat(size), accuracy: 0.5)
                 let viewport = layout?["width"] as? Int ?? 0
+                print("Resized native width", size, "layout viewport", viewport, "visual viewport", layout?["visualWidth"] ?? 0, "native zoom", web.scrollView.zoomScale)
                 XCTAssertGreaterThan(viewport, 0)
                 XCTAssertLessThanOrEqual(layout?["content"] as? Int ?? 99999, viewport + 1)
                 XCTAssertEqual(layout?["columns"] as? Int, viewport >= 720 ? 2 : 1)
