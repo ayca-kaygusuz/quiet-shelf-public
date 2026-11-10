@@ -7,6 +7,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 execFileSync(process.execPath,['scripts/prepare-ios.mjs'],{stdio:'pipe'});
+const germanFixtures={};
+for(const provider of ['dnb','k10plus','thalia','hugendubel'])germanFixtures[provider]=provider==='dnb'||provider==='k10plus'?{xml:await readFile('tests/fixtures/german/'+provider+'.xml','utf8')}:{search:await readFile('tests/fixtures/german/'+provider+'-search.html','utf8'),book:await readFile('tests/fixtures/german/'+provider+'-book.html','utf8')};
 let online=true,metered=false;
 let api,account={id:'101',email:'reader@example.invalid',name:'A reader'},creates=0,removes=0,clears=0;const files=new Map(),calls=[];
 globalThis.QuietShelfIOS={rpc:async(method,args={})=>{
@@ -16,6 +18,8 @@ globalThis.QuietShelfIOS={rpc:async(method,args={})=>{
  if(method==='account.signout'){account=null;return {mode:'ios',configured:true,account:null}}
  assert.equal(method,'http');const u=new URL(args.url),headers=new Headers(args.headers);assert.equal(headers.get('Cookie'),null);
  if(u.hostname==='www.googleapis.com'&&u.pathname.startsWith('/books/v1/volumes')){assert.equal(headers.get('Authorization'),null);assert.equal(headers.get('X-Goog-Api-Key'),'test-only-books-key');return {status:200,headers:{},body:JSON.stringify({items:[{id:'volume-one',volumeInfo:{title:'An iPhone/iPad catalog result',language:'en'}}]})}}
+ const provider={'services.dnb.de':'dnb','sru.k10plus.de':'k10plus','www.thalia.de':'thalia','www.hugendubel.de':'hugendubel'}[u.hostname];
+ if(provider){assert.equal(headers.get('Authorization'),null);assert.equal(headers.get('X-Goog-Api-Key'),null);const f=germanFixtures[provider];return {status:200,headers:{},body:f.xml||(u.pathname.includes('artikeldetails')||u.pathname.endsWith('-produkt-details.html')?f.book:f.search)}}
  assert.equal(args.accountId,'101');assert.equal(headers.get('Authorization'),'Bearer native-account');assert(!JSON.stringify(args).includes('refresh_token'));assert.equal(headers.get('X-Goog-Api-Key'),null);
  if(u.pathname==='/drive/v3/files')return {status:200,headers:{},body:JSON.stringify({files:[...files].map(([id,state])=>({id,version:'1',size:JSON.stringify(state).length}))})};
  if(u.pathname==='/upload/drive/v3/files'){const state=JSON.parse(args.body.split('\r\n\r\n')[2].split('\r\n--')[0]);const id='copy-'+(++creates);files.set(id,state);return {status:200,headers:{},body:JSON.stringify({id,version:'1'})}}
@@ -39,6 +43,10 @@ try{
 
  response=await call('/api/books?source=google&lang=en&q=iPhone/iPad',{},{'X-Google-Api-Key':'test-only-books-key'});assert.equal(response.status,405);
  response=await call('/api/books?source=google&lang=en&q=iPhone/iPad',undefined,{'X-Google-Api-Key':'test-only-books-key'});assert.equal(response.status,200);assert.equal((await response.json()).results[0].title,'An iPhone/iPad catalog result');
+ for(const provider of Object.keys(germanFixtures)){
+  const r=await call('/api/books?source='+provider+'&lang=&q=9783522202602',undefined,{'X-Google-Api-Key':'private-key-not-for-catalogs'});assert.equal(r.status,200);const books=(await r.json()).results;assert.equal(books.length,1);assert.equal(books[0].isbn,'9783522202602');
+  const detail=await call('/api/book?source='+provider+'&url='+encodeURIComponent(books[0].sourceUrl));assert.equal(detail.status,200);assert.equal((await detail.json()).language,'de');
+ }
  await call('/api/account/signout',{});assert.equal((await(await call('/api/account/status')).json()).account,null);assert.equal(files.size,1,'sign-out leaves Drive data intact');
  assert.equal(clears,0);assert(!JSON.stringify(calls).includes('private-refresh-token'));
  const html=await readFile('ios/QuietShelf/Web/index.html','utf8'),csp=await readFile('ios/QuietShelf/Web/csp.txt','utf8'),script=html.match(/<script>([\s\S]*)<\/script>/)[1];

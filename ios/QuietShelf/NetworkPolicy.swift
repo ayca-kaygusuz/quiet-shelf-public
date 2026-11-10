@@ -5,7 +5,7 @@ import Foundation
 // Same catalog/release boundaries as Android. No general-purpose authenticated proxy.
 enum NetworkPolicy {
     static let limit = 12 * 1024 * 1024
-    static let catalogHosts: Set<String> = ["blackwells.co.uk", "www.betterworldbooks.com", "www.kitapyurdu.com", "www.bkmkitap.com", "www.nadirkitap.com", "nadirkitap.com", "openlibrary.org"]
+    static let catalogHosts: Set<String> = ["www.thalia.de", "www.hugendubel.de", "blackwells.co.uk", "www.betterworldbooks.com", "www.kitapyurdu.com", "www.bkmkitap.com", "www.nadirkitap.com", "nadirkitap.com", "openlibrary.org"]
     static func secure(_ url: URL) -> Bool { url.scheme == "https" && url.port == nil && url.user == nil && url.password == nil && url.host != nil }
     static func drive(_ url: URL) -> Bool { url.host == "www.googleapis.com" && (url.path.hasPrefix("/drive/") || url.path.hasPrefix("/upload/drive/")) }
     static func allowed(_ url: URL, method: String) -> Bool {
@@ -15,6 +15,8 @@ enum NetworkPolicy {
             return ["GET", "POST", "DELETE"].contains(method) && (path == "/drive/v3/files" || path.range(of: "^/drive/v3/files/[A-Za-z0-9_-]+$", options: .regularExpression) != nil || path == "/upload/drive/v3/files")
         }
         if host == "www.googleapis.com" { return method == "GET" && url.path.hasPrefix("/books/v1/volumes") }
+        if host == "services.dnb.de" { return method == "GET" && url.path == "/sru/dnb" }
+        if host == "sru.k10plus.de" { return method == "GET" && url.path == "/opac-de-627" }
         if catalogHosts.contains(host) { return method == "GET" }
         if host == "graphql.anilist.co" { return method == "POST" && ["", "/"].contains(url.path) }
         if host == "api.github.com" { return method == "GET" && url.path == "/repos/ayca-kaygusuz/quiet-shelf-public/releases/latest" }
@@ -23,7 +25,7 @@ enum NetworkPolicy {
     }
     static func external(_ url: URL) -> Bool {
         guard secure(url), let host = url.host else { return false }
-        return catalogHosts.contains(host) || ["books.google.com", "anilist.co"].contains(host) || host == "github.com" && url.path.hasPrefix("/ayca-kaygusuz/quiet-shelf-public/releases/")
+        return catalogHosts.contains(host) || ["books.google.com", "anilist.co", "d-nb.info", "opac.k10plus.de"].contains(host) || host == "github.com" && url.path.hasPrefix("/ayca-kaygusuz/quiet-shelf-public/releases/")
     }
 }
 

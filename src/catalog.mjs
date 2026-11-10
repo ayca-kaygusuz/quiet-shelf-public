@@ -6,7 +6,7 @@ function readingInformation(pages,subjects,format,source,isbnValue){
  return {version:1,isbn:parseISBN(isbnValue)||'',pages:Number.isInteger(Number(pages))&&Number(pages)>0&&Number(pages)<=50000?Number(pages):null,subjects:tags,format:/manga|manhwa|manhua/.test(f+' '+words)?'manga':/comic|graphic novel|çizgi roman/.test(f+' '+words)?'comic':/textbook|workbook|dictionary|language instruction/.test(f+' '+words)?'reference':'unknown',sources:[source],checkedAt:new Date().toISOString()};
 }
 const root='https://www.kitapyurdu.com';
-export function text(html=''){return String(html).replace(/<[^>]*>/g,' ').replace(/&#(x[0-9a-f]+|\d+);/gi,(_,v)=>{let n=v[0].toLowerCase()==='x'?parseInt(v.slice(1),16):Number(v);return n>0&&n<=0x10ffff?String.fromCodePoint(n):''}).replace(/&(amp|quot|apos|lt|gt|nbsp);/g,(_,k)=>({amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '}[k])).replace(/\s+/g,' ').trim()}
+export function text(html=''){const entities={amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' ',auml:'ä',ouml:'ö',uuml:'ü',Auml:'Ä',Ouml:'Ö',Uuml:'Ü',szlig:'ß',eacute:'é',egrave:'è',aacute:'á',oacute:'ó',uacute:'ú',ndash:'–',mdash:'—',bdquo:'„',ldquo:'“',rdquo:'”'};return String(html).replace(/<[^>]*>/g,' ').replace(/&#(x[0-9a-f]+|\d+);/gi,(_,v)=>{let n=v[0].toLowerCase()==='x'?parseInt(v.slice(1),16):Number(v);return n>0&&n<=0x10ffff?String.fromCodePoint(n):''}).replace(/&([a-z]+);/gi,(all,k)=>entities[k]??all).replace(/[\u0098\u009c]/g,'').replace(/\s+/g,' ').trim()}
 export function bookURL(value){try{let u=new URL(value);if(u.origin!==root||!/^\/kitap\/[a-zA-Z0-9%-]+\/\d+\.html$/.test(u.pathname)||u.username||u.password)return '';return root+u.pathname}catch{return ''}}
 function attr(tag,key){return text(tag.match(new RegExp('\\b'+key+'=["\']([^"\']*)["\']','i'))?.[1]||'')}
 function cover(value){try{let u=new URL(value);return u.protocol==='https:'&&u.hostname==='img.kitapyurdu.com'?u.href:''}catch{return ''}}
@@ -15,7 +15,7 @@ export function parseBook(html,url){let graphs=[];for(let m of html.matchAll(/<s
 async function upstream(url){let response;for(let i=0;i<4;i++){response=await fetch(url,{headers:{'Accept':'text/html','User-Agent':'QuietShelf/1.0 (personal book catalog)'},redirect:'manual',signal:AbortSignal.timeout(12000)});if(response.status>=300&&response.status<400){let next=new URL(response.headers.get('location'),url);if(next.origin!==root)throw Error('Unexpected redirect');url=next.href;continue}break}if(!response?.ok){let error=Error('Kitapyurdu HTTP '+response?.status);error.upstreamStatus=response?.status;throw error;}let html=await response.text();if(html.length>3000000)throw Error('Response too large');return html}
 
 export const languages={tr:{ol:'tur',ky:'TÜRKÇE'},en:{ol:'eng',ky:'İNGİLİZCE'},de:{ol:'ger',ky:'ALMANCA'},fr:{ol:'fre',ky:'FRANSIZCA'},ja:{ol:'jpn',ky:'JAPONCA'},es:{ol:'spa',ky:'İSPANYOLCA'},it:{ol:'ita',ky:'İTALYANCA'},ru:{ol:'rus',ky:'RUSÇA'},ar:{ol:'ara',ky:'ARAPÇA'},ko:{ol:'kor',ky:'KORECE'},zh:{ol:'chi',ky:'ÇİNCE'},pt:{ol:'por',ky:'PORTEKİZCE'}};
-export function normalizeLanguage(v){let value=String(v||'').toLocaleLowerCase('tr').trim();return ({turkish:'tr','türkçe':'tr',tur:'tr',english:'en','ingilizce':'en','i̇ngilizce':'en',eng:'en',german:'de',ger:'de',deu:'de',french:'fr',fre:'fr',fra:'fr',japanese:'ja',jpn:'ja',spanish:'es',spa:'es',italian:'it',ita:'it',russian:'ru',rus:'ru',arabic:'ar',ara:'ar',korean:'ko',kor:'ko',chinese:'zh',chi:'zh',zho:'zh',portuguese:'pt',por:'pt'})[value]||value}
+export function normalizeLanguage(v){let value=String(v||'').toLocaleLowerCase('tr').trim();return ({turkish:'tr','türkçe':'tr',tur:'tr',english:'en',englisch:'en','ingilizce':'en','i̇ngilizce':'en',eng:'en',german:'de',deutsch:'de',ger:'de',deu:'de',french:'fr','französisch':'fr',fre:'fr',fra:'fr',japanese:'ja',japanisch:'ja',jpn:'ja',spanish:'es',spanisch:'es',spa:'es',italian:'it',italienisch:'it',ita:'it',russian:'ru',russisch:'ru',rus:'ru',arabic:'ar',arabisch:'ar',ara:'ar',korean:'ko',koreanisch:'ko',kor:'ko',chinese:'zh',chinesisch:'zh',chi:'zh',zho:'zh',portuguese:'pt',portugiesisch:'pt',por:'pt'})[value]||value}
 function graphs(html){let result=[];for(let m of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)){try{let data=JSON.parse(m[1]);result.push(...(data['@graph']||(Array.isArray(data)?data:[data])))}catch{}}return result}
 function names(v){return (Array.isArray(v)?v:[v]).filter(Boolean).map(x=>typeof x==='string'?x:x.name||'').join(', ')}
 export function bkmURL(value){try{let u=new URL(value);return u.origin==='https://www.bkmkitap.com'&&/^\/[a-zA-Z0-9%-]+$/.test(u.pathname)&&!u.username&&!u.password?u.origin+u.pathname:''}catch{return ''}}
@@ -171,9 +171,105 @@ async function retailAPI(source,search,query,target,lang){
  }catch(error){return Response.json({error:config.name+' could not return usable edition data. Try again or choose another source.',code:error.upstreamStatus===403?'SOURCE_BLOCKED':'CATALOG_UNAVAILABLE'},{status:502})}
 }
 
+// Public SRU catalogs and German booksellers. No accounts, storefront tokens or connector.
+const germanSources={
+ dnb:{name:'DNB',root:'https://services.dnb.de',endpoint:'/sru/dnb',schema:'MARC21-xml',index:'woe',idIndex:'idn',languageIndex:'spr'},
+ k10plus:{name:'K10plus',root:'https://sru.k10plus.de',endpoint:'/opac-de-627',schema:'marcxml',index:'pica.all',idIndex:'pica.ppn',languageIndex:'pica.spr'},
+ thalia:{name:'Thalia',root:'https://www.thalia.de'},
+ hugendubel:{name:'Hugendubel',root:'https://www.hugendubel.de'}
+};
+export function germanURL(source,value){
+ try{
+  const u=new URL(value);if(u.protocol!=='https:'||u.port||u.username||u.password)return '';
+  if(source==='dnb'&&u.hostname==='portal.dnb.de'&&u.pathname==='/opac.htm'){const id=u.searchParams.get('query')?.match(/^idn\s*=\s*"?(\d{7,11}[\dX])"?$/)?.[1];return id?'https://d-nb.info/'+id:''}
+  if(source==='dnb')return u.hostname==='d-nb.info'&&/^\/\d{7,11}[\dX]$/.test(u.pathname)?u.origin+u.pathname:'';
+  if(source==='k10plus')return u.hostname==='opac.k10plus.de'&&/^\/DB=2\.299\/{1,2}PPNSET$/.test(u.pathname)&&/^\d{7,11}[\dX]$/.test(u.searchParams.get('PPN')||'')?'https://opac.k10plus.de/DB=2.299/PPNSET?PPN='+u.searchParams.get('PPN'):'';
+  if(u.origin!==germanSources[source]?.root)return '';
+  const pattern=source==='thalia'?/^\/shop\/home\/artikeldetails\/A\d+$/:/^\/de\/(?:buch_gebunden|taschenbuch|buch_kartoniert|ebook_epub|ebook_pdf)\/[a-zA-Z0-9_%.-]+-\d+-produkt-details\.html$/;return ['thalia','hugendubel'].includes(source)&&pattern.test(u.pathname)?u.origin+u.pathname:'';
+ }catch{return ''}
+}
+function germanCover(source,value){try{let u=new URL(value,germanSources[source].root);if(source==='hugendubel'&&u.pathname==='/_next/image')u=new URL(u.searchParams.get('url'));return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&u.hostname===(source==='thalia'?'images.thalia.media':'media2.hugendubel.de')?u.href:''}catch{return ''}}
+function germanSubjects(values){const tags=values.filter(Boolean).map(value=>text(value).normalize('NFC')).map(value=>/(?:^|[^\p{L}])(?:Sprachlehrbuch|Lehrbuch|Übungsbuch|Wörterbuch|Sprachunterricht|Sprachen lernen)(?:$|[^\p{L}])/iu.test(value)?value+' / textbook reference':value);return [...tags.filter(v=>v.endsWith(' / textbook reference')),...tags.filter(v=>!v.endsWith(' / textbook reference'))]}
+// Read MARC fields only; never load DTDs, entities, stylesheets or catalog-supplied URLs.
+export function parseGermanSRU(xml,source,lang='',requestedISBN=''){
+ const config=germanSources[source];if(!config?.schema||/<!DOCTYPE|<!ENTITY|<(?:\w+:)?diagnostic\b/i.test(xml)||(!xml.includes('http://www.loc.gov/zing/srw/')||!xml.includes('http://www.loc.gov/MARC21/slim')&&/<(?:\w+:)?recordData\b/i.test(xml))||!/<(?:\w+:)?numberOfRecords\b[^>]*>\s*\d+\s*<\//i.test(xml))throw Error('Catalog did not return usable SRU records');
+ const results=[],seen=new Set();
+ for(const match of xml.matchAll(/<(?:\w+:)?recordData\b[^>]*>([\s\S]*?)<\/(?:\w+:)?recordData>/gi)){
+  const record=match[1],fields=[];
+  const leader=(record.match(/<(?:\w+:)?leader\b[^>]*>([\s\S]*?)<\/(?:\w+:)?leader>/i)?.[1]||'');
+  // MARC type a/t: text; bibliographic level m: a monograph, not a journal/series record.
+  if(!/[at]/.test(leader[6]||'')||leader[7]!=='m')continue;
+  const rawControl=tag=>[...record.matchAll(/<(?:\w+:)?controlfield\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?controlfield>/gi)].find(m=>attr(m[1],'tag')===tag)?.[2]||'';
+  const control=tag=>text(rawControl(tag));
+  for(const m of record.matchAll(/<(?:\w+:)?datafield\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?datafield>/gi))fields.push({tag:attr(m[1],'tag'),values:[...m[2].matchAll(/<(?:\w+:)?subfield\b([^>]*)>([\s\S]*?)<\/(?:\w+:)?subfield>/gi)].map(s=>({code:attr(s[1],'code'),value:text(s[2])}))});
+  const all=(tag,codes)=>fields.filter(f=>f.tag===tag).flatMap(f=>f.values.filter(v=>codes.includes(v.code)).map(v=>v.value)),first=(tag,codes)=>all(tag,codes)[0]||'';
+  const id=control('001'),sourceUrl=source==='dnb'?germanURL(source,'https://d-nb.info/'+id):germanURL(source,'https://opac.k10plus.de/DB=2.299/PPNSET?PPN='+id);
+  const title=all('245',['a','b','n','p']).join(' — ').replace(/\s*[/:;=]\s*$/,'');if(!sourceUrl||!title||seen.has(sourceUrl))continue;
+  const language=[...new Set((all('041',['a']).length?all('041',['a']):[rawControl('008').slice(35,38)]).map(normalizeLanguage).filter(v=>/^[a-z]{2,3}$/.test(v)))];if(lang&&!language.includes(lang))continue;
+  const isbns=all('020',['a']).map(s=>parseISBN(s.match(/[\dXx][\dXx\s-]{8,20}/)?.[0]?.trim())).filter(Boolean),isbn=(requestedISBN&&(isbns.find(v=>v===requestedISBN)||isbns.find(v=>comparableISBN(v)===comparableISBN(requestedISBN))))||isbns.find(v=>v.length===13)||isbns[0]||'';
+  const people=fields.filter(f=>['100','700'].includes(f.tag)),person=f=>f.values.filter(v=>['a','b','c'].includes(v.code)).map(v=>v.value).join(' '),author=people.filter(f=>f.tag==='100'||f.values.some(v=>v.code==='4'&&v.value==='aut')).map(person).join(', '),translator=people.filter(f=>f.values.some(v=>v.code==='4'&&v.value==='trl')).map(person).join(', ');
+  const subjects=germanSubjects(['650','651','653','655'].flatMap(tag=>all(tag,['a','x','v']))),extent=first('300',['a']),pages=extent.match(/\b(\d+)\s*(?:Seiten\b|S\.|pages\b|p\.)/i)?.[1];
+  results.push({title,author,translator,publisher:first('264',['b'])||first('260',['b']),publicationYear:(first('264',['c'])||first('260',['c'])).match(/\b[12]\d{3}\b/)?.[0]||'',binding:first('020',['q']),isbn,language:language.join(', '),cover:'',sourceUrl,source:config.name,recordKind:'edition',readingInfo:readingInformation(pages,subjects,'',config.name,isbn)});seen.add(sourceUrl);
+ }
+ return results.slice(0,40);
+}
+export function parseGermanShopSearch(html,source){
+ const config=germanSources[source],results=[],seen=new Set();if(!config||config.schema)return results;
+ const blocks=source==='thalia'?html.split(/<li\b[^>]*class=["'][^"']*\btm-produktliste__eintrag\b[^"']*["'][^>]*>/i).slice(1).map(b=>b.split('</li>')[0]):html.split(/<div\b[^>]*class=["']search-item article-item["'][^>]*>/i).slice(1);
+ for(const block of blocks){
+  const path=block.match(source==='thalia'?/href=["']([^"']*\/shop\/home\/artikeldetails\/A\d+)["']/i:/href=["']([^"']*-produkt-details\.html)["']/i)?.[1];if(!path)continue;
+  const sourceUrl=germanURL(source,new URL(text(path),config.root).href);if(!sourceUrl||seen.has(sourceUrl))continue;
+  const field=name=>text(block.match(new RegExp('<[^>]+class=["\'][^"\']*\\b'+name+'\\b[^"\']*["\'][^>]*>([\\s\\S]*?)<\\/','i'))?.[1]||'');
+  const title=field(source==='thalia'?'tm-artikeldetails__titel':'title'),author=field(source==='thalia'?'tm-artikeldetails__autor__autoren':'author'),binding=field(source==='thalia'?'tm-flex-truncated__child':'item-type'),image=block.match(/<img\b[^>]*>/i)?.[0]||'';
+  if(!title||/hörbuch|audio|tonie|kalender/i.test(binding))continue;
+  results.push({title,author,publisher:'',isbn:'',language:'',binding,cover:germanCover(source,attr(image,'src')),sourceUrl,source:config.name,recordKind:'edition'});seen.add(sourceUrl);if(results.length===40)break;
+ }
+ return results;
+}
+export function parseGermanShopBook(html,source,url){
+ const config=germanSources[source],sourceUrl=germanURL(source,url);if(!sourceUrl||config?.schema)throw Error('Invalid edition URL');
+ const records=graphs(html),book=records.find(g=>[g['@type']].flat().includes(source==='thalia'?'Book':'Product')&&g.name&&(g.isbn||g.gtin13));if(!book)throw Error('Book edition details unavailable');
+ const identity=germanURL(source,new URL(book.url||book.offers?.url||'',config.root).href),id=v=>v.match(source==='thalia'?/A\d+$/:/\d+-produkt-details\.html$/)?.[0];if(!identity||id(identity)!==id(sourceUrl))throw Error('Edition details identity changed');
+ const fields={};
+ if(source==='thalia')for(const m of html.matchAll(/<section\b[^>]*class=["'][^"']*\bartikeldetail\b[^"']*["'][^>]*>([\s\S]*?)<\/section>/gi)){const label=text(m[1].match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/i)?.[1]||''),value=text(m[1].match(/<(?:p|a)\b[^>]*class=["'][^"']*\b(?:value|single-value)\b[^"']*["'][^>]*>([\s\S]*?)<\/(?:p|a)>/i)?.[1]||'');if(label&&value)fields[label]=value}
+ else for(const m of html.matchAll(/<div\b[^>]*class=["']table-col table-head["'][^>]*>([\s\S]*?)<\/div>\s*<div\b[^>]*class=["']table-col["'][^>]*>([\s\S]*?)<\/div>/gi))fields[text(m[1])]=text(m[2]);
+ const isbn=parseISBN(book.isbn||book.gtin13),binding=fields.Einband||fields.Produktart||text(book.bookFormat||'');if(!isbn||/hörbuch|audio|tonie|kalender/i.test(binding))throw Error('Not a book edition');
+ const subjects=germanSubjects(records.filter(r=>r['@type']==='BreadcrumbList').flatMap(r=>(r.itemListElement||[]).map(e=>e.name)).concat([...(Array.isArray(book.genre)?book.genre:[book.genre]),fields.Warengruppe,fields.Schlagwörter]));
+ return {title:text(book.name),author:text(names(book.author))||fields['Autor/Autorin']||'',publisher:text(names(book.publisher||book.brand))||fields.Verlag||fields['Verlag/Hersteller']||'',isbn,language:normalizeLanguage(book.inLanguage||fields.Sprache||''),binding,publicationYear:text(book.datePublished||fields.Erscheinungsdatum||'').match(/\b[12]\d{3}\b/)?.[0]||'',translator:fields['Übersetzt von']||fields['Übersetzung']||'',cover:germanCover(source,Array.isArray(book.image)?book.image[0]:book.image),sourceUrl,source:config.name,recordKind:'edition',readingInfo:readingInformation(book.numberOfPages||fields.Seitenzahl||fields.Seitenanzahl,subjects,binding,config.name,isbn)};
+}
+const germanPending=new Map();let germanActive=0;const germanQueue=[];
+async function germanBook(source,url){
+ const key=JSON.stringify([source,'',url]),cached=memory.get(key);if(cached&&cached.until>Date.now())return cached.data;if(germanPending.has(key))return germanPending.get(key);
+ const task=(async()=>{if(germanActive>=3)await new Promise(resolve=>germanQueue.push(resolve));else germanActive++;try{const data=parseGermanShopBook(await publicFetch(url,germanSources[source].root),source,url);cacheCatalog(key,data);return data}finally{const next=germanQueue.shift();if(next)next();else germanActive--}})();germanPending.set(key,task);try{return await task}finally{germanPending.delete(key)}
+}
+async function germanAPI(source,search,query,target,lang){
+ const config=germanSources[source],valid=search?'':germanURL(source,target);if(!search&&!valid)return Response.json({error:'Choose a valid book edition from this source.'},{status:400});
+ const key=JSON.stringify([source,lang,search?query:valid]),cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);
+ try{
+  let data;
+  if(config.schema){
+   const url=new URL(config.endpoint,config.root),isbn=parseISBN(query),words=query.normalize('NFC').match(/[\p{L}\p{N}]+/gu)||[];
+   let cql=!search?config.idIndex+'="'+(source==='dnb'?new URL(valid).pathname.slice(1):new URL(valid).searchParams.get('PPN'))+'"':isbn?(source==='dnb'?'isbn':'pica.isb')+'="'+isbn+'"':words.slice(0,24).map(w=>config.index+'="'+w+'"').join(' and ');
+   if(!cql)throw Error('Use title, author or ISBN');if(search&&lang)cql+=' and '+config.languageIndex+'="'+languages[lang].ol+'"';
+   for(const [k,v]of Object.entries({version:'1.1',operation:'searchRetrieve',query:cql,maximumRecords:search?'40':'1',recordSchema:config.schema}))url.searchParams.set(k,v);
+   const records=parseGermanSRU(await publicFetch(url.href,config.root),source,search?lang:'',isbn||'');data=search?{results:records}:records.find(b=>b.sourceUrl===valid);if(!data)throw Error('Edition record unavailable');
+  }else if(!search)data=await germanBook(source,valid);
+  else{
+   const url=new URL(source==='thalia'?'/suche':'/de/search',config.root);url.searchParams.set(source==='thalia'?'sq':'q',query);
+   const html=await publicFetch(url.href,config.root),basic=parseGermanShopSearch(html,source);
+   if(!basic.length&&!(/(?:keine|0)\s+(?:Treffer|Ergebnisse)|keine (?:passenden )?(?:Artikel|Produkte)|data-anzahl-treffer=["']0["']/i.test(html)||source==='hugendubel'&&/\b0\s+Treffer\b/i.test(text(html.match(/<h1\b[^>]*class=["'][^"']*search-title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1]||''))))throw Error('Search results unavailable');
+   let results=basic,partial=false;
+   // Any language shows public result cards immediately. Explicit filters use edition metadata.
+   if(lang){const details=await Promise.allSettled(rankSearchResults(basic,query,12).map(b=>germanBook(source,b.sourceUrl)));partial=details.some(r=>r.status==='rejected');results=details.flatMap(r=>r.status==='fulfilled'&&r.value.language===lang?[r.value]:[]);if(basic.length&&details.length&&details.every(r=>r.status==='rejected'))throw Error('Language metadata unavailable')}
+   data={results,...(partial?{searchNotice:'Some edition details could not be loaded. Retry or choose Any language.'}:{})};
+  }
+  cacheCatalog(key,data);return Response.json(data);
+ }catch(error){return Response.json({error:config.name+' could not return usable book data. Try again or choose another source.',code:error.upstreamStatus===403?'SOURCE_BLOCKED':'CATALOG_UNAVAILABLE'},{status:502})}
+}
+
 const memory=new Map();
 function cacheCatalog(key,data){if(memory.size>=100)memory.delete(memory.keys().next().value);memory.set(key,{data,until:Date.now()+300000})}
-async function catalogOnce(request){let u=new URL(request.url);if(request.method!=='GET')return Response.json({error:'Method not allowed'},{status:405});let source=u.searchParams.get('source')||'kitapyurdu';let lang=u.searchParams.get('lang')||'';if(!['kitapyurdu','bkm','nadir','openlibrary','google','anilist','blackwells','betterworld'].includes(source)||lang&&!languages[lang])return Response.json({error:'Choose a supported source and language.'},{status:400});let query=(u.searchParams.get('q')||'').trim(),target=u.searchParams.get('url')||'',search=u.pathname==='/api/books';if(search&&(query.length<2||query.length>300))return Response.json({error:'Use 2–300 characters.'},{status:400});if(retailSources[source])return retailAPI(source,search,query,target,lang);if(apiSources[source])return extraAPI(request,source,search,query,target,source==='anilist'?'':lang);if(!search){let valid=source==='kitapyurdu'?bookURL(target):source==='bkm'?bkmURL(target):source==='nadir'?nadirURL(target):/^https:\/\/openlibrary\.org\/books\/OL\d+M$/.test(target)?target:'';if(!valid)return Response.json({error:'Choose a valid result from the selected source.'},{status:400});target=valid}let key=JSON.stringify([source,lang,search?query:target]);let cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);let name={kitapyurdu:'Kitapyurdu',bkm:'BKM Kitap',nadir:'Nadir Kitap',openlibrary:'Open Library'}[source];try{let data;
+async function catalogOnce(request){let u=new URL(request.url);if(request.method!=='GET')return Response.json({error:'Method not allowed'},{status:405});let source=u.searchParams.get('source')||'kitapyurdu';let lang=u.searchParams.get('lang')||'';if(!['kitapyurdu','bkm','nadir','openlibrary','google','anilist','blackwells','betterworld','dnb','k10plus','thalia','hugendubel'].includes(source)||lang&&!languages[lang])return Response.json({error:'Choose a supported source and language.'},{status:400});let query=(u.searchParams.get('q')||'').trim(),target=u.searchParams.get('url')||'',search=u.pathname==='/api/books';if(search&&(query.length<2||query.length>300))return Response.json({error:'Use 2–300 characters.'},{status:400});if(germanSources[source])return germanAPI(source,search,query,target,lang);if(retailSources[source])return retailAPI(source,search,query,target,lang);if(apiSources[source])return extraAPI(request,source,search,query,target,source==='anilist'?'':lang);if(!search){let valid=source==='kitapyurdu'?bookURL(target):source==='bkm'?bkmURL(target):source==='nadir'?nadirURL(target):/^https:\/\/openlibrary\.org\/books\/OL\d+M$/.test(target)?target:'';if(!valid)return Response.json({error:'Choose a valid result from the selected source.'},{status:400});target=valid}let key=JSON.stringify([source,lang,search?query:target]);let cached=memory.get(key);if(cached&&cached.until>Date.now())return Response.json(cached.data);let name={kitapyurdu:'Kitapyurdu',bkm:'BKM Kitap',nadir:'Nadir Kitap',openlibrary:'Open Library'}[source];try{let data;
 if(source==='kitapyurdu'){let url=search?root+'/index.php?route=product/list&filter_name='+encodeURIComponent(query)+(lang?'&filter_language='+encodeURIComponent(languages[lang].ky):''):target;let html=await upstream(url);data=search?{results:parseSearch(html)}:parseBook(html,target);if(search&&!data.results.length&&!/searchFilters|Aradım Bulamadım|Aramanız|sonuç bulunamadı/i.test(html))throw Error('Search unavailable')}
 else if(source==='nadir'){data=search?await nadirSearch(query,lang):await nadirBook(target)}
 else if(source==='bkm'){let html=await publicFetch(search?'https://www.bkmkitap.com/arama?q='+encodeURIComponent(query):target,'https://www.bkmkitap.com');let results=parseBkm(html,search?lang:'');if(search){if(!graphs(html).length)throw Error('Search unavailable');data={results}}else{data=results.find(x=>x.sourceUrl===target);if(!data)throw Error('Edition details unavailable')}}

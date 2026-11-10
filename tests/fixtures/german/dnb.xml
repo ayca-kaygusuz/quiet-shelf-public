@@ -1,0 +1,271 @@
+<ns0:searchRetrieveResponse xmlns:ns0="http://www.loc.gov/zing/srw/" xmlns:ns1="http://www.loc.gov/MARC21/slim" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><ns0:version>1.1</ns0:version><ns0:numberOfRecords>1</ns0:numberOfRecords><ns0:records><ns0:record><ns0:recordSchema>MARC21-xml</ns0:recordSchema><ns0:recordPacking>xml</ns0:recordPacking><ns0:recordData><ns1:record type="Bibliographic">
+    <ns1:leader>00000pam a2200000 c 4500</ns1:leader>
+    <ns1:controlfield tag="001">1168641489</ns1:controlfield>
+    <ns1:controlfield tag="003">DE-101</ns1:controlfield>
+    <ns1:controlfield tag="005">20190415233639.0</ns1:controlfield>
+    <ns1:controlfield tag="007">tu</ns1:controlfield>
+    <ns1:controlfield tag="008">181009s2019    gw ||||| |||| 00||||ger  </ns1:controlfield>
+    <ns1:datafield tag="015" ind1=" " ind2=" ">
+      <ns1:subfield code="a">19,A17</ns1:subfield>
+      <ns1:subfield code="z">18,N42</ns1:subfield>
+      <ns1:subfield code="2">dnb</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="016" ind1="7" ind2=" ">
+      <ns1:subfield code="2">DE-101</ns1:subfield>
+      <ns1:subfield code="a">1168641489</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="020" ind1=" " ind2=" ">
+      <ns1:subfield code="a">9783522202602</ns1:subfield>
+      <ns1:subfield code="c">Gewebe : EUR 20.00 (DE), EUR 20.60 (AT), CHF 28.90 (freier Preis)</ns1:subfield>
+      <ns1:subfield code="9">978-3-522-20260-2</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="020" ind1=" " ind2=" ">
+      <ns1:subfield code="a">3522202600</ns1:subfield>
+      <ns1:subfield code="9">3-522-20260-0</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="024" ind1="3" ind2=" ">
+      <ns1:subfield code="a">9783522202602</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="035" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(DE-599)DNB1168641489</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="035" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(OCoLC)1098254886</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="035" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(OCoLC)1057322670</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="040" ind1=" " ind2=" ">
+      <ns1:subfield code="a">1245</ns1:subfield>
+      <ns1:subfield code="b">ger</ns1:subfield>
+      <ns1:subfield code="c">DE-101</ns1:subfield>
+      <ns1:subfield code="d">9999</ns1:subfield>
+      <ns1:subfield code="e">rda</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="041" ind1=" " ind2=" ">
+      <ns1:subfield code="a">ger</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="044" ind1=" " ind2=" ">
+      <ns1:subfield code="c">XA-DE-BW</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="082" ind1="7" ind2="4">
+      <ns1:subfield code="8">1\p</ns1:subfield>
+      <ns1:subfield code="a">K</ns1:subfield>
+      <ns1:subfield code="q">DE-101</ns1:subfield>
+      <ns1:subfield code="2">23sdnb</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="090" ind1=" " ind2=" ">
+      <ns1:subfield code="a">b</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="100" ind1="1" ind2=" ">
+      <ns1:subfield code="0">(DE-588)118530259</ns1:subfield>
+      <ns1:subfield code="0">https://d-nb.info/gnd/118530259</ns1:subfield>
+      <ns1:subfield code="0">(DE-101)118530259</ns1:subfield>
+      <ns1:subfield code="a">Ende, Michael</ns1:subfield>
+      <ns1:subfield code="d">1929-1995</ns1:subfield>
+      <ns1:subfield code="e">Verfasser</ns1:subfield>
+      <ns1:subfield code="4">aut</ns1:subfield>
+      <ns1:subfield code="2">gnd</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="240" ind1="1" ind2="0">
+      <ns1:subfield code="0">(DE-588)4065419-9</ns1:subfield>
+      <ns1:subfield code="0">https://d-nb.info/gnd/4065419-9</ns1:subfield>
+      <ns1:subfield code="0">(DE-101)040654192</ns1:subfield>
+      <ns1:subfield code="a">Die unendliche Geschichte</ns1:subfield>
+      <ns1:subfield code="2">gnd</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="245" ind1="1" ind2="0">
+      <ns1:subfield code="a">Die unendliche Geschichte</ns1:subfield>
+      <ns1:subfield code="c">Michael Ende</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="264" ind1=" " ind2="1">
+      <ns1:subfield code="a">Stuttgart</ns1:subfield>
+      <ns1:subfield code="b">Thienemann </ns1:subfield>
+      <ns1:subfield code="c">[2019]</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="300" ind1=" " ind2=" ">
+      <ns1:subfield code="a">474 Seiten</ns1:subfield>
+      <ns1:subfield code="c">22 cm</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="336" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Text</ns1:subfield>
+      <ns1:subfield code="b">txt</ns1:subfield>
+      <ns1:subfield code="2">rdacontent</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="337" ind1=" " ind2=" ">
+      <ns1:subfield code="a">ohne Hilfsmittel zu benutzen</ns1:subfield>
+      <ns1:subfield code="b">n</ns1:subfield>
+      <ns1:subfield code="2">rdamedia</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="338" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Band</ns1:subfield>
+      <ns1:subfield code="b">nc</ns1:subfield>
+      <ns1:subfield code="2">rdacarrier</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="385" ind1=" " ind2=" ">
+      <ns1:subfield code="0">(DE-588)4028859-6</ns1:subfield>
+      <ns1:subfield code="0">https://d-nb.info/gnd/4028859-6</ns1:subfield>
+      <ns1:subfield code="0">(DE-101)040288595</ns1:subfield>
+      <ns1:subfield code="a">Jugend</ns1:subfield>
+      <ns1:subfield code="2">gnd</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(Produktform)Hardback</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(BISAC Subject Heading)JUV000000</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(Produktform (spezifisch))With dust jacket</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(BISAC Subject Heading)JUV000000: JUVENILE FICTION / General</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(BISAC Subject Heading)JUV037000: JUVENILE FICTION / Fantasy &amp; Magic</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Michael Ende</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Jugendbuchklassiker</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Klassiker Jugendbuch</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Momo</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Wunschpunsch</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Jugendbuch ab</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Phantastik</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Fantasy</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Fantastik</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Fantastik für Jugendliche</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(VLB-WN)1260: Hardcover, Softcover / Kinder- und Jugendbücher/Jugendbücher ab 12 Jahre</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(BISAC Subject Heading)JUV000000: JUVENILE FICTION / General</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(Zielgruppe)ab 12 bis 99 Jahre</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(BISAC Subject Heading)JUV007000: JUVENILE FICTION / Classics</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Jugendbücher</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Tolkien</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Buxtehuder Bulle</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Fuchur</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">(Zielgruppe)ab 13 Jahre</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Die unendliche Geschichte Originalausgabe</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Die unendliche Geschichte Originalillustrationen</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Phantasien</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Kinderbuch Klassiker</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="653" ind1=" " ind2=" ">
+      <ns1:subfield code="a">Jugendbuch Klassiker</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="655" ind1=" " ind2="7">
+      <ns1:subfield code="0">(DE-588)4306252-0</ns1:subfield>
+      <ns1:subfield code="0">https://d-nb.info/gnd/4306252-0</ns1:subfield>
+      <ns1:subfield code="0">(DE-101)043062520</ns1:subfield>
+      <ns1:subfield code="a">Jugendbuch</ns1:subfield>
+      <ns1:subfield code="2">gnd-content</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="655" ind1=" " ind2="7">
+      <ns1:subfield code="0">(DE-101)101071841X</ns1:subfield>
+      <ns1:subfield code="a">Jugendbücher ab 12 Jahre</ns1:subfield>
+      <ns1:subfield code="2">gatbeg</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="700" ind1="1" ind2=" ">
+      <ns1:subfield code="a">Schöffmann-Davidov, Eva</ns1:subfield>
+      <ns1:subfield code="e">Designer</ns1:subfield>
+      <ns1:subfield code="4">dsr</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="850" ind1=" " ind2=" ">
+      <ns1:subfield code="a">DE-101a</ns1:subfield>
+      <ns1:subfield code="a">DE-101b</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="856" ind1="4" ind2="2">
+      <ns1:subfield code="m">X:MVB</ns1:subfield>
+      <ns1:subfield code="q">text/html</ns1:subfield>
+      <ns1:subfield code="u">https://services.dnb.de/plus/idn/1168641489/blurb/</ns1:subfield>
+      <ns1:subfield code="3">Inhaltstext</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="883" ind1="2" ind2=" ">
+      <ns1:subfield code="8">1\p</ns1:subfield>
+      <ns1:subfield code="a">dnb</ns1:subfield>
+      <ns1:subfield code="d">20190415</ns1:subfield>
+      <ns1:subfield code="q">DE-101</ns1:subfield>
+      <ns1:subfield code="u">https://d-nb.info/provenance/plan#dnb</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="925" ind1="r" ind2=" ">
+      <ns1:subfield code="a">ra</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="926" ind1="2" ind2=" ">
+      <ns1:subfield code="a">YF</ns1:subfield>
+      <ns1:subfield code="o">93</ns1:subfield>
+      <ns1:subfield code="q">Publisher</ns1:subfield>
+      <ns1:subfield code="v">1.2</ns1:subfield>
+      <ns1:subfield code="x">Kinder/Jugendliche: Romane, Erzählungen, Tatsachenberichte</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="926" ind1="2" ind2=" ">
+      <ns1:subfield code="a">YFH</ns1:subfield>
+      <ns1:subfield code="o">93</ns1:subfield>
+      <ns1:subfield code="q">Publisher</ns1:subfield>
+      <ns1:subfield code="v">1.2</ns1:subfield>
+      <ns1:subfield code="x">Kinder/Jugendliche: Fantasy</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="926" ind1="2" ind2=" ">
+      <ns1:subfield code="a">5A</ns1:subfield>
+      <ns1:subfield code="o">98</ns1:subfield>
+      <ns1:subfield code="q">Publisher</ns1:subfield>
+      <ns1:subfield code="v">1.2</ns1:subfield>
+      <ns1:subfield code="x">Zielgruppenalter, empfohlenes Alter</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="926" ind1="2" ind2=" ">
+      <ns1:subfield code="a">5AN</ns1:subfield>
+      <ns1:subfield code="o">98</ns1:subfield>
+      <ns1:subfield code="q">Publisher</ns1:subfield>
+      <ns1:subfield code="v">1.2</ns1:subfield>
+      <ns1:subfield code="x">empfohlenes Alter: ab 12 Jahre</ns1:subfield>
+    </ns1:datafield>
+    <ns1:datafield tag="926" ind1="2" ind2=" ">
+      <ns1:subfield code="a">Y</ns1:subfield>
+      <ns1:subfield code="o">93</ns1:subfield>
+      <ns1:subfield code="q">Publisher</ns1:subfield>
+      <ns1:subfield code="v">1.2</ns1:subfield>
+      <ns1:subfield code="x">Kinder, Jugendliche und Bildung</ns1:subfield>
+    </ns1:datafield>
+  </ns1:record></ns0:recordData><ns0:recordPosition>1</ns0:recordPosition></ns0:record></ns0:records><ns0:echoedSearchRetrieveRequest><ns0:version>1.1</ns0:version><ns0:query>isbn=9783522202602</ns0:query><ns0:xQuery xsi:nil="true" /><ns0:maximumRecords>3</ns0:maximumRecords><ns0:recordSchema>MARC21-xml</ns0:recordSchema></ns0:echoedSearchRetrieveRequest></ns0:searchRetrieveResponse>

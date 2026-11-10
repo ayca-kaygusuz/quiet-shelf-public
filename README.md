@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.19.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.20.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Windows, Linux, Android, iPhone/iPad and browser versions share the same library format
 and features. Internet access is used for catalog searches, cover images,
@@ -45,11 +45,11 @@ installed files, not arbitrary files added to the installation folder.
 [Download Quiet Shelf for Linux](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
 The first native Linux release targets **x86-64 / amd64**:
 
-- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.19.0-linux-amd64.deb` with your
+- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.20.0-linux-amd64.deb` with your
   package installer, then open **Quiet Shelf** from the applications menu.
   The `quiet-shelf` command is also available. For terminal installation:
-  `sudo apt install ./Quiet-Shelf-0.19.0-linux-amd64.deb`.
-- **Other Linux desktops:** extract `Quiet-Shelf-0.19.0-linux-x64.tar.gz`, then
+  `sudo apt install ./Quiet-Shelf-0.20.0-linux-amd64.deb`.
+- **Other Linux desktops:** extract `Quiet-Shelf-0.20.0-linux-x64.tar.gz`, then
   open the `quiet-shelf` executable in the extracted folder. Keep the entire
   folder together. The portable build needs the usual Electron/GTK/NSS system
   libraries and working Chromium sandbox support (unprivileged user namespaces).
@@ -84,7 +84,7 @@ package checks compare the portable binary/assets with the tested installed app.
 
 ### Android app
 
-The release includes **Quiet-Shelf-Android-0.19.0.apk** for Android 8 or later
+The release includes **Quiet-Shelf-Android-0.20.0.apk** for Android 8 or later
 with an updated Android System WebView. Download the APK on your phone and open
 it; Android may ask you to allow installation from that browser. Future APKs
 install over the existing app using the same signing identity. No PC, browser
@@ -130,6 +130,19 @@ workflow validates iPhone/iPad simulators and prepares an explicitly unsigned
 arm64 IPA. Physical-device installation, signing renewal and Google consent are
 separate checks; simulator success does not prove those. App Store/TestFlight
 distribution is not configured and normally requires paid Apple membership.
+
+### German edition sources
+
+**DNB**, **K10plus**, **Thalia** and **Hugendubel** are available inside Add title,
+without an API key or browser connector. DNB and K10plus use public SRU/MARC
+bibliographic records; Thalia and Hugendubel use their public search and edition
+pages. Search by title, author or ISBN, or paste a matching catalog record link.
+Any language is the default. Explicit language filters use recorded metadata;
+German catalog coverage includes editions in other languages. Libraries may lack
+covers, and bookstore result cards load fuller metadata when selected. Catalog
+subjects, where supplied, are cached for on-demand Read next information.
+Live ISBN/title searches and imports were verified for all four during 0.20.0
+verification. Availability and metadata coverage can change independently.
 
 ### Additional English-language edition sources
 
@@ -488,7 +501,8 @@ not return ISBN **9786054782369**, although its *The Valley Of Fear* page exists
 Paste a product/edition link into the same search field to load that exact
 listing inside the app, then select it and save. Supported links are Kitapyurdu,
 BKM Kitap, Nadir Kitap, Open Library edition pages, Google Books volume pages,
-Blackwell’s and Better World Books product pages. The source
+Blackwell’s, Better World Books, Thalia and Hugendubel product pages, plus DNB
+and K10plus record links. The source
 selector switches to the link's catalog; normal source access restrictions still
 apply. Kitapyurdu imports also read the page's displayed language when its
 structured metadata omits it.
@@ -502,6 +516,10 @@ structured metadata omits it.
 | Google Books | Volume search/import with language filtering. Shared unauthenticated requests have hit quota limits; an optional personal API key is supported. |
 | Blackwell’s (UK) | In-app edition search and product-link import from public pages, without a connector or API key. Explicit language filters read edition details. Live search and import succeeded during 0.16.0 verification. |
 | Better World Books (US) | In-app edition search and product-link import from public pages, without a connector or API key. ISBN, publisher, binding and actual language are checked. Live search and import succeeded during 0.16.0 verification. |
+| DNB | German National Library SRU edition records: title/author/ISBN search, record-link import, language, publisher, pagination and subjects where supplied. No API key. |
+| K10plus | Library union catalog SRU edition records with international coverage, ISBN and record-link import. No API key. |
+| Thalia | In-app search and edition import from public German bookstore pages, with actual edition language, ISBN and pagination. No connector or API key. |
+| Hugendubel | In-app search and edition import from public German bookstore pages, with actual edition language, ISBN and pagination. No connector or API key. |
 | AniList | Manga series search/import, rather than a specific translated print edition. Edition-language filtering is disabled for this source. API access has failed from the cloud environment. |
 
 Nadir Kitap suggestions include publication year and binding when supplied.

@@ -112,6 +112,14 @@ final class RuntimeTests: XCTestCase {
     }
     func testNativeNetworkAndAssetBoundaries() {
         XCTAssertTrue(NetworkPolicy.allowed(URL(string: "https://www.kitapyurdu.com/index.php?route=product/search")!, method: "GET"))
+        for address in ["https://services.dnb.de/sru/dnb?operation=searchRetrieve", "https://sru.k10plus.de/opac-de-627", "https://www.thalia.de/suche?sq=Ende", "https://www.hugendubel.de/de/search?q=Ende"] {
+            XCTAssertTrue(NetworkPolicy.allowed(URL(string: address)!, method: "GET"))
+            XCTAssertFalse(NetworkPolicy.allowed(URL(string: address)!, method: "POST"))
+        }
+        XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://services.dnb.de/private")!, method: "GET"))
+        XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://sru.k10plus.de/private")!, method: "GET"))
+        XCTAssertTrue(NetworkPolicy.external(URL(string: "https://d-nb.info/1168641489")!))
+        XCTAssertTrue(NetworkPolicy.external(URL(string: "https://opac.k10plus.de/DB=2.299/PPNSET?PPN=1035237822")!))
         XCTAssertFalse(NetworkPolicy.allowed(URL(string: "http://www.kitapyurdu.com/")!, method: "GET"))
         XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://www.googleapis.com/drive/v3/about")!, method: "GET"))
         XCTAssertFalse(NetworkPolicy.allowed(URL(string: "https://example.com/")!, method: "GET"))

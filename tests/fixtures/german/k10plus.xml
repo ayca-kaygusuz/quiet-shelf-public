@@ -1,0 +1,403 @@
+<ns0:searchRetrieveResponse xmlns:ns0="http://www.loc.gov/zing/srw/" xmlns:ns1="http://www.loc.gov/MARC21/slim"><ns0:version>1.1</ns0:version><ns0:numberOfRecords>1</ns0:numberOfRecords><ns0:records><ns0:record><ns0:recordSchema>marcxml</ns0:recordSchema><ns0:recordPacking>xml</ns0:recordPacking><ns0:recordData><ns1:record>
+  <ns1:leader>     cam a22      c 4500</ns1:leader>
+  <ns1:controlfield tag="001">1035237822</ns1:controlfield>
+  <ns1:controlfield tag="003">DE-627</ns1:controlfield>
+  <ns1:controlfield tag="005">20240423233113.0</ns1:controlfield>
+  <ns1:controlfield tag="007">tu</ns1:controlfield>
+  <ns1:controlfield tag="008">181022s2019    gw |||||      00| ||ger c</ns1:controlfield>
+  <ns1:datafield tag="015" ind1=" " ind2=" ">
+    <ns1:subfield code="a">18,N42</ns1:subfield>
+    <ns1:subfield code="2">dnb</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="016" ind1="7" ind2=" ">
+    <ns1:subfield code="a">1168641489</ns1:subfield>
+    <ns1:subfield code="2">DE-101</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="020" ind1=" " ind2=" ">
+    <ns1:subfield code="a">9783522202602</ns1:subfield>
+    <ns1:subfield code="q">Gewebe : EUR 20.00 (DE), EUR 20.60 (AT), CHF 28.90 (freier Preis)</ns1:subfield>
+    <ns1:subfield code="9">978-3-522-20260-2</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="024" ind1="3" ind2=" ">
+    <ns1:subfield code="a">9783522202602</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="035" ind1=" " ind2=" ">
+    <ns1:subfield code="a">(DE-627)1035237822</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="035" ind1=" " ind2=" ">
+    <ns1:subfield code="a">(DE-599)DNB1168641489</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="035" ind1=" " ind2=" ">
+    <ns1:subfield code="a">(OCoLC)1098254886</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="040" ind1=" " ind2=" ">
+    <ns1:subfield code="a">DE-627</ns1:subfield>
+    <ns1:subfield code="b">ger</ns1:subfield>
+    <ns1:subfield code="c">DE-627</ns1:subfield>
+    <ns1:subfield code="e">rda</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="041" ind1=" " ind2=" ">
+    <ns1:subfield code="a">ger</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="044" ind1=" " ind2=" ">
+    <ns1:subfield code="c">XA-DE-BW</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="082" ind1="0" ind2="4">
+    <ns1:subfield code="a">K</ns1:subfield>
+    <ns1:subfield code="q">DE-101</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="084" ind1=" " ind2=" ">
+    <ns1:subfield code="a">5.1</ns1:subfield>
+    <ns1:subfield code="2">asb</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="084" ind1=" " ind2=" ">
+    <ns1:subfield code="a">5.1</ns1:subfield>
+    <ns1:subfield code="2">ssd</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="084" ind1=" " ind2=" ">
+    <ns1:subfield code="a">5.1</ns1:subfield>
+    <ns1:subfield code="2">sfb</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="084" ind1=" " ind2=" ">
+    <ns1:subfield code="a">III J 0</ns1:subfield>
+    <ns1:subfield code="2">kab</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="084" ind1=" " ind2=" ">
+    <ns1:subfield code="a">GN 4451</ns1:subfield>
+    <ns1:subfield code="2">rvk</ns1:subfield>
+    <ns1:subfield code="0">(DE-625)rvk/42622:11634</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="084" ind1=" " ind2=" ">
+    <ns1:subfield code="a">18.10</ns1:subfield>
+    <ns1:subfield code="2">bkl</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="090" ind1=" " ind2=" ">
+    <ns1:subfield code="a">a</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="100" ind1="1" ind2=" ">
+    <ns1:subfield code="a">Ende, Michael</ns1:subfield>
+    <ns1:subfield code="d">1929-1995</ns1:subfield>
+    <ns1:subfield code="e">VerfasserIn</ns1:subfield>
+    <ns1:subfield code="0">(DE-588)118530259</ns1:subfield>
+    <ns1:subfield code="0">(DE-627)079330940</ns1:subfield>
+    <ns1:subfield code="0">(DE-576)16086240X</ns1:subfield>
+    <ns1:subfield code="4">aut</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="245" ind1="1" ind2="4">
+    <ns1:subfield code="a">Die unendliche Geschichte</ns1:subfield>
+    <ns1:subfield code="c">Michael Ende</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="264" ind1=" " ind2="1">
+    <ns1:subfield code="a">Stuttgart</ns1:subfield>
+    <ns1:subfield code="b">Thienemann</ns1:subfield>
+    <ns1:subfield code="c">[2019]</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="264" ind1=" " ind2="4">
+    <ns1:subfield code="c">© 2019</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="300" ind1=" " ind2=" ">
+    <ns1:subfield code="a">474 Seiten</ns1:subfield>
+    <ns1:subfield code="c">22 cm</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="336" ind1=" " ind2=" ">
+    <ns1:subfield code="a">Text</ns1:subfield>
+    <ns1:subfield code="b">txt</ns1:subfield>
+    <ns1:subfield code="2">rdacontent</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="337" ind1=" " ind2=" ">
+    <ns1:subfield code="a">ohne Hilfsmittel zu benutzen</ns1:subfield>
+    <ns1:subfield code="b">n</ns1:subfield>
+    <ns1:subfield code="2">rdamedia</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="338" ind1=" " ind2=" ">
+    <ns1:subfield code="a">Band</ns1:subfield>
+    <ns1:subfield code="b">nc</ns1:subfield>
+    <ns1:subfield code="2">rdacarrier</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="385" ind1=" " ind2=" ">
+    <ns1:subfield code="a">Jugend</ns1:subfield>
+    <ns1:subfield code="0">(DE-588)4028859-6</ns1:subfield>
+    <ns1:subfield code="0">(DE-627)104419199</ns1:subfield>
+    <ns1:subfield code="0">(DE-576)208979859</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="500" ind1=" " ind2=" ">
+    <ns1:subfield code="a">Hier auch später erschienene, unveränderte Nachdrucke</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="520" ind1=" " ind2=" ">
+    <ns1:subfield code="a">Der Welt-Bestseller von Michael Ende für Kinder und Jugendliche ab 12 Jahren. Bastian Balthasar Bux entdeckt in einer Buchhandlung ein geheimnisvolles Buch, "Die unendliche Geschichte". Begeistert liest er von den Abenteuern des Helden Atréju und seinem gefährlichen Auftrag: Phantásien und seine Herrscherin, die Kindliche Kaiserin, zu retten. Zunächst nur Zuschauer, findet er sich unversehens selbst in Phantásien wieder. TU WAS DU WILLST lautet die Inschrift auf dem Symbol der unumschränkten Herrschaftsgewalt. Doch was dieser Satz in Wirklichkeit bedeutet, erfährt Bastian erst nach einer langen Suche. Denn seine wahre Aufgabe ist es nicht, Phantásien zu beherrschen, sondern wieder herauszufinden. Wie aber verlässt man ein Reich, das keine Grenzen hat?</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="583" ind1="1" ind2=" ">
+    <ns1:subfield code="a">Archivierung/Langzeitarchivierung gewährleistet</ns1:subfield>
+    <ns1:subfield code="f">PEBW</ns1:subfield>
+    <ns1:subfield code="x">XA-DE-BW</ns1:subfield>
+    <ns1:subfield code="2">pdager</ns1:subfield>
+    <ns1:subfield code="5">DE-24</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="655" ind1=" " ind2="7">
+    <ns1:subfield code="a">Jugendbuch</ns1:subfield>
+    <ns1:subfield code="0">(DE-588)4306252-0</ns1:subfield>
+    <ns1:subfield code="0">(DE-627)123203171</ns1:subfield>
+    <ns1:subfield code="0">(DE-576)211085316</ns1:subfield>
+    <ns1:subfield code="2">gnd-content</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">503479229X</ns1:subfield>
+    <ns1:subfield code="b">DE-3</ns1:subfield>
+    <ns1:subfield code="9">3</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">E Lit 600.3 End 11.</ns1:subfield>
+    <ns1:subfield code="h">Ha 10</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995848</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">KiJu-Suedstadt</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995856</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">Oststadtbibliothek</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995864</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">STB Badenstedt</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995872</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">STB Doehren</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995880</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">STB List</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995899</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">STB Mühlenberg</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995902</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">STB Ricklingen</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4332995910</ns1:subfield>
+    <ns1:subfield code="b">DE-115</ns1:subfield>
+    <ns1:subfield code="9">115</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">Fantasy / E</ns1:subfield>
+    <ns1:subfield code="h">STB Vahrenwald</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">1827921412</ns1:subfield>
+    <ns1:subfield code="b">DE-Hil2</ns1:subfield>
+    <ns1:subfield code="9">Hil 2</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">GER 521:E53 : BU42</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4053503833</ns1:subfield>
+    <ns1:subfield code="b">DE-Ma9</ns1:subfield>
+    <ns1:subfield code="9">Ma 9</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">2022.00313:1</ns1:subfield>
+    <ns1:subfield code="h">FH</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4710088888</ns1:subfield>
+    <ns1:subfield code="b">DE-Fl3</ns1:subfield>
+    <ns1:subfield code="9">Fl 3</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+    <ns1:subfield code="g">Spra Deu 71</ns1:subfield>
+    <ns1:subfield code="h">SLI</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3616239397</ns1:subfield>
+    <ns1:subfield code="b">DE-478</ns1:subfield>
+    <ns1:subfield code="9">478</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+    <ns1:subfield code="g">J Ende</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3504230045</ns1:subfield>
+    <ns1:subfield code="b">DE-Bo56</ns1:subfield>
+    <ns1:subfield code="9">Bo 56</ns1:subfield>
+    <ns1:subfield code="c">GBV</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">KJ</ns1:subfield>
+    <ns1:subfield code="h">PbF</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4824276136</ns1:subfield>
+    <ns1:subfield code="b">DE-21-108</ns1:subfield>
+    <ns1:subfield code="9">21/108</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">5-HL 500.202</ns1:subfield>
+    <ns1:subfield code="h">Handbibliothek Führer</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3519453177</ns1:subfield>
+    <ns1:subfield code="b">DE-24</ns1:subfield>
+    <ns1:subfield code="9">24</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">69/81658</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4564151851</ns1:subfield>
+    <ns1:subfield code="b">DE-24</ns1:subfield>
+    <ns1:subfield code="9">24</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+    <ns1:subfield code="g">74/7677</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3574591411</ns1:subfield>
+    <ns1:subfield code="b">DE-15</ns1:subfield>
+    <ns1:subfield code="9">15</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3477038622</ns1:subfield>
+    <ns1:subfield code="b">DE-M504149</ns1:subfield>
+    <ns1:subfield code="9">M 504149</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3480213618</ns1:subfield>
+    <ns1:subfield code="b">DE-M504153</ns1:subfield>
+    <ns1:subfield code="9">M 504153</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3784243525</ns1:subfield>
+    <ns1:subfield code="b">DE-M504190</ns1:subfield>
+    <ns1:subfield code="9">M 504190</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3927363189</ns1:subfield>
+    <ns1:subfield code="b">DE-M504105</ns1:subfield>
+    <ns1:subfield code="9">M 504105</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4684942163</ns1:subfield>
+    <ns1:subfield code="b">DE-M504204</ns1:subfield>
+    <ns1:subfield code="9">M 504204</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4814587244</ns1:subfield>
+    <ns1:subfield code="b">DE-M504134</ns1:subfield>
+    <ns1:subfield code="9">M 504134</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">497928342X</ns1:subfield>
+    <ns1:subfield code="b">DE-M504183</ns1:subfield>
+    <ns1:subfield code="9">M 504183</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">503463483X</ns1:subfield>
+    <ns1:subfield code="b">DE-M504198</ns1:subfield>
+    <ns1:subfield code="9">M 504198</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">4649456533</ns1:subfield>
+    <ns1:subfield code="b">DE-M504193</ns1:subfield>
+    <ns1:subfield code="9">M 504193</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">d</ns1:subfield>
+    <ns1:subfield code="g">J 4 End</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3573869068</ns1:subfield>
+    <ns1:subfield code="b">DE-Mar1</ns1:subfield>
+    <ns1:subfield code="9">Mar 1</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">b</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="924" ind1="0" ind2=" ">
+    <ns1:subfield code="a">3565679301</ns1:subfield>
+    <ns1:subfield code="b">DE-59</ns1:subfield>
+    <ns1:subfield code="9">59</ns1:subfield>
+    <ns1:subfield code="c">BSZ</ns1:subfield>
+    <ns1:subfield code="d">c</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="935" ind1=" " ind2=" ">
+    <ns1:subfield code="i">sf</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="936" ind1="r" ind2="v">
+    <ns1:subfield code="a">GN 4451</ns1:subfield>
+    <ns1:subfield code="b">Sekundärliteratur</ns1:subfield>
+    <ns1:subfield code="k">Germanistik. Niederlandistik. Skandinavistik</ns1:subfield>
+    <ns1:subfield code="k">Deutsche Literatur</ns1:subfield>
+    <ns1:subfield code="k">Moderne II: 1946 - 1990</ns1:subfield>
+    <ns1:subfield code="k">Literaturgeschichte</ns1:subfield>
+    <ns1:subfield code="k">Einzelne Autoren</ns1:subfield>
+    <ns1:subfield code="k">Autoren E</ns1:subfield>
+    <ns1:subfield code="k">Ende, Michael</ns1:subfield>
+    <ns1:subfield code="k">Sekundärliteratur</ns1:subfield>
+    <ns1:subfield code="0">(DE-627)1271883341</ns1:subfield>
+    <ns1:subfield code="0">(DE-625)rvk/42622:11634</ns1:subfield>
+    <ns1:subfield code="0">(DE-576)201883341</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="936" ind1="b" ind2="k">
+    <ns1:subfield code="a">18.10</ns1:subfield>
+    <ns1:subfield code="j">Deutsche Literatur</ns1:subfield>
+    <ns1:subfield code="0">(DE-627)106405047</ns1:subfield>
+  </ns1:datafield>
+  <ns1:datafield tag="951" ind1=" " ind2=" ">
+    <ns1:subfield code="a">BO</ns1:subfield>
+  </ns1:datafield>
+</ns1:record></ns0:recordData><ns0:recordPosition>1</ns0:recordPosition></ns0:record></ns0:records><ns0:echoedSearchRetrieveRequest><ns0:version>1.1</ns0:version><ns0:query>pica.isb=9783522202602</ns0:query><ns0:maximumRecords>3</ns0:maximumRecords><ns0:recordPacking>xml</ns0:recordPacking><ns0:recordSchema>marcxml</ns0:recordSchema></ns0:echoedSearchRetrieveRequest></ns0:searchRetrieveResponse>

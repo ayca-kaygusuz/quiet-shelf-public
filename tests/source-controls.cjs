@@ -45,6 +45,14 @@ await elements['#lookupResults'].onclick({target:{closest:()=>({dataset:{result:
 assert.equal(elements['#title'].value,'Gachiakuta 1');assert.match(elements['#editionPreview'].innerHTML,/View edition on Nadir Kitap/);
 for(const url of ['https://user@www.nadirkitap.com/a-kitap123.html','https://www.nadirkitap.com:444/a-kitap123.html','https://evil.com/a-kitap123.html'])assert.equal(vm.runInContext('lookupLink('+JSON.stringify(url)+')',ctx),null);
 vm.runInContext('resetLookup()',ctx);assert.equal(elements['#googleApiKey'].value,'test-only-key');
-for(const value of ['kitapyurdu','bkm','nadir','openlibrary','google','blackwells','betterworld','anilist']){elements['#lookupSource'].value=value;elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'')}
+for(const value of ['kitapyurdu','bkm','nadir','openlibrary','google','blackwells','betterworld','dnb','k10plus','thalia','hugendubel','anilist']){elements['#lookupSource'].value=value;elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'')}
 assert.equal(vm.runInContext("lookupLink('https://blackwells.co.uk/bookshop/product/a-title/9798225031299').source",ctx),'blackwells');assert.equal(vm.runInContext("lookupLink('https://www.betterworldbooks.com/product/detail/a-title-9781338878929').source",ctx),'betterworld');
+
+for(const [provider,url]of Object.entries({dnb:'https://d-nb.info/1168641489',k10plus:'https://opac.k10plus.de/DB=2.299/PPNSET?PPN=1035237822',thalia:'https://www.thalia.de/shop/home/artikeldetails/A1052513935',hugendubel:'https://www.hugendubel.de/de/buch_gebunden/a-title-34535436-produkt-details.html'})){
+ assert.equal(vm.runInContext('lookupLink('+JSON.stringify(url)+').source',ctx),provider);
+ assert.equal(vm.runInContext('safeSource('+JSON.stringify(url)+')',ctx),true);
+ for(const bad of [url.replace('https:','http:'),url.replace('https://','https://user@'),url.replace('https://','https://evil.example/')])assert.equal(vm.runInContext('lookupLink('+JSON.stringify(bad)+')',ctx),null);
+ elements['#lookupSource'].value=provider;elements['#lookupSource'].onchange();assert.equal(elements['#lookupLanguage'].value,'');assert.equal(elements['#googleSettings'].hidden,true);
+}
+assert.equal(vm.runInContext("safeCover('https://images.thalia.media/cover.jpg')",ctx),true);assert.equal(vm.runInContext("safeCover('https://media2.hugendubel.de/shop/coverscans/cover.jpg')",ctx),true);
 console.log('PASS: provider selection, default languages, remembered preference, selected-source requests, direct source selection, source changes restore controls')})().catch(e=>{console.error(e);process.exitCode=1});

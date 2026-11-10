@@ -79,3 +79,11 @@ Book covers, bibliographic records, retailer content and catalog services retain
 their respective owners' rights and terms; retrieving them does not relicense
 that material under Quiet Shelf's license. Personal libraries and credentials
 are user data and are not part of the licensed project distribution.
+
+German catalog integrations use public bibliographic/search interfaces:
+DNB SRU (https://services.dnb.de/sru/dnb), K10plus SRU
+(https://sru.k10plus.de/opac-de-627), Thalia (https://www.thalia.de) and
+Hugendubel (https://www.hugendubel.de). Their catalog data, covers and site
+content remain subject to their respective terms. Small public-record/parser
+fixtures exercise compatibility; no storefront access tokens or user data are
+included. Catalog metadata is not relicensed by the application license.
