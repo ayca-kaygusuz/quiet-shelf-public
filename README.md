@@ -1,9 +1,10 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.17.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.18.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
-JSON. Internet access is used for catalog searches, cover images and Windows
-update checks/downloads, and optional Google Drive sync in the Windows, Android and local browser apps.
+JSON. Windows, Linux, Android and browser versions share the same library format
+and features. Internet access is used for catalog searches, cover images,
+update checks/downloads and optional Google Drive sync.
 
 ## Windows application
 
@@ -39,9 +40,51 @@ application. Keep JSON backups. The installer refuses a non-empty destination
 unless it is an existing Quiet Shelf installation; uninstall removes only its
 installed files, not arbitrary files added to the installation folder.
 
+## Linux application
+
+[Download Quiet Shelf for Linux](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
+The first native Linux release targets **x86-64 / amd64**:
+
+- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.18.0-linux-amd64.deb` with your
+  package installer, then open **Quiet Shelf** from the applications menu.
+  The `quiet-shelf` command is also available. For terminal installation:
+  `sudo apt install ./Quiet-Shelf-0.18.0-linux-amd64.deb`.
+- **Other Linux desktops:** extract `Quiet-Shelf-0.18.0-linux-x64.tar.gz`, then
+  open the `quiet-shelf` executable in the extracted folder. Keep the entire
+  folder together. The portable build needs the usual Electron/GTK/NSS system
+  libraries and working Chromium sandbox support (unprivileged user namespaces).
+  On Ubuntu systems that restrict portable applications' user namespaces, use
+  the `.deb` package, which includes the normal app-specific sandbox integration.
+
+No separate Node.js installation, browser server or Google Cloud client is
+needed. The native app uses the existing **Desktop app** OAuth client, with a
+short-lived loopback callback only during sign-in. A GNOME Secret Service or KDE
+KWallet keyring remembers the connection securely. If no usable keyring is
+available, sign-in still works for the current app session; refresh tokens are
+never saved through Electron's plaintext fallback. Unlock/enable your desktop
+keyring to remember sign-in.
+
+The profile is `~/.config/Quiet Shelf` (or `$XDG_CONFIG_HOME/Quiet Shelf` when set).
+It survives package upgrades/removal and portable-folder replacement. The
+browser has its separate storage; use Drive or JSON backup/restore to connect
+libraries. Linux includes the same themes, insights, search, series/display
+options, reading history, wishlist/archive and Read next rules. NetworkManager
+metered information is used when available; the manual connection switch and
+manual sync remain available.
+
+Account → App updates checks stable GitHub versions, respecting the saved
+preference, offline state and metered connections. Downloads start only when
+requested and are checked against SHA-256 before **Show downloaded package**
+reveals them. Install the `.deb` or extract/replace the portable app folder,
+then reopen Quiet Shelf. Linux does not silently run privileged installation
+commands or replace a running installation. Back up remains available offline.
+The release workflow tests the installed app under Ubuntu 24.04 with a real
+Linux keyring, full shared UI checks and profile persistence after restart;
+package checks compare the portable binary/assets with the tested installed app.
+
 ### Android app
 
-The release includes **Quiet-Shelf-Android-0.17.0.apk** for Android 8 or later
+The release includes **Quiet-Shelf-Android-0.18.0.apk** for Android 8 or later
 with an updated Android System WebView. Download the APK on your phone and open
 it; Android may ask you to allow installation from that browser. Future APKs
 install over the existing app using the same signing identity. No PC, browser

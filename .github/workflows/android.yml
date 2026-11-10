@@ -106,6 +106,9 @@ jobs:
   publish:
     if: always() && github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish && (needs.build.result == 'success' || needs.build.result == 'skipped' && inputs.verifiedRunId != '')
     needs: build
+    concurrency:
+      group: quiet-shelf-release-assets-${{ github.ref }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: write

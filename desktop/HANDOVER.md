@@ -290,3 +290,29 @@ reviewable but inactive. Never remove books or rewrite a saved checklist on
 exclude/restore/expiry. Check backup/sync validation, guest/account isolation,
 future series members, non-skipping of an excluded earlier volume and native
 restart persistence. Ship all clients before syncing the new optional fields.
+
+## Linux release (0.18.0)
+
+The native Linux adapter shares desktop/main.mjs and all src/ with Windows.
+Run npm run build:linux on Linux; packages go to work/linux. The Desktop OAuth
+configuration uses the existing release inputs/secret, never tracked values.
+The Debian installation is /opt/Quiet Shelf/quiet-shelf, with an applications
+menu entry and command symlink. The portable archive has the same binary/assets.
+Production renderer sandbox, context isolation and Node-integration restrictions
+remain enabled. Do not add no-sandbox flags to distributions or launchers.
+The managed cloud's headless local QA flag is test-only; release CI launches the
+installed package normally under Xvfb with a real D-Bus/keyring session.
+
+Linux keyrings: accept known GNOME/KWallet backends only; basic_text, unknown
+and unavailable backends are session-only. Native keyring CI uses encrypted dummy
+probe data, never a real Google token. nmcli asks only for connection state/cost.
+Linux updates select the installed .deb or portable .tar.gz and verify the
+package before revealing it; installing is explicit through the user's package
+manager/folder replacement. Never spawn a Windows installer or quit automatically
+on Linux. Recheck the package before showing it as ready to install.
+
+Linux, Android and Windows/browser artifacts must come from the same source
+commit/version. Promote only successful exact-workflow/source Linux artifacts;
+merge checksums without losing another platform's entries. Linux/Android asset
+publication shares a job concurrency group. The private repository mirrors the
+source and release notes/verified public download links; it runs no build jobs.

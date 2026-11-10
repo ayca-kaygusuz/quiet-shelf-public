@@ -13,11 +13,11 @@ The complete copyright and license text is retained in assets/Manrope-OFL.txt
 and is available in the app's Account → About Quiet Shelf section. Android
 packages retain the same text in their assets.
 
-## Windows runtime
+## Windows and Linux runtime
 
 Electron is provided by Electron contributors under the MIT license. Chromium,
-Node.js and their dependencies retain their own licenses. The Windows package
-keeps Electron's LICENSE.electron.txt and licenses.chromium.html alongside the
+Node.js and their dependencies retain their own licenses. The Windows and Linux packages
+keep Electron's LICENSE.electron.txt and LICENSES.chromium.html alongside the
 runtime; these notices must remain with redistributed runtime files.
 
 Electron source and licensing: https://github.com/electron/electron

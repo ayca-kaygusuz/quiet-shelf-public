@@ -9,7 +9,7 @@ import {readFileSync} from 'node:fs';
 import '../src/sync-core.js';
 
 const profile=await mkdtemp(join(tmpdir(),'quiet-shelf-auth-')),clientId='123456-testclient.apps.googleusercontent.com',desktopCredential='test-only-desktop',opened=[],calls=[];
-const safeStorage={isEncryptionAvailable:()=>true,getSelectedStorageBackend:()=> 'test-keyring',encryptString:value=>Buffer.from('encrypted:'+Buffer.from(value).toString('base64')),decryptString:value=>Buffer.from(value.toString().slice(10),'base64').toString()};
+const safeStorage={isEncryptionAvailable:()=>true,getSelectedStorageBackend:()=> 'gnome_libsecret',encryptString:value=>Buffer.from('encrypted:'+Buffer.from(value).toString('base64')),decryptString:value=>Buffer.from(value.toString().slice(10),'base64').toString()};
 let files=new Map(),nextFile=0;
 const fetcher=async(url,options={})=>{
  calls.push({url:String(url),options});const u=new URL(url);
@@ -55,5 +55,8 @@ try{
  assert.equal((await handler(new Request(APP_ORIGIN+'/api/account/signout',{method:'OPTIONS'}))).status,405);
  assert.equal((await handler(new Request(APP_ORIGIN+'/api/account/sync',{method:'POST',headers:{'X-Quiet-Shelf-Account':'1','Content-Length':'20000000'},body:'{}'}))).status,400);
  assert.equal((await request('signout',{})).status,200);account.dispose();account=createGoogleAccount(options);await account.ready;assert.equal(account.status().account,null);assert.equal(files.size,1,'signing out never deletes Drive data');
+ for(const backend of ['basic_text','unknown',undefined]){
+  account.dispose();account=createGoogleAccount({...options,profile:join(profile,'fallback-'+(backend||'missing')),safeStorage:{isEncryptionAvailable:()=>true,getSelectedStorageBackend:()=>backend,encryptString(){throw Error('Never store tokens using an insecure Linux backend')}}});await account.ready;assert.equal(account.status().rememberSupported,false);await request('start',{});const authURL=new URL(opened.at(-1)),target=new URL(authURL.searchParams.get('redirect_uri'));target.search=new URLSearchParams({state:authURL.searchParams.get('state'),code:'code-for-test'});assert.equal((await callback(target)).status,200);assert.equal(account.status().account.id,'101');await assert.rejects(readFile(join(profile,'fallback-'+(backend||'missing'),'drive-session.bin')));account.dispose();
+ }
  console.log('PASS: real loopback callback, state/PKCE, system-browser URL, configured Desktop code/refresh exchanges, verified identity, encrypted remembered token, account binding, Drive round trip, guarded protocol and sign-out persistence');
 }finally{account.dispose();await rm(profile,{recursive:true,force:true})}

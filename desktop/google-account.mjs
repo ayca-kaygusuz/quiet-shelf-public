@@ -2,6 +2,7 @@ import http from 'node:http';
 import {readFile,writeFile,rename,mkdir,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {execFile} from 'node:child_process';
+import {linuxMetered} from './linux-network.mjs';
 import {googleClientID,googleDesktopCredential,googlePKCE,googleAuthorizationURL,exchangeGoogleCode,refreshGoogleToken,googleIdentity} from '../src/google-oauth.mjs';
 import {createDriveStore,reconcileDrive,limitedJSON} from '../src/drive.mjs';
 
@@ -9,7 +10,7 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
  let session=null,clientId=defaultClientId,credentialClientId=defaultClientId,clientSecret=defaultClientSecret,pending=null,busy=false,error='',errorCode='',cache=new Map(),networkCache=null;
  const credentialFor=id=>id===credentialClientId&&googleDesktopCredential(clientSecret)?clientSecret:undefined;
  const configFile=join(profile,'google-connection.json'),tokenFile=join(profile,'drive-session.bin');
- const rememberSupported=()=>safeStorage.isEncryptionAvailable()&&(platform==='win32'||safeStorage.getSelectedStorageBackend?.()!=='basic_text');
+ const rememberSupported=()=>safeStorage.isEncryptionAvailable()&&(platform!=='linux'||['gnome_libsecret','kwallet','kwallet5','kwallet6'].includes(safeStorage.getSelectedStorageBackend?.()));
  async function atomic(path,data){await mkdir(profile,{recursive:true});await writeFile(path+'.tmp',data,{mode:0o600});await rename(path+'.tmp',path)}
  async function persist(value=session){if(value&&rememberSupported())await atomic(tokenFile,safeStorage.encryptString(JSON.stringify(value)));else await rm(tokenFile,{force:true})}
  const ready=(async()=>{
@@ -17,7 +18,7 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
   if(developerControls)try{const config=JSON.parse(await readFile(configFile,'utf8'));if(googleClientID(config.clientId))clientId=config.clientId}catch{}
   try{if(rememberSupported()){const saved=JSON.parse(safeStorage.decryptString(await readFile(tokenFile)));if(googleClientID(saved.clientId)&&(!clientId||saved.clientId===clientId)&&saved.account&&/^\d{1,100}$/.test(saved.account.id)&&typeof saved.refreshToken==='string'){clientId=saved.clientId;session=saved}}}catch(e){if(e.code!=='ENOENT')error='The saved Google connection could not be opened. Please sign in again.'}
  })();
- function status(){return {mode:'desktop',configured:googleClientID(clientId)&&!!credentialFor(clientId),clientId,developerControls,account:session?.account||null,pending:!!pending,busy,error,errorCode,rememberSupported:rememberSupported()}}
+ function status(){return {mode:'desktop',platform,configured:googleClientID(clientId)&&!!credentialFor(clientId),clientId,developerControls,account:session?.account||null,pending:!!pending,busy,error,errorCode,rememberSupported:rememberSupported()}}
 
  function closePending(){if(pending){clearTimeout(pending.timer);pending.server.close();pending=null}}
  async function start(){
@@ -50,7 +51,9 @@ export function createGoogleAccount({profile,safeStorage,openExternal,fetcher=fe
   if(platform==='win32')metered=await new Promise(resolve=>{
    const command="$ErrorActionPreference='Stop'; [void][Windows.Networking.Connectivity.NetworkInformation,Windows.Networking.Connectivity,ContentType=WindowsRuntime]; $p=[Windows.Networking.Connectivity.NetworkInformation]::GetInternetConnectionProfile(); if($null -eq $p){'offline'}else{$c=$p.GetConnectionCost(); if($c.Roaming -or $c.OverDataLimit -or $c.ApproachingDataLimit -or ($c.NetworkCostType.ToString() -in @('Fixed','Variable'))){'metered'}elseif($c.NetworkCostType.ToString() -eq 'Unrestricted'){'unmetered'}else{'unknown'}}";
    execFile('powershell.exe',['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,timeout:7000,maxBuffer:4096},(error,stdout)=>{const value=stdout?.trim();resolve(error?null:value==='metered'?true:value==='unmetered'?false:null)});
-  });networkCache={metered,checkedAt:Date.now(),source:platform==='win32'?'Windows':'unavailable'};return networkCache;
+  });
+  if(platform==='linux')metered=await new Promise(resolve=>execFile('nmcli',['-t','-f','GENERAL.STATE,GENERAL.METERED','device','show'],{timeout:2500,maxBuffer:16384,env:{...process.env,LC_ALL:'C'}},(error,stdout)=>resolve(error?null:linuxMetered(stdout))));
+  networkCache={metered,checkedAt:Date.now(),source:platform==='win32'?'Windows':platform==='linux'?'NetworkManager':'unavailable'};return networkCache;
  }
  async function handle(request){
   await ready;const u=new URL(request.url),action=u.pathname.slice('/api/account/'.length);try{

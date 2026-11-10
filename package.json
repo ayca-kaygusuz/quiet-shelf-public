@@ -1,6 +1,6 @@
 {
   "name": "quiet-shelf",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "private": true,
   "description": "A personal book, manga and comic reading library",
   "engines": {
@@ -12,7 +12,8 @@
     "build": "node build.mjs",
     "desktop": "electron .",
     "build:windows": "node scripts/build-windows.mjs",
-    "build:android": "node scripts/build-android.mjs"
+    "build:android": "node scripts/build-android.mjs",
+    "build:linux": "node scripts/build-linux.mjs"
   },
   "devDependencies": {
     "electron": "45.2.3",
@@ -80,8 +81,42 @@
         "from": "assets/licenses",
         "to": "licenses/android-compatibility"
       }
-    ]
+    ],
+    "linux": {
+      "target": [
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "executableName": "quiet-shelf",
+      "category": "Office",
+      "icon": "desktop/assets/icon.png",
+      "artifactName": "Quiet-Shelf-${version}-linux-${arch}.${ext}",
+      "maintainer": "Quiet Shelf contributors <contributors@example.invalid>",
+      "desktop": {
+        "entry": {
+          "Name": "Quiet Shelf",
+          "Comment": "Your personal reading library",
+          "StartupWMClass": "quiet-shelf"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "deb": {
+      "compression": "xz"
+    }
   },
   "author": "Alex (Ayca Kaygusuz)",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/ayca-kaygusuz/quiet-shelf-public",
+  "desktopName": "quiet-shelf.desktop"
 }

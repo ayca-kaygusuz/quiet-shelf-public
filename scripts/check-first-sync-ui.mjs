@@ -13,7 +13,7 @@ export async function checkFirstSyncUI({evaluate,capture,prefix}){
   await QuietShelfAccount.refresh();await QuietShelfAccount.sync(true);if(document.querySelector('#accountPage').hidden)document.querySelector('#accountButton').click();
   return {pending:QuietShelfAccount.status().setupPending,local:document.querySelector('#setupLocalCount').textContent,drive:document.querySelector('#setupDriveCount').textContent,visible:!document.querySelector('#syncSetup').hidden,kept:QuietShelfApp.snapshot().library.length,list:document.querySelector('#list').textContent};
  })()`);
- assert.equal(prepared.pending,true);assert.equal(prepared.local,'2');assert.equal(prepared.drive,'1');assert.equal(prepared.visible,true);assert.equal(prepared.kept,2);assert(prepared.list.includes('Local first title'));
+ assert.equal(prepared.pending,true,JSON.stringify(prepared));assert.equal(prepared.local,'2');assert.equal(prepared.drive,'1');assert.equal(prepared.visible,true);assert.equal(prepared.kept,2);assert(prepared.list.includes('Local first title'));
  for(const theme of ['ink','sage']){
   await evaluate(`document.querySelector('#theme').value=${JSON.stringify(theme)};document.querySelector('#theme').dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#updateCard').hidden=true;window.scrollTo(0,0);true`);
   await capture(prefix+'-'+theme);

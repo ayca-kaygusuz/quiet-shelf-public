@@ -1,0 +1,165 @@
+name: Linux application
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/linux.yml'
+      - 'assets/**'
+      - 'desktop/**'
+      - 'src/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'LICENSE'
+      - 'NOTICE'
+      - 'THIRD_PARTY_NOTICES.md'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Attach verified Linux packages to the matching published release
+        type: boolean
+        default: false
+      verifiedRunId:
+        description: Optional successful Linux run from this exact commit; reuse its tested artifact
+        type: string
+        default: ''
+      googleDesktopClientId:
+        description: Public Desktop OAuth client ID; otherwise use the repository variable
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false && !inputs.verifiedRunId
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID: ${{ inputs.googleDesktopClientId || vars.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID }}
+      QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install Linux runtime and test dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgtk-3-0t64 libnss3 libasound2t64 libgbm1 libsecret-1-0 gnome-keyring dbus-x11 xvfb
+      - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - run: npm test
+      - name: Check the shared Desktop Google client
+        run: node scripts/check-google-release.mjs
+      - name: Prepare verified Linux build tools
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tools="$RUNNER_TEMP/quiet-shelf-linux-tools"
+          mkdir -p "$tools/electron" "$tools/7zip" "$tools/fpm"
+          version=$(node -p "require('./package.json').devDependencies.electron")
+          archive="electron-v$version-linux-x64.zip"
+          gh release download "v$version" --repo electron/electron --pattern "$archive" --pattern SHASUMS256.txt --dir "$tools"
+          (cd "$tools" && sha256sum --check <(grep " $archive\$" SHASUMS256.txt))
+          unzip -q "$tools/$archive" -d "$tools/electron"
+          gh release download '7zip@1.0.0' --repo electron-userland/electron-builder-binaries --pattern 7zip-linux-x64.tar.gz --dir "$tools"
+          echo 'd151bb44b2a9d9bfc52813ce4cac042916394a0ab8a56bd5d221a5dc9ef8d5d7  '"$tools/7zip-linux-x64.tar.gz" | sha256sum --check
+          tar -xzf "$tools/7zip-linux-x64.tar.gz" -C "$tools/7zip"
+          seven=$(find "$tools/7zip" -type f -name 7za -print -quit)
+          gh release download 'fpm@2.1.4' --repo electron-userland/electron-builder-binaries --pattern fpm-1.17.0-ruby-3.4.3-linux-amd64.7z --dir "$tools"
+          echo '44b0ec6025c14ec137f56180e62675c0eae36233cdce53d0953d9c73ced8989f  '"$tools/fpm-1.17.0-ruby-3.4.3-linux-amd64.7z" | sha256sum --check
+          "$seven" x -y "$tools/fpm-1.17.0-ruby-3.4.3-linux-amd64.7z" "-o$tools/fpm" >/dev/null
+          echo "QUIET_SHELF_ELECTRON_DIST=$tools/electron" >> "$GITHUB_ENV"
+          echo "ELECTRON_BUILDER_7ZIP_PATH=$seven" >> "$GITHUB_ENV"
+          echo "CUSTOM_FPM_PATH=$tools/fpm/fpm" >> "$GITHUB_ENV"
+      - run: npm run build:linux
+      - name: Install the Debian package
+        run: sudo apt-get install -y ./work/linux/Quiet-Shelf-*-linux-amd64.deb
+      - name: Test the installed Linux app with a real keyring
+        run: dbus-run-session -- xvfb-run -a node scripts/check-linux-runtime.mjs
+      - name: Test portable archive contents
+        run: node scripts/check-linux-package.mjs
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: quiet-shelf-linux
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            work/linux/Quiet-Shelf-*-linux-amd64.deb
+            work/linux/Quiet-Shelf-*-linux-x64.tar.gz
+            work/linux/SHA256SUMS-Linux.txt
+            work/linux/linux-build.json
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: quiet-shelf-linux-previews
+          retention-days: 1
+          if-no-files-found: warn
+          path: |
+            work/linux/previews/*.png
+            work/linux/linux-build.json
+            work/linux/SHA256SUMS-Linux.txt
+  publish:
+    if: always() && github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish && (needs.build.result == 'success' || needs.build.result == 'skipped' && inputs.verifiedRunId != '')
+    needs: build
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: quiet-shelf-release-assets-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate the tested source run
+        id: tested
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_RUN: ${{ inputs.verifiedRunId || github.run_id }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN" > tested-run.json
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const run=JSON.parse(readFileSync('tested-run.json'));
+          if(run.head_sha!==process.env.GITHUB_SHA||run.path!=='.github/workflows/linux.yml'||run.repository.full_name!==process.env.GITHUB_REPOSITORY||run.id!==Number(process.env.GITHUB_RUN_ID)&&run.conclusion!=='success')throw Error('Linux promotion requires a successful run of this exact workflow and source.');
+          JS
+          echo "run=$VERIFIED_RUN" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: quiet-shelf-linux
+          path: release
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.tested.outputs.run }}
+      - name: Validate and publish the tested Linux packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          gh release view "$tag" --json isDraft,targetCommitish,assets > release-info.json
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
+          const version=JSON.parse(readFileSync('package.json')).version,meta=JSON.parse(readFileSync('release/linux-build.json')),release=JSON.parse(readFileSync('release-info.json'));
+          const names=[`Quiet-Shelf-${version}-linux-amd64.deb`,`Quiet-Shelf-${version}-linux-x64.tar.gz`];
+          if(release.isDraft||release.targetCommitish!==process.env.GITHUB_SHA||meta.sourceSha!==process.env.GITHUB_SHA||meta.version!==version||meta.configured!==true||meta.packages.length!==2||names.some(n=>!meta.packages.some(p=>p.filename===n))||release.assets.some(a=>names.includes(a.name)))throw Error('Matching published release and immutable, configured, exact-source Linux packages are required.');
+          for(const p of meta.packages){const bytes=readFileSync('release/'+p.filename);if(bytes.length!==p.size||createHash('sha256').update(bytes).digest('hex')!==p.sha256)throw Error('Linux package checksum mismatch.');}
+          JS
+          mkdir -p release/existing
+          gh release download "$tag" --pattern SHA256SUMS.txt --dir release/existing
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const meta=JSON.parse(readFileSync('release/linux-build.json')),names=new Set(meta.packages.map(p=>p.filename));
+          const old=readFileSync('release/existing/SHA256SUMS.txt','utf8').trim().split(/\r?\n/).filter(line=>!names.has(line.trim().split(/\s+/).at(-1)));
+          writeFileSync('release/SHA256SUMS.txt',old.concat(meta.packages.map(p=>p.sha256+'  '+p.filename)).join('\n')+'\n');
+          JS
+          gh release upload "$tag" release/*.deb release/*.tar.gz
+          gh release upload "$tag" release/SHA256SUMS.txt --clobber

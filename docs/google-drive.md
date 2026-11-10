@@ -1,6 +1,6 @@
 # Google Drive connection
 
-Version 0.17.0 connects Windows, Android and the local browser app to Google Drive.
+Version 0.18.0 connects Windows, Linux, Android and the local browser app to Google Drive.
 The hosted web OAuth adapter is implemented too; public hosting deployment and
 the native iOS app is deferred. Libraries and JSON import/export work
 without an account. No web hosting is required for native sync.
@@ -36,7 +36,7 @@ References: [Desktop OAuth](https://developers.google.com/identity/protocols/oau
 
 ## Release configuration without tracked credentials
 
-The public Windows workflow reads its Desktop client ID from Actions variable
+The public Windows and Linux workflows read their shared Desktop client ID from Actions variable
 `QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_ID` or the approved dispatch's
 `googleDesktopClientId` input. The matching Desktop client value is stored as
 Actions repository secret `QUIET_SHELF_GOOGLE_DESKTOP_CLIENT_SECRET`. Set that
@@ -172,3 +172,14 @@ against the expected account. Tokens remain native/in memory; only a non-secret
 marker and public account ID cross the Android WebMessage interface.
 The shared Drive model, read-only preview, explicit first connection and recovery
 behavior remain the same. See [Android setup](../android/README.md).
+
+## Native Linux
+
+Google's Desktop app client covers Linux as well as Windows and macOS. Linux
+uses the same release client configuration and PKCE/loopback flow; no Android
+certificate registration, new OAuth client or user credential setup is needed.
+GNOME Secret Service and KDE KWallet are accepted secure storage backends.
+Missing, unknown or basic_text backends keep tokens in memory for the session
+and do not write refresh-token files. No Web client secret is bundled.
+NetworkManager supplies metered state when available; user controls and manual
+sync work when the connection cost cannot be detected.

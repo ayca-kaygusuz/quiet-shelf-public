@@ -148,3 +148,20 @@ mutating a checklist or generating a replacement. Preserve indefinite legacy
 book exclusions, keep every rule reversible, validate new backup/sync fields and
 keep guest/account rules separate. A skipped volume never authorizes suggesting
 its later volumes out of order.
+
+## Linux app
+
+Linux shares desktop/ and src/ with Windows. Ship a rebuilt x64 Debian package
+and portable tar archive with every maintained native update, with the same
+version/source as Windows, Android and browser. Keep the standard Electron
+sandbox enabled; no production no-sandbox fallback. Preserve profiles across
+package upgrades/removal and portable-folder replacement. Retain all license
+and runtime notices in both package formats and offline About.
+Use the existing Desktop OAuth release configuration. Accept known Linux
+keyring backends only; never persist refresh tokens via basic_text or unknown
+storage. Missing keyrings allow session-only sign-in with clear account status.
+NetworkManager cost detection is optional and must never request network secrets.
+Linux downloads are verified before explicit manual package installation;
+never auto-run privileged installers, execute downloaded shell commands or
+silently replace a running installation. Test native startup/UI/profile restart
+and real keyring encryption on the public Linux CI runner before publication.
