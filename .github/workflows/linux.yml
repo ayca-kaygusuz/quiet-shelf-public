@@ -76,7 +76,8 @@ jobs:
           gh release download '7zip@1.0.0' --repo electron-userland/electron-builder-binaries --pattern 7zip-linux-x64.tar.gz --dir "$tools"
           echo 'd151bb44b2a9d9bfc52813ce4cac042916394a0ab8a56bd5d221a5dc9ef8d5d7  '"$tools/7zip-linux-x64.tar.gz" | sha256sum --check
           tar -xzf "$tools/7zip-linux-x64.tar.gz" -C "$tools/7zip"
-          seven=$(find "$tools/7zip" -type f -name 7za -print -quit)
+          seven="$tools/7zip/7zip/bin/7za"
+          test -x "$seven"
           gh release download 'fpm@2.1.4' --repo electron-userland/electron-builder-binaries --pattern fpm-1.17.0-ruby-3.4.3-linux-amd64.7z --dir "$tools"
           echo '44b0ec6025c14ec137f56180e62675c0eae36233cdce53d0953d9c73ced8989f  '"$tools/fpm-1.17.0-ruby-3.4.3-linux-amd64.7z" | sha256sum --check
           "$seven" x -y "$tools/fpm-1.17.0-ruby-3.4.3-linux-amd64.7z" "-o$tools/fpm" >/dev/null
