@@ -42,6 +42,26 @@ final class RuntimeTests: XCTestCase {
         XCTAssertLessThanOrEqual(dimensions?["content"] as? Int ?? 99999, width + 1)
         if width >= 720 { XCTAssertEqual(dimensions?["columns"] as? Int, 2); XCTAssertNotEqual(dimensions?["detail"] as? String, "none") }
         else { XCTAssertEqual(dimensions?["columns"] as? Int, 1) }
+        // Resize the real WKWebView to window widths used by iPad multitasking.
+        // This tests WebKit's layout; OS Split View gestures remain a device check.
+        if UIDevice.current.userInterfaceIdiom == .pad, let parent = web.superview {
+            let original = parent.constraints.filter { ($0.firstItem as? UIView) === web || ($0.secondItem as? UIView) === web }
+            NSLayoutConstraint.deactivate(original)
+            let widthConstraint = web.widthAnchor.constraint(equalToConstant: 834)
+            let temporary = [web.leadingAnchor.constraint(equalTo: parent.leadingAnchor), web.topAnchor.constraint(equalTo: parent.safeAreaLayoutGuide.topAnchor), web.heightAnchor.constraint(equalToConstant: 900), widthConstraint]
+            NSLayoutConstraint.activate(temporary)
+            defer { NSLayoutConstraint.deactivate(temporary); NSLayoutConstraint.activate(original); parent.layoutIfNeeded() }
+            for size in [834, 768, 720, 719, 600, 507, 375, 320, 834] {
+                widthConstraint.constant = CGFloat(size); parent.layoutIfNeeded()
+                try await Task.sleep(nanoseconds: 150_000_000)
+                _ = try await evaluate("document.querySelector('#list .titlebutton').click()", in: web)
+                let layout = try await evaluate("({width:innerWidth,content:document.documentElement.scrollWidth,columns:getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length,detail:getComputedStyle(document.querySelector('#detail')).display})", in: web) as? [String: Any]
+                XCTAssertEqual(layout?["width"] as? Int, size)
+                XCTAssertLessThanOrEqual(layout?["content"] as? Int ?? 99999, size + 1)
+                XCTAssertEqual(layout?["columns"] as? Int, size >= 720 ? 2 : 1)
+                XCTAssertEqual(layout?["detail"] as? String, "block")
+            }
+        }
         // Reload the actual custom scheme origin, not a substituted HTTP test page.
         web.reload(); try await Task.sleep(nanoseconds: 1_000_000_000)
         let reopened = try await ready()
