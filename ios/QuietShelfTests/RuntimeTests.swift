@@ -32,7 +32,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(status?["mode"] as? String, "ios")
         XCTAssertNotNil(status?["network"])
         _ = try await web.callAsyncJavaScript("await QuietShelfAccount.refresh()", arguments: [:], in: nil, contentWorld: .page)
-        _ = try await evaluate("QuietShelfApp.apply({library:[{id:'ios-qa-title',title:'Tablet test title',author:'Test author',status:'Unread',history:[]}],preferences:{theme:'sage'}})", in: web)
+        _ = try await evaluate("QuietShelfApp.apply({library:[{id:'ios-qa-title',title:'Tablet test title',author:'Test author',status:'Unread',history:[]}],preferences:{theme:'sage'}});QuietShelfApp.changed?.()", in: web)
         let actual3 = try await evaluate("QuietShelfApp.snapshot().library[0].title", in: web) as? String
         XCTAssertEqual(actual3, "Tablet test title")
         let actual4 = try await evaluate("document.documentElement.dataset.theme", in: web) as? String

@@ -54,6 +54,18 @@ Google Play services: https://developers.google.com/android/guides/overview
 Google Play services POM license: Android Software Development Kit License
 https://developer.android.com/studio/terms.html
 
+## iPhone and iPad runtime libraries
+
+Google Sign-In for iOS 10.1.0 and its resolved AppAuth, GTMAppAuth,
+GTMSessionFetcher, App Check, GoogleUtilities and Interop dependencies retain
+their upstream licenses. Xcode resolves pinned package revisions; the build
+collects their original license/notice files and includes them in the iOS app's
+offline Account → About → Third-party notices and build artifacts. They are not
+relicensed as Quiet Shelf material. Apple system frameworks retain Apple terms.
+
+Google Sign-In source and license: https://github.com/google/GoogleSignIn-iOS
+AppAuth source and license: https://github.com/openid/AppAuth-iOS
+
 ## Build tools and outside catalogs
 
 Development/build tools and their dependencies retain their upstream licenses.

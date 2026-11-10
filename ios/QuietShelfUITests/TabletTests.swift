@@ -14,10 +14,16 @@ final class TabletTests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         sleep(2)
         XCTAssertTrue(addButton.isHittable)
+        let landscapeFrame = app.webViews.firstMatch.frame
+        XCTAssertGreaterThan(landscapeFrame.width, landscapeFrame.height)
+        XCTAssertGreaterThan(landscapeFrame.width, app.frame.width - 100, "The app must use the full iPad window")
         let landscape = XCTAttachment(screenshot: app.screenshot()); landscape.name = "Native landscape"; landscape.lifetime = .keepAlways; add(landscape)
         XCUIDevice.shared.orientation = .portrait
         sleep(2)
         XCTAssertTrue(addButton.isHittable)
+        let portraitFrame = app.webViews.firstMatch.frame
+        XCTAssertGreaterThan(portraitFrame.height, portraitFrame.width)
+        XCTAssertGreaterThan(portraitFrame.width, app.frame.width - 100, "No phone compatibility frame on iPad")
         let portrait = XCTAttachment(screenshot: app.screenshot()); portrait.name = "Native portrait"; portrait.lifetime = .keepAlways; add(portrait)
         app.terminate(); app.launch()
         XCTAssertTrue(app.buttons["+ Add title"].firstMatch.waitForExistence(timeout: 25))

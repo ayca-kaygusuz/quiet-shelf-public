@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {readFile} from 'node:fs/promises';
+import {readFile,mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 execFileSync(process.execPath,['scripts/prepare-ios.mjs'],{stdio:'pipe'});
+let online=true,metered=false;
 let api,account={id:'101',email:'reader@example.invalid',name:'A reader'},creates=0,removes=0,clears=0;const files=new Map(),calls=[];
 globalThis.QuietShelfIOS={rpc:async(method,args={})=>{
- calls.push({method,args});if(method==='account.status')return {mode:'ios',configured:true,account,network:{online:true,metered:false}};
+ calls.push({method,args});if(method==='account.status')return {mode:'ios',configured:true,account,network:{online,metered}};
  if(method==='app.info')return {version:'0.14.1'};
  if(method==='account.clearToken'){clears++;return true}
  if(method==='account.signout'){account=null;return {mode:'ios',configured:true,account:null}}
@@ -30,6 +33,10 @@ try{
  let response=await call('/api/account/sync',{accountId:'101',state,readOnly:true,manual:true});assert.equal((await response.json()).state.registers.length,0);assert.equal(creates,0,'first check sends no phone data to Drive');assert.equal(removes,0);
  response=await call('/api/account/sync',{accountId:'101',state,manual:true});const synced=S.project((await response.json()).state);assert.equal(synced.library[0].title,'Tablet title');assert.equal(synced.preferences.readNext.list.id,'ios-checklist');assert.equal(creates,1);
  assert.equal((await call('/api/account/sync',{accountId:'202',state,manual:true})).status,401,'another account cannot use this connection');
+ metered=true;response=await call('/api/account/sync',{accountId:'101',state,manual:false});assert.equal((await response.json()).paused,true);assert.equal(creates,1,'metered automatic sync cannot upload');
+ response=await call('/api/account/sync',{accountId:'101',state,manual:true});assert.equal(response.status,200,'manual sync remains available on metered connections');
+ online=false;response=await call('/api/account/sync',{accountId:'101',state,manual:true});assert.equal(response.status,400);assert.match((await response.json()).error,/Offline/);online=true;metered=false;
+
  response=await call('/api/books?source=google&lang=en&q=iPhone/iPad',{},{'X-Google-Api-Key':'test-only-books-key'});assert.equal(response.status,405);
  response=await call('/api/books?source=google&lang=en&q=iPhone/iPad',undefined,{'X-Google-Api-Key':'test-only-books-key'});assert.equal(response.status,200);assert.equal((await response.json()).results[0].title,'An iPhone/iPad catalog result');
  await call('/api/account/signout',{});assert.equal((await(await call('/api/account/status')).json()).account,null);assert.equal(files.size,1,'sign-out leaves Drive data intact');
@@ -39,3 +46,15 @@ try{
  assert(!html.includes('client_secret'));
  console.log('PASS: iPhone/iPad shared catalog and Drive model, native credential marker/account binding, read-only first sync, saved theme/update preference and packaged CSP');
 }finally{globalThis.fetch=originalFetch;delete globalThis.QuietShelfIOS}
+
+const setup=await mkdtemp(join(tmpdir(),'quiet-shelf-ios-config-'));
+try{
+ const output=join(setup,'public-env'),testId='123-ios-test.apps.googleusercontent.com';
+ const plist='<?xml version="1.0"?><plist version="1.0"><dict><key>CLIENT_ID</key><string>'+testId+'</string><key>BUNDLE_ID</key><string>com.quietshelf.ios</string><key>API_KEY</key><string>ignored-test-api-key</string></dict></plist>';
+ const env={...process.env,QUIET_SHELF_GOOGLE_IOS_CLIENT_ID:testId,QUIET_SHELF_GOOGLE_IOS_CONFIGURATION:plist,GITHUB_ENV:output};
+ execFileSync('python3',['scripts/ios-google-config.py'],{env,stdio:'pipe'});
+ assert.equal(await readFile(output,'utf8'),'QUIET_SHELF_GOOGLE_IOS_CLIENT_ID='+testId+'\n');
+ assert.throws(()=>execFileSync('python3',['scripts/ios-google-config.py'],{env:{...env,QUIET_SHELF_GOOGLE_IOS_CLIENT_ID:'123-other.apps.googleusercontent.com'},stdio:'pipe'}));
+ assert.throws(()=>execFileSync('python3',['scripts/ios-google-config.py'],{env:{...env,QUIET_SHELF_GOOGLE_IOS_CONFIGURATION:plist.replace('com.quietshelf.ios','com.other.app')},stdio:'pipe'}));
+ console.log('PASS: iOS plist extracts only the public client ID, discards unrelated API keys and rejects mismatched clients/bundles');
+}finally{await rm(setup,{recursive:true,force:true})}

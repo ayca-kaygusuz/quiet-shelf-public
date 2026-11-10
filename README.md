@@ -45,11 +45,11 @@ installed files, not arbitrary files added to the installation folder.
 [Download Quiet Shelf for Linux](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
 The first native Linux release targets **x86-64 / amd64**:
 
-- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.18.0-linux-amd64.deb` with your
+- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.19.0-linux-amd64.deb` with your
   package installer, then open **Quiet Shelf** from the applications menu.
   The `quiet-shelf` command is also available. For terminal installation:
-  `sudo apt install ./Quiet-Shelf-0.18.0-linux-amd64.deb`.
-- **Other Linux desktops:** extract `Quiet-Shelf-0.18.0-linux-x64.tar.gz`, then
+  `sudo apt install ./Quiet-Shelf-0.19.0-linux-amd64.deb`.
+- **Other Linux desktops:** extract `Quiet-Shelf-0.19.0-linux-x64.tar.gz`, then
   open the `quiet-shelf` executable in the extracted folder. Keep the entire
   folder together. The portable build needs the usual Electron/GTK/NSS system
   libraries and working Chromium sandbox support (unprivileged user namespaces).
@@ -84,7 +84,7 @@ package checks compare the portable binary/assets with the tested installed app.
 
 ### Android app
 
-The release includes **Quiet-Shelf-Android-0.18.0.apk** for Android 8 or later
+The release includes **Quiet-Shelf-Android-0.19.0.apk** for Android 8 or later
 with an updated Android System WebView. Download the APK on your phone and open
 it; Android may ask you to allow installation from that browser. Future APKs
 install over the existing app using the same signing identity. No PC, browser
@@ -605,7 +605,7 @@ that browser copy; Drive retains the shared data while it is stopped.
 
 A hosted Worker adapter implements Web OAuth with server-side Web credentials,
 encrypted HttpOnly remembered-session cookies, state/PKCE and the same data
-format. Public hosting deployment and the native iOS app is deferred. The release supplies the Desktop application credentials alongside PKCE; users
+format. Public hosting deployment remains deferred. The release supplies the Desktop application credentials alongside PKCE; users
 only sign in and approve access. Web client credentials remain separate. Kitapyurdu account-list sync is
 not implemented. See [Google Drive setup](docs/google-drive.md) for maintainer
 configuration and the real-account verification checklist.

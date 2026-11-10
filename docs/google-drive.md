@@ -1,8 +1,7 @@
 # Google Drive connection
 
-Version 0.18.0 connects Windows, Linux, Android and the local browser app to Google Drive.
-The hosted web OAuth adapter is implemented too; public hosting deployment and
-the native iOS app is deferred. Libraries and JSON import/export work
+Version 0.19.0 connects Windows, Linux, Android, iPhone/iPad and the local browser app to Google Drive.
+The hosted web OAuth adapter is implemented too; public hosting deployment remains deferred. Libraries and JSON import/export work
 without an account. No web hosting is required for native sync.
 
 ## Google Cloud setup
@@ -23,7 +22,7 @@ without an account. No web hosting is required for native sync.
 6. Before general public use, change **Audience** from **Testing** to
    **Production**, and complete any production/branding steps Google requests.
    Users outside the test list cannot use an app left in Testing. Hosted Web
-   client setup is described below; native iOS client setup is deferred; Android setup is described in android/README.md.
+   client setup is described below; iOS setup is described in ios/INSTALL.md; Android setup is described in android/README.md.
 
 Google Testing projects can expire refresh tokens after seven days when Drive
 access is requested. This is a Google test-mode limit, not a sync defect. Moving
@@ -183,3 +182,28 @@ Missing, unknown or basic_text backends keep tokens in memory for the session
 and do not write refresh-token files. No Web client secret is bundled.
 NetworkManager supplies metered state when available; user controls and manual
 sync work when the connection cost cannot be detected.
+
+## iPhone and iPad Google connection
+
+Create an **iOS** OAuth client in the same Google Cloud project using bundle ID
+`com.quietshelf.ios`. Supply its public ID using the iOS workflow input or
+`QUIET_SHELF_GOOGLE_IOS_CLIENT_ID` repository variable. Google supplies a plist
+configuration download for iOS; there is no client secret to inject. For
+compatibility with the existing Actions setup, builds can also extract only
+`CLIENT_ID` from the plist stored under the earlier, misnamed
+`QUIET_SHELF_GOOGLE_IOS_CLIENT_SECRET` entry. The plist, any optional API key and
+all other fields are discarded; no real OAuth secret is used. Do not use
+a Web/Desktop secret or an Apple signing credential. The build derives the
+reversed-client-ID URL scheme and retains the native SDK licenses offline.
+
+Authorization opens the native Google system-browser flow; access/refresh
+credentials stay in the Google SDK/Keychain. The WebView receives public identity
+only. Native Drive requests require the active account ID and app-data endpoint;
+Books API keys cannot become Drive credentials. First connection uses the same
+read-only preview and explicit library choice as Windows/browser/Android/Linux.
+
+Free AltStore signing can rewrite the bundle identifier, so test Google consent
+on the actual signed installation and report configuration errors without
+switching to an empty workspace. Do not enable App Check/App Attest enforcement
+for an unsigned/sideload distribution without first checking its compatibility.
+See [installation and device checks](../ios/INSTALL.md).

@@ -36,11 +36,17 @@
    document.querySelector('#accountUpdateSummary').textContent='iPhone and iPad updates are available as an IPA from GitHub. Install with the same AltStore account to keep your library. Free signing needs refreshing every seven days.';
    document.querySelector('#browserUpdateDownload').textContent='View iPhone / iPad update ↗';
    const detail=document.querySelector('#detail'),close=document.createElement('button');close.type='button';close.className='ios-close-detail';close.textContent='← Library';close.setAttribute('aria-label','Back to library');
-   close.onclick=()=>{document.body.classList.remove('ios-detail-open');document.querySelector('#list .selected .titlebutton')?.focus()};
+   close.onclick=()=>{document.body.classList.remove('ios-detail-open');detailState();document.querySelector('#list .selected .titlebutton')?.focus()};
    const compact=matchMedia('(max-width:719px)');
-   for(const list of [document.querySelector('#list'),document.querySelector('#readNextEntries')])list.addEventListener('click',event=>{if(event.target.closest('.titlebutton')){if(!detail.contains(close))detail.prepend(close);document.body.classList.add('ios-detail-open');detail.scrollTop=0;if(compact.matches)close.focus()}});
+   function detailState(){
+    const modal=compact.matches&&document.body.classList.contains('ios-detail-open');
+    for(const element of document.querySelectorAll('.app-header,#collectionTabs,#readNextPanel,.insights,.library-panel,footer,#message,.notice'))element.inert=modal;
+    if(modal){detail.setAttribute('role','dialog');detail.setAttribute('aria-modal','true')}
+    else{detail.removeAttribute('role');detail.removeAttribute('aria-modal')}
+   }
+   for(const list of [document.querySelector('#list'),document.querySelector('#readNextEntries')])list.addEventListener('click',event=>{if(event.target.closest('.titlebutton')){if(!detail.contains(close))detail.prepend(close);document.body.classList.add('ios-detail-open');detailState();detail.scrollTop=0;if(compact.matches)close.focus()}});
    new MutationObserver(()=>{if(document.body.classList.contains('ios-detail-open')&&!detail.contains(close))detail.prepend(close)}).observe(detail,{childList:true});
-   compact.addEventListener('change',()=>{if(!compact.matches)document.body.style.overflow=''});
+   compact.addEventListener('change',detailState);
    document.addEventListener('click',event=>{const link=event.target.closest('a[href]');if(link&&new URL(link.href).protocol!=='quiet-shelf-ios:'){event.preventDefault();void rpc('open.external',{url:link.href}).catch(e=>App.message(e.message))}});
    globalThis.QuietShelfIOS.back=()=>{if(document.querySelector('#addDialog').open){document.querySelector('#addDialog').close();return true}if(!document.querySelector('#syncPopover').hidden){document.querySelector('#syncIndicator').click();return true}if(!document.querySelector('#accountPage').hidden){document.querySelector('#backToLibrary').click();return true}if(document.body.classList.contains('ios-detail-open')){close.click();return true}return false};
   };configure();

@@ -5,7 +5,7 @@
 The standalone app is implemented in `desktop/main.mjs`, using the same
 `src/index.html` and `src/catalog.mjs` as the browser app. The browser version
 remains available. Version 0.12.0 adds the user-requested optional Google Drive
-connection in the Windows app. Web sign-in is implemented alongside Windows. Public web deployment and the native iOS app remain deferred. Android is now
+connection in the Windows app. Web sign-in is implemented alongside Windows. Public web deployment remains deferred. iPhone/iPad now lives in `ios/` with a universal adaptive layout and AltStore IPA packaging. Android is now
 implemented in `android/` with the same shared source.
 
 The desktop app loads `quiet-shelf://app/` through an in-process protocol handler;

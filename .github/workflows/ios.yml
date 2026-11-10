@@ -1,7 +1,29 @@
 name: iPhone and iPad application
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios.yml'
+      - 'ios/**'
+      - 'src/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'assets/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'LICENSE'
+      - 'NOTICE'
+      - 'THIRD_PARTY_NOTICES.md'
   workflow_dispatch:
     inputs:
+      publish:
+        description: Attach tested unsigned IPA to the matching published release
+        type: boolean
+        default: false
+      verifiedRunId:
+        description: Successful iOS run at this exact source commit; reuse its tested IPA
+        type: string
+        default: ''
       googleIosClientId:
         description: Public iOS OAuth client ID; never an OAuth secret or plist
         type: string
@@ -13,7 +35,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false
+    if: github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false && !inputs.verifiedRunId
     runs-on: macos-15
     timeout-minutes: 55
     env:
@@ -29,6 +51,10 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: npm test
+      - name: Prepare public iOS Google configuration
+        env:
+          QUIET_SHELF_GOOGLE_IOS_CONFIGURATION: ${{ secrets.QUIET_SHELF_GOOGLE_IOS_CLIENT_SECRET }}
+        run: python3 scripts/ios-google-config.py
       - name: Resolve pinned Google native SDK and retain its notices
         run: |
           set -euo pipefail
@@ -61,4 +87,39 @@ jobs:
           path: |
             work/ios/*runtime.xcresult
             work/ios/simulator-results.json
+            ios/QuietShelf.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
           retention-days: 1
+  publish:
+    if: always() && github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.event.repository.private == false && github.ref == 'refs/heads/main' && inputs.publish && (needs.build.result == 'success' || needs.build.result == 'skipped' && inputs.verifiedRunId != '')
+    needs: build
+    concurrency:
+      group: quiet-shelf-release-assets-${{ github.ref }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '24'
+      - name: Verify successful exact-source Simulator build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_RUN_ID: ${{ inputs.verifiedRunId || github.run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$VERIFIED_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN_ID" > ios-run.json
+          node --input-type=module -e "import fs from 'node:fs';const r=JSON.parse(fs.readFileSync('ios-run.json'));if(r.head_sha!==process.env.GITHUB_SHA||r.path!=='.github/workflows/ios.yml'||r.id!==Number(process.env.GITHUB_RUN_ID)&&r.conclusion!=='success')throw Error('The IPA must come from a successful iOS workflow at the exact release commit.');"
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: ios-unsigned-package
+          path: release-ios
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.verifiedRunId || github.run_id }}
+      - name: Attach verified IPA and installation instructions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish-ios.py
