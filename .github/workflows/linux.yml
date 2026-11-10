@@ -67,7 +67,11 @@ jobs:
           version=$(node -p "require('./package.json').devDependencies.electron")
           archive="electron-v$version-linux-x64.zip"
           gh release download "v$version" --repo electron/electron --pattern "$archive" --pattern SHASUMS256.txt --dir "$tools"
-          (cd "$tools" && sha256sum --check <(grep " $archive\$" SHASUMS256.txt))
+          node --input-type=module - "$tools" "$archive" <<'JS'
+          import {readFileSync} from 'node:fs';import {join} from 'node:path';import {createHash} from 'node:crypto';
+          const [directory,name]=process.argv.slice(2),entries=readFileSync(join(directory,'SHASUMS256.txt'),'utf8').split(/\r?\n/).map(line=>line.trim().split(/\s+/)).filter(parts=>parts.at(-1)===name);
+          if(entries.length!==1||createHash('sha256').update(readFileSync(join(directory,name))).digest('hex')!==entries[0][0])throw Error('Electron runtime checksum mismatch.');
+          JS
           unzip -q "$tools/$archive" -d "$tools/electron"
           gh release download '7zip@1.0.0' --repo electron-userland/electron-builder-binaries --pattern 7zip-linux-x64.tar.gz --dir "$tools"
           echo 'd151bb44b2a9d9bfc52813ce4cac042916394a0ab8a56bd5d221a5dc9ef8d5d7  '"$tools/7zip-linux-x64.tar.gz" | sha256sum --check
