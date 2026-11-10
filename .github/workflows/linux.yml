@@ -69,7 +69,7 @@ jobs:
           gh release download "v$version" --repo electron/electron --pattern "$archive" --pattern SHASUMS256.txt --dir "$tools"
           node --input-type=module - "$tools" "$archive" <<'JS'
           import {readFileSync} from 'node:fs';import {join} from 'node:path';import {createHash} from 'node:crypto';
-          const [directory,name]=process.argv.slice(2),entries=readFileSync(join(directory,'SHASUMS256.txt'),'utf8').split(/\r?\n/).map(line=>line.trim().split(/\s+/)).filter(parts=>parts.at(-1)===name);
+          const [directory,name]=process.argv.slice(2),entries=readFileSync(join(directory,'SHASUMS256.txt'),'utf8').split(/\r?\n/).map(line=>line.trim().split(/\s+/)).filter(parts=>parts.at(-1)?.replace(/^\*/, '')===name);
           if(entries.length!==1||createHash('sha256').update(readFileSync(join(directory,name))).digest('hex')!==entries[0][0])throw Error('Electron runtime checksum mismatch.');
           JS
           unzip -q "$tools/$archive" -d "$tools/electron"
