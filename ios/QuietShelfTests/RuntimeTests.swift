@@ -53,7 +53,12 @@ final class RuntimeTests: XCTestCase {
             defer { NSLayoutConstraint.deactivate(temporary); NSLayoutConstraint.activate(original); parent.layoutIfNeeded() }
             for size in [834, 768, 720, 719, 600, 507, 375, 320, 834] {
                 widthConstraint.constant = CGFloat(size); parent.layoutIfNeeded()
-                try await Task.sleep(nanoseconds: 150_000_000)
+                // Native constraints and the WebKit content process resize asynchronously.
+                for _ in 0..<50 {
+                    let viewport = try await evaluate("innerWidth", in: web) as? Int
+                    if viewport == size { break }
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                }
                 _ = try await evaluate("document.querySelector('#list .titlebutton').click()", in: web)
                 let layout = try await evaluate("({width:innerWidth,content:document.documentElement.scrollWidth,columns:getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length,detail:getComputedStyle(document.querySelector('#detail')).display})", in: web) as? [String: Any]
                 XCTAssertEqual(layout?["width"] as? Int, size)
