@@ -7,7 +7,19 @@ import WebKit
 
 final class RuntimeTests: XCTestCase {
     @MainActor private func evaluate(_ script: String, in web: WKWebView) async throws -> Any? {
-        try await web.evaluateJavaScript(script)
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Any?, Error>) in
+            web.evaluateJavaScript(script) { value, error in
+                if let error { continuation.resume(throwing: error) }
+                else { continuation.resume(returning: value) }
+            }
+        }
+    }
+    @MainActor private func asyncScript(_ script: String, in web: WKWebView) async throws -> Any? {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Any?, Error>) in
+            web.callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: .page) { result in
+                switch result { case .success(let value): continuation.resume(returning: value); case .failure(let error): continuation.resume(throwing: error) }
+            }
+        }
     }
     @MainActor private func ready() async throws -> WKWebView {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
@@ -28,10 +40,10 @@ final class RuntimeTests: XCTestCase {
         let previous = try await evaluate("localStorage.getItem('ios.qa.persistence')", in: web) as? String
         XCTAssertTrue(previous == nil || previous == "kept")
         _ = try await evaluate("localStorage.setItem('ios.qa.persistence','kept')", in: web)
-        let status = try await web.callAsyncJavaScript("return await (await fetch('/api/account/status')).json()", arguments: [:], in: nil, contentWorld: .page) as? [String: Any]
+        let status = try await asyncScript("return await (await fetch('/api/account/status')).json()", in: web) as? [String: Any]
         XCTAssertEqual(status?["mode"] as? String, "ios")
         XCTAssertNotNil(status?["network"])
-        _ = try await web.callAsyncJavaScript("await QuietShelfAccount.refresh()", arguments: [:], in: nil, contentWorld: .page)
+        _ = try await asyncScript("await QuietShelfAccount.refresh()", in: web)
         _ = try await evaluate("QuietShelfApp.apply({library:[{id:'ios-qa-title',title:'Tablet test title',author:'Test author',status:'Unread',history:[]}],preferences:{theme:'sage'}});QuietShelfApp.changed?.()", in: web)
         let actual3 = try await evaluate("QuietShelfApp.snapshot().library[0].title", in: web) as? String
         XCTAssertEqual(actual3, "Tablet test title")

@@ -79,6 +79,14 @@ jobs:
             work/ios/native-notices.txt
             ios/QuietShelf.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
           retention-days: 1
+      - name: Export native Simulator screenshots
+        if: always()
+        run: |
+          shopt -s nullglob
+          for result in work/ios/*-runtime.xcresult; do
+            name=$(basename "$result" .xcresult)
+            xcrun xcresulttool export attachments --path "$result" --output-path "work/ios/previews/$name"
+          done
       - name: Retain native runtime results
         if: always()
         uses: actions/upload-artifact@v7.0.1
@@ -87,6 +95,7 @@ jobs:
           path: |
             work/ios/*runtime.xcresult
             work/ios/simulator-results.json
+            work/ios/previews/**
             ios/QuietShelf.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
           retention-days: 1
   publish:

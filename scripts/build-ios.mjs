@@ -8,7 +8,7 @@ if(process.platform!=='darwin')throw Error('Native iOS builds require macOS with
 const version=JSON.parse(readFileSync('package.json')).version,parts=version.split('.').map(Number),number=(parts[0]+1)+'.'+parts[1]+'.'+parts[2];
 const id=(process.env.QUIET_SHELF_GOOGLE_IOS_CLIENT_ID||'').trim();
 if(id&&!/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(id))throw Error('Invalid public iOS OAuth client ID.');
-const args=['-project','ios/QuietShelf.xcodeproj','-scheme','QuietShelf','CODE_SIGNING_ALLOWED=NO',`MARKETING_VERSION=${version}`,`CURRENT_PROJECT_VERSION=${number}`];
+const args=['-project','ios/QuietShelf.xcodeproj','-scheme','QuietShelf','-onlyUsePackageVersionsFromResolvedFile','CODE_SIGNING_ALLOWED=NO',`MARKETING_VERSION=${version}`,`CURRENT_PROJECT_VERSION=${number}`];
 if(id)args.push('QUIET_SHELF_IOS_CLIENT_ID='+id,'QUIET_SHELF_IOS_REVERSED_CLIENT_ID='+id.split('.').reverse().join('.'));
 const dir=resolve('work/ios');mkdirSync(dir,{recursive:true});
 // sips is supplied by macOS; no downloaded project-generator dependency.
