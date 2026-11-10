@@ -15,7 +15,7 @@ if(!localHeadless){
  const result=execFileSync('gnome-keyring-daemon',['--unlock','--components=secrets'],{env,input:randomBytes(32).toString('hex'),encoding:'utf8',timeout:15000});
  for(const line of result.split('\n'))if(line.startsWith('GNOME_KEYRING_CONTROL='))env.GNOME_KEYRING_CONTROL=line.slice('GNOME_KEYRING_CONTROL='.length);
  const runtime=join(resolve(process.env.QUIET_SHELF_ELECTRON_DIST),'electron');env.QUIET_SHELF_KEYRING_PROBE=join(qa,'keyring-probe.bin');
- for(const mode of [[],['--read-probe']])execFileSync(runtime,['--disable-gpu','--password-store=gnome-libsecret',resolve('scripts/check-linux-keyring.cjs'),...mode],{env,stdio:'inherit',timeout:20000});
+ for(const mode of ['write','read'])execFileSync(runtime,['--disable-gpu','--password-store=gnome-libsecret',resolve('scripts/check-linux-keyring.cjs')],{env:{...env,QUIET_SHELF_KEYRING_MODE:mode},stdio:'inherit',timeout:20000});
 }
 let child,ws,pending=new Map(),id=0;
 async function command(method,params={}){return new Promise((resolve,reject)=>{const n=++id,timer=setTimeout(()=>{pending.delete(n);reject(Error('Linux runtime command timed out.'))},20000);pending.set(n,{resolve,reject,timer});ws.send(JSON.stringify({id:n,method,params}))})}

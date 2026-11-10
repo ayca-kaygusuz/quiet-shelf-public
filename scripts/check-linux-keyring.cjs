@@ -9,8 +9,8 @@ app.whenReady().then(()=>{
  assert(['gnome_libsecret','kwallet','kwallet5','kwallet6'].includes(safeStorage.getSelectedStorageBackend()),'No secure Linux keyring was selected.');
  const value='quiet-shelf-ephemeral-keyring-probe',path=process.env.QUIET_SHELF_KEYRING_PROBE;
  assert(path,'An isolated probe file is required.');
- if(process.argv.includes('--read-probe'))assert.equal(safeStorage.decryptString(readFileSync(path)),value);
+ if(process.env.QUIET_SHELF_KEYRING_MODE==='read')assert.equal(safeStorage.decryptString(readFileSync(path)),value);
  else{const bytes=safeStorage.encryptString(value);assert(!bytes.includes(Buffer.from(value)));writeFileSync(path,bytes,{mode:0o600})}
- console.log('PASS: Linux OS keyring '+(process.argv.includes('--read-probe')?'restored an encrypted test value after restart.':'encrypted a test value without plaintext storage.'));
+ console.log('PASS: Linux OS keyring '+(process.env.QUIET_SHELF_KEYRING_MODE==='read'?'restored an encrypted test value after restart.':'encrypted a test value without plaintext storage.'));
  app.quit();
 }).catch(error=>{console.error(error.message);app.exit(1)});
