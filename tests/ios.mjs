@@ -54,7 +54,7 @@ try{
  const plist='<?xml version="1.0"?><plist version="1.0"><dict><key>CLIENT_ID</key><string>'+testId+'</string><key>BUNDLE_ID</key><string>com.quietshelf.ios</string><key>API_KEY</key><string>ignored-test-api-key</string></dict></plist>';
  const env={...process.env,QUIET_SHELF_GOOGLE_IOS_CLIENT_ID:testId,QUIET_SHELF_GOOGLE_IOS_CONFIGURATION:plist,GITHUB_ENV:output};
  execFileSync(python,['scripts/ios-google-config.py'],{env,stdio:'pipe'});
- assert.equal(await readFile(output,'utf8'),'QUIET_SHELF_GOOGLE_IOS_CLIENT_ID='+testId+'\n');
+ assert.equal((await readFile(output,'utf8')).replace(/\r\n/g,'\n'),'QUIET_SHELF_GOOGLE_IOS_CLIENT_ID='+testId+'\n');
  assert.throws(()=>execFileSync(python,['scripts/ios-google-config.py'],{env:{...env,QUIET_SHELF_GOOGLE_IOS_CLIENT_ID:'123-other.apps.googleusercontent.com'},stdio:'pipe'}));
  assert.throws(()=>execFileSync(python,['scripts/ios-google-config.py'],{env:{...env,QUIET_SHELF_GOOGLE_IOS_CONFIGURATION:plist.replace('com.quietshelf.ios','com.other.app')},stdio:'pipe'}));
  console.log('PASS: iOS plist extracts only the public client ID, discards unrelated API keys and rejects mismatched clients/bundles');
