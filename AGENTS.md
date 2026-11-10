@@ -36,7 +36,7 @@ Never replace actual library counts or chart values with illustrative data.
 Keep the browser version and standalone desktop version available, sharing
 `src/` for interface and catalog behavior. The desktop app has a separate local
 profile, with optional Google Drive sync now explicitly requested. Browser Google sign-in and first-sync choices share the Windows behavior. Public
-web hosting deployment and the native iOS app remain deferred. Android is implemented
+web hosting deployment remains deferred. iPhone/iPad is implemented in `ios/`. Android is implemented
 in `android/` using the same shared source and data format. Keep guest and Google-account workspaces
 separate, credentials out of the renderer, and Google Books keys device-local.
 Keep browser and Windows development aligned: implement common features,
@@ -165,3 +165,25 @@ Linux downloads are verified before explicit manual package installation;
 never auto-run privileged installers, execute downloaded shell commands or
 silently replace a running installation. Test native startup/UI/profile restart
 and real keyring encryption on the public Linux CI runner before publication.
+
+## iPhone / iPad app
+
+Keep iOS/iPadOS universal (device families 1 and 2), with full-window launch,
+portrait/landscape and system multitasking enabled. Adapt to available window
+width: regular-width library/details panes and compact list/detail navigation.
+Never ship a phone-compatibility app stretched on iPad. Share src/ and versioned
+backup/Drive semantics with every other maintained platform.
+
+Use the origin-bound main-frame WKWebView bridge, a fixed local asset allowlist,
+bounded HTTPS catalog/Drive/release requests and selected-file system pickers.
+Google Sign-In uses the native iOS SDK and iOS public client ID, without a client
+secret. Keep user tokens in the SDK/Keychain; never send them to page scripts.
+Do not bundle Desktop/Web OAuth configuration or Apple account/signing material.
+Retain notices from exact resolved Swift packages in the offline About view.
+
+The user chose free AltStore Classic installation from Windows. Package an
+explicitly unsigned universal IPA; do not claim it installs by tapping a download.
+Document personal signing and seven-day renewal, preserve local data on updates,
+and distinguish Simulator tests from actual AltStore/Google/device validation.
+Do not enroll in paid Apple services or publish to App Store/TestFlight without
+new authorization. Run native iPhone/iPad Simulator tests before IPA publication.

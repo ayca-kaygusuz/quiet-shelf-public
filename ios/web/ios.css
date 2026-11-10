@@ -1,0 +1,51 @@
+/* Copyright 2026 Alex (Ayca Kaygusuz) — SPDX-License-Identifier: Apache-2.0 */
+/* Size by the available window, including iPad Split View / Stage Manager. */
+body[data-platform="ios"] .wrap{max-width:none;padding:18px 24px 28px}
+body[data-platform="ios"]{overscroll-behavior-y:contain;-webkit-text-size-adjust:100%}
+body[data-platform="ios"] button,body[data-platform="ios"] select,body[data-platform="ios"] input:not([type="checkbox"]),body[data-platform="ios"] summary{min-height:44px}
+body[data-platform="ios"] input,body[data-platform="ios"] select,body[data-platform="ios"] textarea{font-size:16px}
+body[data-platform="ios"] .kebab-trigger{width:44px;min-width:44px;height:44px}
+body[data-platform="ios"] .menu-col,body[data-platform="ios"] td:last-child{width:48px}
+body[data-platform="ios"] .titlebutton{min-height:48px}
+body[data-platform="ios"] .toggle{min-height:44px}
+body[data-platform="ios"] #pcDownload{display:none}
+.ios-close-detail{display:none}
+@media(min-width:720px){
+ body[data-platform="ios"] .layout{grid-template-columns:minmax(0,1fr) minmax(300px,.8fr);gap:16px}
+ body[data-platform="ios"] #detail{display:block;position:sticky;top:calc(var(--app-header-height,100px) + 16px);max-height:calc(100dvh - var(--app-header-height,100px) - 32px);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+ body[data-platform="ios"] .detailhero .cover{width:60px;flex-basis:60px;height:88px}
+ body[data-platform="ios"] .tabs{margin-inline:16px;max-width:calc(100% - 32px)}
+ body[data-platform="ios"] .tabs button{font-size:12px;padding:9px 10px}
+ body[data-platform="ios"] .detailbody{padding-inline:16px}
+ body[data-platform="ios"] .tools{flex-wrap:wrap}
+ body[data-platform="ios"] .tools .search-field{flex-basis:100%}
+ body[data-platform="ios"] .tools select{width:100%;max-width:none}
+ body[data-platform="ios"] .titlebutton strong{font-size:14px}
+ body[data-platform="ios"] .next-entries{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1100px){
+ body[data-platform="ios"] .layout{grid-template-columns:minmax(0,1.65fr) minmax(340px,1fr);gap:24px}
+ body[data-platform="ios"] .tools .search-field{flex-basis:auto}
+ body[data-platform="ios"] .tools select{width:auto;max-width:240px}
+ body[data-platform="ios"] .insights-grid{grid-template-columns:minmax(320px,.85fr) minmax(0,1.3fr)}
+}
+@media(min-width:720px) and (max-width:979px){
+ body[data-platform="ios"] .insights-grid{grid-template-columns:1fr}
+ body[data-platform="ios"] .activity{border-left:0;border-top:1px solid var(--line);padding:16px 0 0}
+ body[data-platform="ios"] .account-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-platform="ios"] .account-panel{padding:20px}
+ body[data-platform="ios"] .detailhero{padding:20px 16px;gap:12px}
+}
+@media(max-width:719px){
+ body[data-platform="ios"] .wrap{padding:12px 12px 24px}
+ body[data-platform="ios"] .layout{grid-template-columns:1fr}
+ body[data-platform="ios"] #detail{display:none}
+ body[data-platform="ios"].ios-detail-open #detail{display:block;position:fixed;inset:8px;z-index:38;max-height:none;overflow:auto;border:1px solid var(--line);overscroll-behavior:contain}
+ body[data-platform="ios"].ios-detail-open{overflow:hidden}
+ body[data-platform="ios"].ios-detail-open .ios-close-detail{display:block;margin:12px 16px 0}
+ body[data-platform="ios"] .app-header>.actions{justify-content:space-between}
+ body[data-platform="ios"] .account-grid{grid-template-columns:1fr}
+ body[data-platform="ios"] .account-wide{grid-column:auto}
+ body[data-platform="ios"] .next-entries{grid-template-columns:1fr}
+}
+body[data-platform="ios"] dialog{max-height:calc(100dvh - 24px);width:min(620px,calc(100% - 24px));touch-action:pan-y}

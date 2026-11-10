@@ -43,3 +43,18 @@ service-account*.json
 /android/local.properties
 *.jks
 *.keystore
+
+# iPhone/iPad generated assets, Apple signing and local Xcode state
+/ios/QuietShelf/Web/
+/ios/QuietShelf/Generated-Info.plist
+/ios/QuietShelf/Assets.xcassets/
+/ios/build/
+**/xcuserdata/
+*.xcuserstate
+*.mobileprovision
+*.provisionprofile
+*.ipa
+*.xcarchive
+
+__pycache__/
+*.pyc

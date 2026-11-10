@@ -1,8 +1,8 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.18.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.19.0.**
 Run it on your PC, keep your reading history in your browser, and back it up as
-JSON. Windows, Linux, Android and browser versions share the same library format
+JSON. Windows, Linux, Android, iPhone/iPad and browser versions share the same library format
 and features. Internet access is used for catalog searches, cover images,
 update checks/downloads and optional Google Drive sync.
 
@@ -104,6 +104,32 @@ checks and the saved preference remain available. Android updates link to the
 release APK and require the normal Android install confirmation. The release
 checksum manifest covers the APK alongside the Windows/browser packages.
 See [Android development and signing](android/README.md).
+
+### iPhone and iPad app
+
+The universal iOS/iPadOS app targets **17.4 or later** and uses the shared library,
+catalog, reading history, themes, Read next and Google Drive data format. iPad
+uses a full-size window, supports portrait/landscape and permits system
+multitasking. From 720 points wide, library and details appear side by side;
+narrow windows use compact list/detail navigation. Touch targets, safe areas,
+system Files pickers and keyboard shortcuts are included.
+
+Free distribution uses an **unsigned IPA**, installed and signed using
+**AltStore Classic** from Windows. It cannot install by tapping a download.
+Free Apple signing needs refreshing within seven days, with AltServer reachable
+for renewal. The PC does not need to stay on continuously. Keep the same Apple
+account and update the existing app to preserve its local storage.
+
+Google sign-in uses an iOS OAuth client and the native SDK/Keychain; no iOS OAuth
+secret or local browser server is needed. JSON backup/restore also works without
+signing in. Update checks respect the saved preference and connection status;
+install IPA updates through the same signing method.
+
+See [iPhone/iPad installation and development](ios/INSTALL.md). The native build
+workflow validates iPhone/iPad simulators and prepares an explicitly unsigned
+arm64 IPA. Physical-device installation, signing renewal and Google consent are
+separate checks; simulator success does not prove those. App Store/TestFlight
+distribution is not configured and normally requires paid Apple membership.
 
 ### Additional English-language edition sources
 

@@ -5,7 +5,7 @@ export const RELEASES_URL='https://github.com/ayca-kaygusuz/quiet-shelf-public/r
 const apiURL='https://api.github.com/repos/ayca-kaygusuz/quiet-shelf-public/releases/latest';
 const downloadRoot='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/download/';
 const maxInstaller=300*1024*1024;
-export const APP_VERSION='0.18.0';
+export const APP_VERSION='0.19.0';
 export function releaseVersionParts(value){let match=String(value).match(/^v?(\d+)\.(\d+)\.(\d+)$/);if(!match)return null;let parts=match.slice(1).map(Number);return parts.every(Number.isSafeInteger)?parts:null}
 export function newerVersion(candidate,current){let a=releaseVersionParts(candidate),b=releaseVersionParts(current);if(!a||!b)return false;for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i]}return false}
 export function releaseSafeDownload(value){try{let u=new URL(value);return u.protocol==='https:'&&!u.port&&!u.username&&!u.password&&(u.origin==='https://github.com'&&u.pathname.startsWith('/ayca-kaygusuz/quiet-shelf-public/releases/download/')||['release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(u.hostname))}catch{return false}}
@@ -21,7 +21,7 @@ export async function releaseGet(url,fetcher,signal,installer=false){
 async function limitedText(response,limit){let length=0,chunks=[];for await(const chunk of response.body){length+=chunk.length;if(length>limit)throw Error('Update metadata too large');chunks.push(chunk)}const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length}return new TextDecoder().decode(bytes)}
 export function updateFilename(version,kind='windows'){
  if(!releaseVersionParts(version))throw Error('Invalid update version');
- const names={windows:`Quiet-Shelf-Setup-${version}-x64.exe`,android:`Quiet-Shelf-Android-${version}.apk`,browser:'quiet-shelf-pc.zip',linux:`Quiet-Shelf-${version}-linux-x64.tar.gz`,'linux-deb':`Quiet-Shelf-${version}-linux-amd64.deb`};
+ const names={windows:`Quiet-Shelf-Setup-${version}-x64.exe`,android:`Quiet-Shelf-Android-${version}.apk`,ios:`Quiet-Shelf-iOS-${version}-unsigned.ipa`,browser:'quiet-shelf-pc.zip',linux:`Quiet-Shelf-${version}-linux-x64.tar.gz`,'linux-deb':`Quiet-Shelf-${version}-linux-amd64.deb`};
  if(!Object.hasOwn(names,kind))throw Error('Unsupported update platform');return names[kind];
 }
 export async function latestUpdate(current,{fetcher=fetch,signal,kind='windows'}={}){
