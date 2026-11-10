@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {catalog,lovelyURL,parseLovelySearch,parseLovelyBook} from '../src/catalog.mjs';
+import {catalog,lovelyURL,parseLovelySearch,parseLovelyBook,rankSearchResults} from '../src/catalog.mjs';
 import {isExternalBookURL} from '../desktop/app-protocol.mjs';
 const files={};for(const name of ['isbn','title','edition','work'])files[name]=JSON.parse(await readFile('tests/fixtures/lovelybooks/'+name+'.json','utf8'));
 const isbn='9783522202602',edition=parseLovelyBook(files.edition),featured=parseLovelyBook(files.work.book),workURL='https://www.lovelybooks.de/autor/Michael-Ende/Die-unendliche-Geschichte-1523237141-w/';
+assert.equal(rankSearchResults(parseLovelySearch(files.isbn),files.isbn.content[0].title+' '+files.isbn.content[0].subtitle).length,1,'full-title queries retain the separate catalog subtitle');
+assert(edition.title.includes(files.edition.subtitle));
 assert.equal(edition.isbn,isbn);assert.equal(edition.language,'de');assert.equal(edition.readingInfo.pages,480);assert.equal(featured.isbn,'9783522202503');assert.notEqual(edition.sourceUrl,featured.sourceUrl,'edition links must distinguish ISBNs sharing a work ID');
 assert.equal(parseLovelySearch(files.isbn)[0].readingInfo.pages,null,'missing search pagination is not guessed');assert(parseLovelySearch(files.title).every(b=>!b.sourceUrl.includes('1874939848')),'audio is not imported as a book');
 assert.equal(parseLovelySearch(files.title,'en').length,0);assert.equal(parseLovelySearch(files.isbn,'de').length,1);assert.equal(parseLovelyBook({...files.edition,isbn:'B000TEST01'}).isbn,'','ASIN is not an ISBN');

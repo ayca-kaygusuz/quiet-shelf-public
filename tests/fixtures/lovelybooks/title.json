@@ -17,7 +17,8 @@
       },
       "cover": {
         "url": "https://images.lovelybooks.de/img/265x/lb-cover/9783522202503_1662042219000.jpg"
-      }
+      },
+      "subtitle": "Farbig illustrierte Schmuckausgabe | Das große Abenteuer in Phantásien – Michael Endes zeitloser Fantasy‑Klassiker"
     },
     {
       "id": 46572942,
@@ -36,7 +37,8 @@
       },
       "cover": {
         "url": "https://images.lovelybooks.de/img/265x/lb-cover/9783745600926_1733139146000.jpg"
-      }
+      },
+      "subtitle": "12 CDs"
     },
     {
       "id": 285082474,
@@ -55,7 +57,8 @@
       },
       "cover": {
         "url": "https://images.lovelybooks.de/img/265x/lb-cover/9783522200509_1557222604000.jpg"
-      }
+      },
+      "subtitle": "Das Phantásien-Lexikon"
     },
     {
       "id": 25691016491,
@@ -74,7 +77,8 @@
       },
       "cover": {
         "url": "https://images.lovelybooks.de/img/265x/lb-cover/O2_B0G1YRW3PJ_1780905108884_500_500.jpg"
-      }
+      },
+      "subtitle": null
     },
     {
       "id": 25860887284,
@@ -93,7 +97,8 @@
       },
       "cover": {
         "url": "https://images.lovelybooks.de/img/265x/lb-cover/S1_9783830193289_1781661338000_530_795.jpg"
-      }
+      },
+      "subtitle": "Roman über Liebe, Verantwortung und Unternehmertum"
     }
   ],
   "totalElements": 16

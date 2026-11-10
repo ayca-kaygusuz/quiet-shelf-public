@@ -151,6 +151,7 @@ without a login, API key or browser connector. It uses the site's anonymous
 catalog interface; this is not a documented public API, so site changes may
 require adapter maintenance.
 
+Edition subtitles are retained in titles, including edition and volume wording.
 Title searches show the featured editions supplied by LovelyBooks. Search by
 ISBN for an exact edition, or paste a LovelyBooks book link. Imports and later
 metadata refreshes use the selected edition's title ID, with ISBN verification,
