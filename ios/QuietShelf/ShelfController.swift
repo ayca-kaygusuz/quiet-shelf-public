@@ -9,7 +9,7 @@ import GoogleSignIn
 final class ShelfController: UIViewController, WKScriptMessageHandlerWithReply, WKNavigationDelegate, WKUIDelegate, UIDocumentPickerDelegate {
     private var web: WKWebView!
     private let network = NWPathMonitor()
-    private var online = true, metered = false, pending = false, tokenRejected = false
+    private var online = false, metered = false, pending = false, tokenRejected = false
     private var account: [String: String]? = UserDefaults.standard.dictionary(forKey: "google.publicAccount") as? [String: String]
     private var accountError = "", generation = 0
     private var requests: [Int: BoundedRequest] = [:]
@@ -157,18 +157,24 @@ final class ShelfController: UIViewController, WKScriptMessageHandlerWithReply, 
         if let exportURL { try? FileManager.default.removeItem(at: exportURL.deletingLastPathComponent()) }; exportURL = nil
         reply?(value, error)
     }
-    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { finishFile(exporting ? false : NSNull()) }
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        let value: Any = exporting ? false : NSNull()
+        controller.dismiss(animated: true) { self.finishFile(value) }
+    }
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        if exporting { finishFile(true); return }
-        guard let url = urls.first else { finishFile(NSNull()); return }
+        if exporting { controller.dismiss(animated: true) { self.finishFile(true) }; return }
+        guard let url = urls.first else { controller.dismiss(animated: true) { self.finishFile(NSNull()) }; return }
         let access = url.startAccessingSecurityScopedResource(); defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
             let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? NetworkPolicy.limit + 1
             guard size <= NetworkPolicy.limit else { throw URLError(.dataLengthExceedsMaximum) }
             let bytes = try Data(contentsOf: url); guard bytes.count <= NetworkPolicy.limit else { throw URLError(.dataLengthExceedsMaximum) }
-            let document = try JSONSerialization.jsonObject(with: bytes); finishFile(document)
-        } catch { finishFile(nil, error: "This JSON backup could not be read. Your current library is unchanged.") }
+            let document = try JSONSerialization.jsonObject(with: bytes)
+            // Finish dismissal before JavaScript can present the restore confirmation.
+            controller.dismiss(animated: true) { self.finishFile(document) }
+        } catch { controller.dismiss(animated: true) { self.finishFile(nil, error: "This JSON backup could not be read. Your current library is unchanged.") } }
     }
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         let url = navigationAction.request.url
         if Assets.local(url), ["", "/", "/index.html"].contains(url?.path ?? "") { decisionHandler(.allow); return }

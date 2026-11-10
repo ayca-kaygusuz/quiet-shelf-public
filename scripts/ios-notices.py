@@ -5,7 +5,7 @@ import pathlib,json,subprocess
 root=pathlib.Path('work/ios/packages/checkouts')
 lock=pathlib.Path('ios/QuietShelf.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved')
 pins=json.loads(lock.read_text())['pins']
-output=['iOS native runtime dependencies. Apple system frameworks retain Apple terms.\n']
+output=['iOS native runtime dependencies. Apple system frameworks retain Apple terms.\n', 'Swift runtime notice (upstream Swift 6.1.2): https://github.com/swiftlang/swift/blob/swift-6.1.2-RELEASE/LICENSE.txt\n', pathlib.Path('ios/licenses/swift-runtime-LICENSE.txt').read_text()]
 for pin in pins:
  identity=pin['identity']; revision=pin['state']['revision']
  candidates=[p for p in root.iterdir() if p.is_dir() and subprocess.run(['git','-C',str(p),'rev-parse','HEAD'],capture_output=True,text=True).stdout.strip()==revision]

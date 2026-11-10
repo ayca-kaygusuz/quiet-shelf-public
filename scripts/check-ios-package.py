@@ -17,7 +17,7 @@ with zipfile.ZipFile(path) as archive:
  assert not any(n.endswith(('.mobileprovision','.p12','.key','.pem')) for n in archive.namelist())
  assert not any('.xctest/' in n for n in archive.namelist()), 'Production IPA must not contain test bundles'
  assert root+'_CodeSignature/CodeResources' not in archive.namelist(), 'Distribute explicitly unsigned; AltStore supplies signing'
- for file in ['index.html','ios-bootstrap.js','ios-api.mjs','ios.css','read-next.js','legal.js','LICENSE','NOTICE','THIRD_PARTY_NOTICES.md','Manrope-OFL.txt']:
+ for file in ['index.html','ios-bootstrap.js','ios-api.mjs','ios.css','read-next.js','legal.js','LICENSE','NOTICE','THIRD_PARTY_NOTICES.md','Manrope-OFL.txt','Swift-runtime-LICENSE.txt']:
   assert len(archive.read(root+'Web/'+file))>0,file
  legal=archive.read(root+'Web/legal.js').decode()
  assert 'GoogleSignIn' in legal and 'AppAuth' in legal, 'Native licenses must be available offline'

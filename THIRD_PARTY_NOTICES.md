@@ -61,7 +61,10 @@ GTMSessionFetcher, App Check, GoogleUtilities and Interop dependencies retain
 their upstream licenses. Xcode resolves pinned package revisions; the build
 collects their original license/notice files and includes them in the iOS app's
 offline Account → About → Third-party notices and build artifacts. They are not
-relicensed as Quiet Shelf material. Apple system frameworks retain Apple terms.
+relicensed as Quiet Shelf material. Swift runtime components retain their upstream
+Apache-2.0 license with Runtime Library Exception; its full text from Swift
+6.1.2 is kept in ios/licenses/swift-runtime-LICENSE.txt and the iOS distribution.
+Apple system frameworks retain Apple terms.
 
 Google Sign-In source and license: https://github.com/google/GoogleSignIn-iOS
 AppAuth source and license: https://github.com/openid/AppAuth-iOS

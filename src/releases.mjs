@@ -18,7 +18,12 @@ export async function releaseGet(url,fetcher,signal,installer=false){
   }
   throw Error('Too many update redirects');
 }
-async function limitedText(response,limit){let length=0,chunks=[];for await(const chunk of response.body){length+=chunk.length;if(length>limit)throw Error('Update metadata too large');chunks.push(chunk)}const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length}return new TextDecoder().decode(bytes)}
+async function limitedText(response,limit){
+ const reader=response.body?.getReader();if(!reader)throw Error('Update metadata unavailable');
+ let length=0,text='';const decoder=new TextDecoder();
+ try{for(;;){const {done,value}=await reader.read();if(done)break;length+=value.byteLength;if(length>limit)throw Error('Update metadata too large');text+=decoder.decode(value,{stream:true})}return text+decoder.decode()}
+ finally{await reader.cancel().catch(()=>{});reader.releaseLock()}
+}
 export function updateFilename(version,kind='windows'){
  if(!releaseVersionParts(version))throw Error('Invalid update version');
  const names={windows:`Quiet-Shelf-Setup-${version}-x64.exe`,android:`Quiet-Shelf-Android-${version}.apk`,ios:`Quiet-Shelf-iOS-${version}-unsigned.ipa`,browser:'quiet-shelf-pc.zip',linux:`Quiet-Shelf-${version}-linux-x64.tar.gz`,'linux-deb':`Quiet-Shelf-${version}-linux-amd64.deb`};

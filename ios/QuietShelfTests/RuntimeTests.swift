@@ -15,11 +15,20 @@ final class RuntimeTests: XCTestCase {
         }
     }
     @MainActor private func asyncScript(_ script: String, in web: WKWebView) async throws -> Any? {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Any?, Error>) in
-            web.callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: .page) { result in
-                switch result { case .success(let value): continuation.resume(returning: value); case .failure(let error): continuation.resume(throwing: error) }
+        // Use the same callback evaluator as the application. Some older Apple
+        // simulator runtimes omit the separate Swift WebKit overlay library.
+        let key = UUID().uuidString
+        let launch = "globalThis.__quietShelfTestPromises ??= {}; (async()=>{\n" + script + "\n})().then(value=>globalThis.__quietShelfTestPromises['" + key + "']={value:value??null},error=>globalThis.__quietShelfTestPromises['" + key + "']={error:String(error.message||error)}); true"
+        _ = try await evaluate(launch, in: web)
+        for _ in 0..<100 {
+            if let result = try await evaluate("globalThis.__quietShelfTestPromises['" + key + "']||null", in: web) as? [String: Any] {
+                _ = try await evaluate("delete globalThis.__quietShelfTestPromises['" + key + "']", in: web)
+                if let message = result["error"] as? String { throw NSError(domain: "JavaScript", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+                return result["value"]
             }
+            try await Task.sleep(nanoseconds: 100_000_000)
         }
+        throw NSError(domain: "JavaScript", code: 2, userInfo: [NSLocalizedDescriptionKey: "Async test script did not finish"])
     }
     @MainActor private func ready() async throws -> WKWebView {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
@@ -43,6 +52,13 @@ final class RuntimeTests: XCTestCase {
         let status = try await asyncScript("return await (await fetch('/api/account/status')).json()", in: web) as? [String: Any]
         XCTAssertEqual(status?["mode"] as? String, "ios")
         XCTAssertNotNil(status?["network"])
+        let update = try await asyncScript("""
+        const {latestUpdate}=await import('/releases.mjs');
+        const base='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/download/v0.99.0/',name='Quiet-Shelf-iOS-0.99.0-unsigned.ipa',hash='a'.repeat(64);
+        const update=await latestUpdate('0.19.0',{kind:'ios',fetcher:async url=>String(url).startsWith('https://api.github.com/')?Response.json({tag_name:'v0.99.0',assets:[{name,size:123,digest:'sha256:'+hash,browser_download_url:base+name},{name:'SHA256SUMS.txt',browser_download_url:base+'SHA256SUMS.txt'}]}):new Response(hash+'  '+name)});
+        return update.version;
+        """, in: web) as? String
+        XCTAssertEqual(update, "0.99.0", "Update checks must work in actual WebKit without stream async iterators")
         _ = try await asyncScript("await QuietShelfAccount.refresh()", in: web)
         _ = try await evaluate("QuietShelfApp.apply({library:[{id:'ios-qa-title',title:'Tablet test title',author:'Test author',status:'Unread',history:[]}],preferences:{theme:'sage'}});QuietShelfApp.changed?.()", in: web)
         let actual3 = try await evaluate("QuietShelfApp.snapshot().library[0].title", in: web) as? String
@@ -73,9 +89,13 @@ final class RuntimeTests: XCTestCase {
                 }
                 _ = try await evaluate("document.querySelector('#list .titlebutton').click()", in: web)
                 let layout = try await evaluate("({width:innerWidth,content:document.documentElement.scrollWidth,columns:getComputedStyle(document.querySelector('.layout')).gridTemplateColumns.split(' ').length,detail:getComputedStyle(document.querySelector('#detail')).display})", in: web) as? [String: Any]
-                XCTAssertEqual(layout?["width"] as? Int, size)
-                XCTAssertLessThanOrEqual(layout?["content"] as? Int ?? 99999, size + 1)
-                XCTAssertEqual(layout?["columns"] as? Int, size >= 720 ? 2 : 1)
+                // The native view must fill its window. WebKit may preserve a
+                // separate CSS page scale while transitioning between sizes.
+                XCTAssertEqual(web.bounds.width, CGFloat(size), accuracy: 0.5)
+                let viewport = layout?["width"] as? Int ?? 0
+                XCTAssertGreaterThan(viewport, 0)
+                XCTAssertLessThanOrEqual(layout?["content"] as? Int ?? 99999, viewport + 1)
+                XCTAssertEqual(layout?["columns"] as? Int, viewport >= 720 ? 2 : 1)
                 XCTAssertEqual(layout?["detail"] as? String, "block")
             }
         }
