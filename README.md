@@ -1,6 +1,6 @@
 # Quiet Shelf
 
-A personal reading tracker for books, manga and comics. **Current version: 0.20.0.**
+A personal reading tracker for books, manga and comics. **Current version: 0.20.1.**
 Run it on your PC, keep your reading history in your browser, and back it up as
 JSON. Windows, Linux, Android, iPhone/iPad and browser versions share the same library format
 and features. Internet access is used for catalog searches, cover images,
@@ -45,11 +45,11 @@ installed files, not arbitrary files added to the installation folder.
 [Download Quiet Shelf for Linux](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
 The first native Linux release targets **x86-64 / amd64**:
 
-- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.20.0-linux-amd64.deb` with your
+- **Ubuntu/Debian/Mint:** install `Quiet-Shelf-0.20.1-linux-amd64.deb` with your
   package installer, then open **Quiet Shelf** from the applications menu.
   The `quiet-shelf` command is also available. For terminal installation:
-  `sudo apt install ./Quiet-Shelf-0.20.0-linux-amd64.deb`.
-- **Other Linux desktops:** extract `Quiet-Shelf-0.20.0-linux-x64.tar.gz`, then
+  `sudo apt install ./Quiet-Shelf-0.20.1-linux-amd64.deb`.
+- **Other Linux desktops:** extract `Quiet-Shelf-0.20.1-linux-x64.tar.gz`, then
   open the `quiet-shelf` executable in the extracted folder. Keep the entire
   folder together. The portable build needs the usual Electron/GTK/NSS system
   libraries and working Chromium sandbox support (unprivileged user namespaces).
@@ -84,7 +84,7 @@ package checks compare the portable binary/assets with the tested installed app.
 
 ### Android app
 
-The release includes **Quiet-Shelf-Android-0.20.0.apk** for Android 8 or later
+The release includes **Quiet-Shelf-Android-0.20.1.apk** for Android 8 or later
 with an updated Android System WebView. Download the APK on your phone and open
 it; Android may ask you to allow installation from that browser. Future APKs
 install over the existing app using the same signing identity. No PC, browser
@@ -470,8 +470,10 @@ explicit, with the existing unfinished-list confirmation.
 
 ## Catalog search
 
-Choose one **Search source** at a time. The app remembers the last source and
-language selection. Where supported, **Edition language** narrows results;
+Choose one **Search source** at a time. The app remembers the last source.
+Every new **Add title** dialog starts with **Any language**, including after
+loading older preferences or signing in. You can choose an **Edition language**
+to narrow the current search;
 suggestions display available author, publisher, language and ISBN details.
 Select a result, review its details, then add it to the chosen collection.
 

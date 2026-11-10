@@ -31,7 +31,7 @@
   if(p[1]==='sort')return ['addedAsc','addedDesc','titleAsc','titleDesc','authorAsc','status','finishedDesc'].includes(v);
   if(p[1]==='collectionView')return ['library','archive','wishlist'].includes(v);
   if(p[1]==='filter')return ['All','Unread','In progress','Done'].includes(v);
-  return p[1]==='search'&&plain(v)&&['kitapyurdu','bkm','nadir','openlibrary','google','anilist','blackwells','betterworld'].includes(v.source)&&['','tr','en','de','fr','ja','es','it','ru','ar','ko','zh','pt'].includes(v.lang);
+  return p[1]==='search'&&plain(v)&&['kitapyurdu','bkm','nadir','openlibrary','google','anilist','blackwells','betterworld','dnb','k10plus','thalia','hugendubel'].includes(v.source)&&['','tr','en','de','fr','ja','es','it','ru','ar','ko','zh','pt'].includes(v.lang);
  }
  function validate(state){
   if(!state||state.schema!==SCHEMA||!validClock(state.clock)||!Array.isArray(state.registers)||state.registers.length>300000||JSON.stringify(state).length>MAX_BYTES)throw Error('The sync copy is invalid or too large.');
