@@ -6,6 +6,11 @@ The GitHub Pages project website remains separate. No ChatGPT account is needed
 for this Cloudflare deployment. A Google account is optional; guest libraries
 and manual JSON backup/restore remain available.
 
+Opening/reloading the hosted page needs an internet connection. An already open
+tab can retain local edits while offline and sync after reconnecting. This target
+does not yet install an offline service-worker cache. Clearing browser storage
+can remove local/unsynced records; keep JSON backups.
+
 ## Build and checks
 
 Use Node.js 24 LTS. No npm install, Python, native packages, database, or paid

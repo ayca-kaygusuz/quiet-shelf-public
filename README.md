@@ -24,6 +24,25 @@ icon `docs/icon.png` is copied unchanged from `desktop/assets/icon.png`;
 update both together when changing the app icon. Google branding setup is
 documented in [Google Drive connection](docs/google-drive.md#public-branding-website).
 
+## Hosted browser deployment
+
+The full browser application has a separate Cloudflare Workers target in
+[`web/`](web/README.md). Run `node web/build.mjs` to build it, or manually run
+**Hosted browser application** from public `main` to test and deploy to the
+maintainer's free Cloudflare account. Cloudflare account/token setup and the
+Google Web client's actual HTTPS callback are required before sign-in works.
+The workflow summary reports the deployed URL and catalog availability.
+
+Hosted libraries stay in the visitor's browser with optional Google Drive sync.
+The server processes OAuth and relays Drive snapshots; the browser runs the same
+validated merge/checkpoint rules as the installed apps to fit the free Worker
+CPU allowance. There is no central library database or ChatGPT login requirement.
+Guest mode, JSON backups, first-sync choices and local recovery remain available.
+Web OAuth credentials are server secrets, never frontend or installer files.
+Updates preserve the server's session-encryption key. Free service limits and
+provider blocks still apply. Real Google consent and two-device sync must be
+checked separately from simulated tests and deployment smoke checks.
+
 ## Windows application
 
 [Download Quiet Shelf for Windows](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
@@ -665,7 +684,8 @@ that browser copy; Drive retains the shared data while it is stopped.
 
 A hosted Worker adapter implements Web OAuth with server-side Web credentials,
 encrypted HttpOnly remembered-session cookies, state/PKCE and the same data
-format. Public hosting deployment remains deferred. The release supplies the Desktop application credentials alongside PKCE; users
+format. The maintained Cloudflare deployment is documented in [web/README.md](web/README.md).
+The release supplies the Desktop application credentials alongside PKCE; users
 only sign in and approve access. Web client credentials remain separate. Kitapyurdu account-list sync is
 not implemented. See [Google Drive setup](docs/google-drive.md) for maintainer
 configuration and the real-account verification checklist.
@@ -707,6 +727,7 @@ Main files:
 | `desktop/app-protocol.mjs` | In-process app/catalog routing and navigation policy |
 | `desktop/updates.mjs` | Saved background-check policy and verified Windows update downloads |
 | `src/releases.mjs` | Shared trusted release metadata and browser update-check adapter |
+| `web/` | Hosted browser build, streaming Drive transport, free Cloudflare deployment and live checks |
 | `scripts/check-windows-update.ps1` | Installed Windows upgrade/restart smoke check |
 | `scripts/build-windows.mjs` | Windows installer packaging |
 | `desktop/installer.nsi` | Per-user installation and data-preserving uninstall |
@@ -750,6 +771,8 @@ them. Building and running the PC app do not require hosting configuration.
 
 Deployment identity in `.openai/hosting.json` is local and ignored by Git.
 Publishing is separate from building and is not performed by `npm run build`.
+The newer standalone hosted target uses `node web/build.mjs`, without embedding
+those distribution ZIPs; see [Hosted browser deployment](#hosted-browser-deployment).
 
 
 ## License and attribution

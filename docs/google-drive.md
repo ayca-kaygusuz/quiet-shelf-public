@@ -1,7 +1,8 @@
 # Google Drive connection
 
 Version 0.19.0 connects Windows, Linux, Android, iPhone/iPad and the local browser app to Google Drive.
-The hosted web OAuth adapter is implemented too; public hosting deployment remains deferred. Libraries and JSON import/export work
+The hosted web OAuth adapter and the free Cloudflare deployment workflow are
+implemented too; see [hosted setup](../web/README.md). Libraries and JSON import/export work
 without an account. No web hosting is required for native sync.
 
 ## Google Cloud setup
@@ -146,6 +147,14 @@ Drive. Update the same folder and keep the same origin/browser profile to retain
 library and sign-in storage. Library records remain local when signed out.
 
 ## Hosted web adapter
+
+Use `web/build.mjs` and the public **Hosted browser application** workflow for
+the maintained Cloudflare target. Its streaming Drive transport keeps snapshot
+validation and merging in the browser to fit the free plan's CPU budget while
+keeping OAuth tokens in encrypted HttpOnly cookies. The local browser and native
+adapters retain their existing protocol and share the same Drive data format.
+Register the deployed URL's callback only after the workflow reports its real
+HTTPS origin. No real Google consent is implied by a successful deployment.
 
 The generated Worker and the Node server share `src/web-account.mjs`. Configure
 the hosted server once with these runtime values:
