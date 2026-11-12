@@ -147,3 +147,15 @@ After registering the callback, check real sign-in and restarting the browser,
 first-sync options, a guest library, Drive → browser and browser → native edits,
 offline changes, account switching/sign-out, JSON backup/restore, and the catalogs
 you need. Use a separate test browser/profile until these pass.
+
+The first hosted rollout passed real Google sign-in, loading the existing Drive
+library, and a web → installed-app theme sync. Automated checks passed on the
+deployed Worker, including the live Google token-endpoint preflight. This does
+not claim every platform/browser, offline case, or catalog was tested manually.
+
+Observed Cloudflare catalog access during rollout: Open Library, DNB, K10plus,
+LovelyBooks and Hugendubel returned results. Kitapyurdu, BKM, Nadir Kitap,
+Thalia, Blackwell's and Better World Books returned access blocks; AniList's
+title query was unavailable. Google Books reported shared quota exhaustion;
+its optional per-browser key remains available. These findings can change
+independently of the application. The native apps use their own connections.

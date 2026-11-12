@@ -27,8 +27,9 @@ documented in [Google Drive connection](docs/google-drive.md#public-branding-web
 ## Hosted browser deployment
 
 The public trial is [Quiet Shelf web preview](https://quiet-shelf.quiet-shelf-e5fd3b33.workers.dev).
-Google sign-in and loading an existing Drive library have been checked in a
-real browser; Google branding verification is pending. Local tracking and JSON
+Google sign-in, loading an existing Drive library, and syncing a changed theme
+from the web app to an installed app have been checked in real use. Google
+branding verification is pending. Local tracking and JSON
 backups are available. Some catalogs block hosted searches, while the native apps continue
 to use their device's connection.
 
