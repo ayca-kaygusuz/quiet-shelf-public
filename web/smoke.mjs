@@ -5,10 +5,10 @@ import {appendFileSync} from 'node:fs';
 const origin=process.env.QUIET_SHELF_WEB_ORIGIN;
 if(!/^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev$/.test(origin||''))throw Error('Use the deployed HTTPS workers.dev origin.');
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-let health;
-for(let attempt=0;attempt<8;attempt++){
- try{const r=await fetch(origin+'/_health',{signal:AbortSignal.timeout(20000)});if(r.ok){health=await r.json();break}}catch{}
- if(attempt===7)throw Error('The deployed app has not become reachable. Retry the smoke check.');await pause(10000);
+let health;const readyDeadline=Date.now()+5*60000;
+for(let attempt=0;;attempt++){
+ try{const r=await fetch(origin+'/_health',{signal:AbortSignal.timeout(10000)});if(r.ok){health=await r.json();break}console.log('Waiting for the new HTTPS endpoint: HTTP '+r.status)}catch(error){console.log('Waiting for HTTPS readiness: '+(error.cause?.code||error.name||'network error'))}
+ if(Date.now()>=readyDeadline)throw Error('The deployed HTTPS endpoint is not reachable after five minutes. Check Cloudflare routing/TLS before retrying.');await pause(10000);
 }
 if(!health.googleConfigured||health.source!==process.env.GITHUB_SHA)throw Error('The deployed source or Google server configuration does not match this run.');
 for(const path of ['/','/account.js','/read-next.js','/sync-core.js','/drive-client.js','/legal.js','/icon.png']){

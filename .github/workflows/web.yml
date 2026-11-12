@@ -27,7 +27,7 @@ jobs:
   deploy:
     if: github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.ref == 'refs/heads/main' && github.event.repository.private == false
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
