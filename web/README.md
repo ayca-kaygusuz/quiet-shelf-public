@@ -85,6 +85,19 @@ console requires it; do not replace working domains. A successful deploy cannot
 change Google client configuration or prove real Google consent. Complete
 Google's production/branding steps separately.
 
+## Web updates
+
+Refreshing loads the current deployment; pushing source alone does not deploy
+it. The hosted update card compares this page's loaded source commit with the
+server's deployed commit. It offers **Refresh app**, without querying GitHub
+release quotas or offering a Windows/browser ZIP. The shared automatic-check
+preference, offline/metered pauses and manual checks still apply. Refresh warns
+before discarding an unfinished form; saved library records remain local.
+
+A new workers.dev address can take several minutes to become reachable over
+HTTPS. The smoke check allows five minutes and reports network/status codes;
+an accepted upload alone is not a successful live deployment.
+
 ## Browser-side merge and free-tier limits
 
 Cloudflare Free currently permits 100,000 dynamic requests/day and a small CPU

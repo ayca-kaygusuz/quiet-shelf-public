@@ -15,6 +15,7 @@ for(const path of ['/','/account.js','/read-next.js','/sync-core.js','/drive-cli
  const r=await fetch(origin+path,{signal:AbortSignal.timeout(20000)});if(!r.ok||r.headers.get('Cache-Control')!=='no-store')throw Error('A required app route failed: '+path);
 }
 const status=await (await fetch(origin+'/api/account/status')).json();if(status.account||status.mode!=='web'||status.syncTransport!=='browser-v1')throw Error('A new browser must start signed out with the hosted sync transport.');
+const update=await (await fetch(origin+'/api/update-check?source='+process.env.GITHUB_SHA)).json();if(update.phase!=='up-to-date'||update.mode!=='hosted')throw Error('Hosted update checks must compare the deployed website, without GitHub download metadata.');
 const start=await fetch(origin+'/api/account/start',{redirect:'manual',signal:AbortSignal.timeout(20000)}),authorization=new URL(start.headers.get('Location')||origin);
 if(start.status!==303||authorization.hostname!=='accounts.google.com'||authorization.searchParams.get('redirect_uri')!==origin+'/api/account/callback'||authorization.searchParams.get('code_challenge_method')!=='S256')throw Error('The Google sign-in boundary failed.');
 if(!start.headers.get('Set-Cookie')?.includes('HttpOnly')||!start.headers.get('Set-Cookie')?.includes('Secure'))throw Error('Google login cookies must be secure and HttpOnly.');

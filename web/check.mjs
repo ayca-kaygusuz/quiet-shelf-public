@@ -14,7 +14,7 @@ const originalFetch=globalThis.fetch,build=buildHosted(),bundle=readFileSync(bui
 assert(!bundle.includes('google-client.generated.json'));assert(!bundle.includes('atob(downloads'));
 const shipped=(await import(pathToFileURL(build.output))).default;
 const origin='https://quiet-shelf.example.workers.dev',clientId='123456-webclient.apps.googleusercontent.com';
-const env={QUIET_SHELF_PUBLIC_ORIGIN:origin,QUIET_SHELF_GOOGLE_WEB_CLIENT_ID:clientId,QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET:'test-only-web-secret',QUIET_SHELF_SESSION_KEY:Buffer.alloc(32,42).toString('base64')};
+const env={QUIET_SHELF_PUBLIC_ORIGIN:origin,QUIET_SHELF_BUILD_SHA:'a'.repeat(40),QUIET_SHELF_GOOGLE_WEB_CLIENT_ID:clientId,QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET:'test-only-web-secret',QUIET_SHELF_SESSION_KEY:Buffer.alloc(32,42).toString('base64')};
 assert.equal((await shipped.fetch(new Request(origin+'/'),env)).status,200);
 assert.equal((await shipped.fetch(new Request(origin+'/'))).status,403);
 let response=await shipped.fetch(new Request(origin+'/'),env);const html=await response.text();
@@ -26,6 +26,9 @@ assert.equal((await shipped.fetch(new Request(origin+'/credentials.json'),env)).
 assert.equal((await shipped.fetch(new Request(origin+'/private/browser-session.key'),env)).status,404);
 assert.equal((await shipped.fetch(new Request(origin+'/privacy'),env)).headers.get('Location'),'https://ayca-kaygusuz.github.io/quiet-shelf-public/privacy.html');
 assert(!JSON.stringify(await (await shipped.fetch(new Request(origin+'/_health'),env)).json()).includes('test-only-web-secret'));
+assert(html.includes('globalThis.QuietShelfHostedBuild='));
+assert.equal((await (await shipped.fetch(new Request(origin+'/api/update-check?source='+'a'.repeat(40)),env)).json()).phase,'up-to-date');
+assert.equal((await (await shipped.fetch(new Request(origin+'/api/update-check?source='+'b'.repeat(40)),env)).json()).phase,'available');
 let seen;
 const routing=createHostedWorker({html:'',assets:{},icon:'',catalogHandler:async request=>{seen=request;return Response.json({results:[]})},accountFactory:()=>({handle:async request=>{seen=request;return Response.json({})}})});
 await routing.fetch(new Request(origin+'/api/books?source=google&q=test',{headers:{Cookie:'private=1',Authorization:'private','X-Google-Api-Key':'test-only-key'}}),env);
@@ -37,13 +40,16 @@ assert.equal((await routing.fetch(new Request(origin+'/api/account/start',{heade
 
 // Exercise real encrypted Web OAuth cookies and the browser merge transport
 // against simulated Google endpoints. No real user or Google token is used.
-const files=new Map(),calls=[],jar=new Map();let sequence=0,failUpload=false;
+const files=new Map(),calls=[],jar=new Map();let sequence=0,failUpload=false,authFailure='';
 const S=globalThis.QuietShelfSync;
 const provider=async(url,settings={})=>{
  const u=new URL(url);calls.push({url:String(url),method:settings.method||'GET'});
  assert.equal(new Headers(settings.headers).get('Cookie'),null);
- if(u.hostname==='oauth2.googleapis.com')return Response.json({access_token:'test-access',refresh_token:'test-refresh',scope:'openid email profile https://www.googleapis.com/auth/drive.appdata'});
- if(u.hostname==='openidconnect.googleapis.com')return Response.json({sub:'101',email:'reader@example.invalid',email_verified:true,name:'Test reader'});
+ if(u.hostname==='oauth2.googleapis.com'){
+  if(authFailure==='network')throw Error('private-test-token should never appear in an error');
+  return Response.json({access_token:'test-access',...(authFailure==='remember'?{}:{refresh_token:'test-refresh'}),scope:authFailure==='permission'?'openid email profile':'openid email profile https://www.googleapis.com/auth/drive.appdata'});
+ }
+ if(u.hostname==='openidconnect.googleapis.com')return authFailure==='profile'?Response.json({error:'private-test-token'},{status:403}):Response.json({sub:'101',email:'reader@example.invalid',email_verified:true,name:'Test reader'});
  assert.equal(u.hostname,'www.googleapis.com');assert.equal(new Headers(settings.headers).get('Authorization'),'Bearer test-access');
  if(u.pathname==='/drive/v3/files')return Response.json({files:[...files].map(([id,state])=>({id,version:'1',size:JSON.stringify(state).length}))});
  if(u.pathname==='/upload/drive/v3/files'){
@@ -79,6 +85,12 @@ result=await client.QuietShelfHostedSync.sync({accountId:'101',state:local});ass
 response=await call('/api/account/drive/create',{method:'POST',headers:{...driveHeaders,'X-Quiet-Shelf-Account-Id':'101','Content-Length':String(S.MAX_BYTES+1)},body:'{}'});assert.equal(response.status,413);
 response=await call('/api/account/sync',{method:'POST',headers:{...driveHeaders,'X-Quiet-Shelf-Account-Id':'101'},body:JSON.stringify({accountId:'101',state:local})});assert.equal(response.status,409);
 assert(!clientSource.includes('test-refresh'));assert(!clientSource.includes('test-only-web-secret'));
+for(const [failure,code]of [['permission','GOOGLE_DRIVE_PERMISSION'],['profile','GOOGLE_PROFILE_HTTP_403'],['remember','GOOGLE_REMEMBERED_ACCESS'],['network','GOOGLE_TOKEN_EXCHANGE']]){
+ jar.clear();authFailure=failure;response=await call('/api/account/start');const login=new URL(response.headers.get('Location'));
+ await call('/api/account/callback?'+new URLSearchParams({state:login.searchParams.get('state'),code:'test-only-code'}));
+ const outcome=await (await call('/api/account/status')).json();assert(outcome.error.includes(code));assert(!outcome.error.includes('private-test-token'));assert(!outcome.error.includes('test-refresh'));assert.equal(outcome.account,null);
+}
+authFailure='';
 
 // Upload metadata must retain an existing session secret on every deployment.
 for(const existingKey of [false,true]){

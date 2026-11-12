@@ -3,13 +3,13 @@
 
 import {catalog} from '../src/catalog.mjs';
 import {createWebAccount} from '../src/web-account.mjs';
-import {APP_VERSION,createBrowserReleaseHandler} from '../src/releases.mjs';
+import {APP_VERSION} from '../src/releases.mjs';
 
 const project='https://ayca-kaygusuz.github.io/quiet-shelf-public/';
 const release='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest';
 const policy="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests";
 
-export function createHostedWorker({html,assets,icon,catalogHandler=catalog,accountFactory=createWebAccount,releaseHandler=createBrowserReleaseHandler()}){
+export function createHostedWorker({html,assets,icon,catalogHandler=catalog,accountFactory=createWebAccount}){
   function secure(response){
     const headers=new Headers(response.headers);
     headers.set('X-Content-Type-Options','nosniff');
@@ -39,7 +39,11 @@ export function createHostedWorker({html,assets,icon,catalogHandler=catalog,acco
           const headers=new Headers(request.headers);headers.delete('oai-authenticated-user-id');
           return secure(await accountFactory(env,{browserMerge:true}).handle(new Request(request,{headers})));
         }
-        if(u.pathname==='/api/update-check')return secure(await releaseHandler(request));
+        if(u.pathname==='/api/update-check'){
+          if(!isGet)return secure(new Response('Method not allowed',{status:405}));
+          const loaded=u.searchParams.get('source'),source=env.QUIET_SHELF_BUILD_SHA||'';
+          return secure(Response.json({phase:loaded&&loaded!==source?'available':'up-to-date',version:APP_VERSION,source,checkedAt:Date.now(),mode:'hosted'}));
+        }
         if(u.pathname==='/api/books'||u.pathname==='/api/book'){
           const headers=new Headers(),key=request.headers.get('X-Google-Api-Key');
           if(u.searchParams.get('source')==='google'&&key)headers.set('X-Google-Api-Key',key);
@@ -48,7 +52,11 @@ export function createHostedWorker({html,assets,icon,catalogHandler=catalog,acco
         return secure(new Response('Not found',{status:404}));
       }
       if(!isGet&&!isHead)return secure(new Response('Method not allowed',{status:405,headers:{Allow:'GET, HEAD'}}));
-      if(u.pathname==='/')return secure(new Response(isHead?null:html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));
+      if(u.pathname==='/'){
+        const config=JSON.stringify({version:APP_VERSION,source:/^[a-f0-9]{40}$/.test(env.QUIET_SHELF_BUILD_SHA||'')?env.QUIET_SHELF_BUILD_SHA:''});
+        const page=html.replace('<script src="/read-next.js">','<script>globalThis.QuietShelfHostedBuild='+config+';</script><script src="/read-next.js">');
+        return secure(new Response(isHead?null:page,{headers:{'Content-Type':'text/html; charset=utf-8'}}));
+      }
       if(Object.hasOwn(assets,u.pathname))return secure(new Response(isHead?null:assets[u.pathname],{headers:{'Content-Type':'application/javascript; charset=utf-8'}}));
       if(u.pathname==='/icon.png'||u.pathname==='/favicon.ico')return secure(new Response(isHead?null:Uint8Array.from(atob(icon),c=>c.charCodeAt(0)),{headers:{'Content-Type':'image/png'}}));
       if(u.pathname==='/privacy'||u.pathname==='/terms')return secure(Response.redirect(project+u.pathname.slice(1)+'.html',302));

@@ -45,12 +45,20 @@ export function createWebAccount(env={},options={}){
   if(action==='callback'&&request.method==='GET'){
    const login=await open('login');cookie('login','',0);
    if(!login||u.searchParams.get('state')!==login.state)return new Response('This sign-in response is invalid or expired. Return to Quiet Shelf and sign in again.',{status:403,headers});
+   let stage='GOOGLE_TOKEN_EXCHANGE';
    try{
-    if(u.searchParams.has('error')||!u.searchParams.get('code'))throw Error('Google sign-in was cancelled.');
-    const tokens=await exchangeGoogleCode({...configuration,code:u.searchParams.get('code'),redirectURI:login.redirectURI,verifier:login.verifier},fetcher),identity=await googleIdentity(tokens.access_token,fetcher);
-    if(typeof tokens.refresh_token!=='string')throw Error('Google did not allow a remembered connection. Sign in again.');
+    if(u.searchParams.has('error')||!u.searchParams.get('code')){const error=Error('Google sign-in was cancelled. Start sign-in again when ready.');error.code='GOOGLE_CANCELLED';throw error}
+    const tokens=await exchangeGoogleCode({...configuration,code:u.searchParams.get('code'),redirectURI:login.redirectURI,verifier:login.verifier},fetcher);
+    stage='GOOGLE_ACCOUNT_DETAILS';const identity=await googleIdentity(tokens.access_token,fetcher);
+    if(typeof tokens.refresh_token!=='string'){const error=Error('Google did not allow a remembered connection. Sign in again and approve the requested access.');error.code='GOOGLE_REMEMBERED_ACCESS';throw error}
+    stage='GOOGLE_REMEMBER_CONNECTION';
     cookie('session',await seal({clientId:configuration.clientId,account:identity,refreshToken:tokens.refresh_token,expires:Date.now()+180*86400000},'session'),180*86400);
-   }catch(error){const message=error.code?error.message:'Google sign-in could not be completed. Try signing in again.';cookie('outcome',await seal({clientId:configuration.clientId,message,expires:Date.now()+60000},'outcome'),60)}
+   }catch(error){
+    const code=/^(GOOGLE_[A-Z_]+(?:_\d{3})?|SIGN_IN_REQUIRED)$/.test(error.code||'')?error.code:stage;
+    const safeMessages={GOOGLE_DRIVE_PERMISSION:'Google Drive app-data permission was not granted. Sign in again and approve the Drive permission.',GOOGLE_PROFILE_INCOMPLETE:'Google did not provide a verified email address. Sign in again and allow the basic account details.',GOOGLE_REMEMBERED_ACCESS:'Google did not allow a remembered connection. Sign in again and approve the requested access.',GOOGLE_CANCELLED:'Google sign-in was cancelled. Start again when ready.',GOOGLE_REMEMBER_CONNECTION:'This browser connection could not be saved. Your local library is kept.',GOOGLE_ACCOUNT_DETAILS:'Google account details could not be checked. Try signing in again.',GOOGLE_TOKEN_EXCHANGE:'Google authorization could not be exchanged. Try signing in again.',SIGN_IN_REQUIRED:'Google could not accept this sign-in attempt. Start sign-in again.',GOOGLE_CLIENT_CONFIGURATION:'The hosted Google connection needs a configuration fix. Your local library is kept.',GOOGLE_AUTH_UNAVAILABLE:'Google could not be reached. Try again when online.'};
+    const message=(safeMessages[code]||(/^GOOGLE_PROFILE_HTTP_\d{3}$/.test(code)?'Google account details could not be reached. Try signing in again.':'Google sign-in could not finish. Your local library is kept.'))+' ['+code+']';
+    cookie('outcome',await seal({clientId:configuration.clientId,message,expires:Date.now()+60000},'outcome'),60);
+   }
    return redirect('/?account=connected');
   }
   if(request.method!=='POST')return json({error:'Method not allowed'},405);

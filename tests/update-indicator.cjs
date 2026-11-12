@@ -1,20 +1,21 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const html=fs.readFileSync('src/index.html','utf8'),script=html.match(/<script>([\s\S]*)<\/script>/)[1];
-function launch(protocol='quiet-shelf:',saved={}){
+function launch(protocol='quiet-shelf:',saved={},hosted=false){
  const elements={},requests=[],timers=new Map(),storage={'quiet-shelf-google-key-v1':'test-only-google-key','quiet-shelf-v1':JSON.stringify([{id:'saved',title:'My book',author:'',status:'Unread',history:[]}]),...saved};
  let state={phase:'idle',visible:false},clock=100000,nextTimer=0,rejectAction=false;
  const element=s=>{if(!elements[s]){let text='';const node={value:'',innerHTML:'',textWrites:0,hidden:false,disabled:false,className:'',style:{},attrs:{},setAttribute(k,v){this.attrs[k]=v},removeAttribute(k){delete this.attrs[k]},addEventListener(){},querySelector:()=>({disabled:false}),focus(){this.focused=true}};Object.defineProperty(node,'textContent',{get:()=>text,set:value=>{text=value;node.textWrites++}});elements[s]=node}return elements[s]};
  class AppDate extends Date{static now(){return clock}}
- const context={console,URL,Date:AppDate,AbortController,crypto:require('node:crypto').webcrypto,location:{protocol,hostname:protocol==='quiet-shelf:'?'app':'localhost'},navigator:{onLine:true,connection:{saveData:false}},
+ const context={console,URL,Date:AppDate,AbortController,crypto:require('node:crypto').webcrypto,location:{protocol,hostname:protocol==='quiet-shelf:'?'app':'localhost'},navigator:{onLine:true,connection:{saveData:false}},QuietShelfHostedBuild:hosted?{source:'a'.repeat(40),version:'0.21.0'}:undefined,
   setTimeout:fn=>{timers.set(++nextTimer,fn);return nextTimer},clearTimeout:id=>timers.delete(id),
   localStorage:{getItem:k=>storage[k],setItem:(k,v)=>storage[k]=v,removeItem:k=>delete storage[k]},
   document:{querySelector:element,querySelectorAll:()=>[],addEventListener(){}},
-  fetch:async(url,options)=>{requests.push({url,options});if(url==='/api/update-check'){if(rejectAction)throw Error('Unavailable');return {ok:true,json:async()=>({phase:'available',version:'0.99.0',checkedAt:clock})}}if(url.startsWith('/api/update-action')){if(rejectAction)throw Error('Unavailable');if(url.endsWith('action=check'))state={phase:'checking',visible:true}}return {ok:true,json:async()=>({...state})}}
+  fetch:async(url,options)=>{requests.push({url,options});if(url.split('?')[0]==='/api/update-check'){if(rejectAction)throw Error('Unavailable');return {ok:true,json:async()=>({phase:'available',version:'0.99.0',checkedAt:clock})}}if(url.startsWith('/api/update-action')){if(rejectAction)throw Error('Unavailable');if(url.endsWith('action=check'))state={phase:'checking',visible:true}}return {ok:true,json:async()=>({...state})}}
  };
  vm.createContext(context);vm.runInContext(script,context);
  return {element,requests,storage,run:s=>vm.runInContext(s,context),state(value){state=value},clock(value){clock=value},reject(value){rejectAction=value}};
 }
 (async()=>{
+ const hosted=launch('https:',{},true);assert.match(hosted.element('#accountUpdateSummary').textContent,/Refreshing loads/);assert.equal(hosted.element('#accountWindowsDownload').hidden,true);assert.match(hosted.element('#updateInlineStatus').textContent,/latest deployed web version/);await hosted.element('#checkUpdates').onclick();assert(hosted.requests.some(r=>r.url==='/api/update-check?source='+'a'.repeat(40)));assert.match(hosted.element('#updateInlineStatus').textContent,/Refresh to load/);assert.equal(hosted.element('#browserUpdateDownload').textContent,'Refresh app');assert.equal(hosted.element('#browserUpdateDownload').href,'/');assert.equal(hosted.element('#updateCard').hidden,true);hosted.element('#autoUpdateChecks').checked=false;hosted.element('#autoUpdateChecks').onchange();assert.match(hosted.element('#updateCheckPolicy').textContent,/checks are off/);
  const browser=launch('http:');assert.equal(browser.requests.length,0,'browser version never polls the native updater');
  assert.match(html,/<button id="desktopUpdates"[^>]*hidden/);assert.match(html,/<section id="updateCard"[^>]*hidden/);
  browser.element('#autoUpdateChecks').checked=false;browser.element('#autoUpdateChecks').onchange();assert.equal(browser.run('QuietShelfApp.backup().preferences.autoUpdateChecks'),false);assert.match(browser.element('#updateCheckPolicy').textContent,/checks are off/);assert.equal(browser.requests.length,0);
