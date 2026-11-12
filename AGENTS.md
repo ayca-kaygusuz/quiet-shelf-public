@@ -36,7 +36,11 @@ Never replace actual library counts or chart values with illustrative data.
 Keep the browser version and standalone desktop version available, sharing
 `src/` for interface and catalog behavior. The desktop app has a separate local
 profile, with optional Google Drive sync now explicitly requested. Browser Google sign-in and first-sync choices share the Windows behavior. Public
-web hosting deployment remains deferred. iPhone/iPad is implemented in `ios/`. Android is implemented
+web hosting is authorized through the free Cloudflare deployment in `web/`.
+Use its manual public-main workflow; preserve the session key and keep runtime
+credentials out of source and frontend bundles. The older private ChatGPT Site
+is separate; never change its audience as part of Cloudflare deployment.
+iPhone/iPad is implemented in `ios/`. Android is implemented
 in `android/` using the same shared source and data format. Keep guest and Google-account workspaces
 separate, credentials out of the renderer, and Google Books keys device-local.
 Keep browser and Windows development aligned: implement common features,

@@ -1,0 +1,53 @@
+name: Hosted browser application
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloudflareAccountId:
+        description: Cloudflare account ID (or use the CLOUDFLARE_ACCOUNT_ID variable)
+        type: string
+        default: ''
+      googleWebClientId:
+        description: Public Google Web client ID (or use the repository variable / Web JSON secret)
+        type: string
+        default: ''
+      workerName:
+        description: Public Worker name within your workers.dev subdomain
+        type: string
+        default: quiet-shelf
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quiet-shelf-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'ayca-kaygusuz/quiet-shelf-public' && github.ref == 'refs/heads/main' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '24'
+      - name: Check shared app and hosted boundaries
+        run: |
+          npm test
+      - name: Build the hosted app without native credentials
+        run: node web/build.mjs
+      - name: Deploy to the existing free Cloudflare account
+        id: deploy
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflareAccountId || vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          QUIET_SHELF_GOOGLE_WEB_CLIENT_ID: ${{ inputs.googleWebClientId || vars.QUIET_SHELF_GOOGLE_WEB_CLIENT_ID }}
+          QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET: ${{ secrets.QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET }}
+          QUIET_SHELF_WORKER_NAME: ${{ inputs.workerName }}
+        run: node web/deploy.mjs
+      - name: Check the deployed app, OAuth boundary, and catalog availability
+        env:
+          QUIET_SHELF_WEB_ORIGIN: ${{ steps.deploy.outputs.origin }}
+        run: node web/smoke.mjs
