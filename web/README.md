@@ -129,6 +129,14 @@ workaround without the user's explicit agreement.
 ## Release verification
 
 The workflow verifies static/script routes, version/source, anonymous status,
+and a token-endpoint request from the actual deployed Worker using a nonexistent
+refresh token. An `invalid_grant` response proves the runtime can reach Google
+and authenticate the application without using any real user's credentials.
+The cached health result exposes only ready/failed and a safe error code.
+The hosted adapter converts unsupported workerd `redirect: error` requests to
+manual redirects and rejects redirect responses before credentials can follow.
+The simulated runtime tests enforce this behavior for OAuth and Drive calls.
+It also checks
 OAuth start/callback configuration, and each catalog without real user data.
 The active hosted checks use simulated Google and Cloudflare services to test
 encrypted sessions, origin/header/key isolation, browser/server round trips,

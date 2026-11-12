@@ -11,6 +11,7 @@ for(let attempt=0;;attempt++){
  if(Date.now()>=readyDeadline)throw Error('The deployed HTTPS endpoint is not reachable after five minutes. Check Cloudflare routing/TLS before retrying.');await pause(10000);
 }
 if(!health.googleConfigured||health.source!==process.env.GITHUB_SHA)throw Error('The deployed source or Google server configuration does not match this run.');
+const googleHealth=await (await fetch(origin+'/_health?google=1',{signal:AbortSignal.timeout(30000)})).json();if(googleHealth.googleConnection?.state!=='ready')throw Error('The deployed Worker could not authenticate its Google application connection: '+(googleHealth.googleConnection?.code||'unavailable'));
 for(const path of ['/','/account.js','/read-next.js','/sync-core.js','/drive-client.js','/legal.js','/icon.png']){
  const r=await fetch(origin+path,{signal:AbortSignal.timeout(20000)});if(!r.ok||r.headers.get('Cache-Control')!=='no-store')throw Error('A required app route failed: '+path);
 }

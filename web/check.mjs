@@ -6,7 +6,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {pathToFileURL} from 'node:url';
 import {buildHosted} from './build.mjs';
-import {createHostedWorker} from './worker.mjs';
+import {createHostedWorker,workerFetch} from './worker.mjs';
 import {deployHosted} from './deploy.mjs';
 import {createWebAccount} from '../src/web-account.mjs';
 
@@ -46,6 +46,7 @@ const provider=async(url,settings={})=>{
  const u=new URL(url);calls.push({url:String(url),method:settings.method||'GET'});
  assert.equal(new Headers(settings.headers).get('Cookie'),null);
  if(u.hostname==='oauth2.googleapis.com'){
+  if(settings.body.get('refresh_token')==='quiet-shelf-runtime-preflight-not-a-user-token')return Response.json({error:'invalid_grant'},{status:400});
   if(authFailure==='network')throw Error('private-test-token should never appear in an error');
   return Response.json({access_token:'test-access',...(authFailure==='remember'?{}:{refresh_token:'test-refresh'}),scope:authFailure==='permission'?'openid email profile':'openid email profile https://www.googleapis.com/auth/drive.appdata'});
  }
@@ -62,7 +63,9 @@ const provider=async(url,settings={})=>{
  if(settings.method==='DELETE'){files.delete(id);return new Response(null,{status:204})}
  assert(files.has(id));return Response.json(files.get(id));
 };
-const worker=createHostedWorker({html:'',assets:{},icon:'',accountFactory:(environment,options)=>createWebAccount(environment,{...options,fetcher:provider})});
+globalThis.fetch=function(input,settings={}){assert.equal(this,globalThis,'workerd fetch must retain its global receiver');assert.notEqual(settings.redirect,'error','workerd rejects redirect:error before any network request');return provider(input,settings)};
+const runtimeFetch=globalThis.fetch;
+const worker=createHostedWorker({html:'',assets:{},icon:''});
 function remember(r){for(const item of r.headers.getSetCookie()){const pair=item.split(';')[0],i=pair.indexOf('='),k=pair.slice(0,i),v=pair.slice(i+1);if(item.includes('Max-Age=0'))jar.delete(k);else jar.set(k,v)}}
 async function call(path,settings={}){const headers=new Headers(settings.headers);headers.set('Cookie',[...jar].map(([k,v])=>k+'='+v).join('; '));const r=await worker.fetch(new Request(origin+path,{...settings,headers}),env);remember(r);return r}
 response=await call('/api/account/start');const authorization=new URL(response.headers.get('Location'));assert.equal(authorization.hostname,'accounts.google.com');
@@ -91,6 +94,10 @@ for(const [failure,code]of [['permission','GOOGLE_DRIVE_PERMISSION'],['profile',
  const outcome=await (await call('/api/account/status')).json();assert(outcome.error.includes(code));assert(!outcome.error.includes('private-test-token'));assert(!outcome.error.includes('test-refresh'));assert.equal(outcome.account,null);
 }
 authFailure='';
+const runtimeHealth=await (await worker.fetch(new Request(origin+'/_health?google=1'),env)).json();assert.equal(runtimeHealth.googleConnection.state,'ready');
+let redirectRequests=0;
+globalThis.fetch=function(input,settings){assert.equal(this,globalThis);assert.equal(settings.redirect,'manual');redirectRequests++;return Response.redirect('https://other.example.invalid/',302)};
+await assert.rejects(()=>workerFetch('https://oauth2.googleapis.com/token',{method:'POST',redirect:'error',body:'synthetic-credential'}),/redirects are not allowed/);assert.equal(redirectRequests,1,'credentialed redirects must never be followed');globalThis.fetch=runtimeFetch;
 
 // Upload metadata must retain an existing session secret on every deployment.
 for(const existingKey of [false,true]){

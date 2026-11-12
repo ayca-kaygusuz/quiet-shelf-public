@@ -2,14 +2,31 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {catalog} from '../src/catalog.mjs';
-import {createWebAccount} from '../src/web-account.mjs';
+import {createWebAccount,googleWebConfiguration} from '../src/web-account.mjs';
+import {refreshGoogleToken} from '../src/google-oauth.mjs';
 import {APP_VERSION} from '../src/releases.mjs';
 
 const project='https://ayca-kaygusuz.github.io/quiet-shelf-public/';
 const release='https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest';
 const policy="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests";
 
+// workerd rejects redirect:'error' before making a request. Preserve the same
+// security boundary with manual redirects, never following a credentialed hop.
+export async function workerFetch(input,settings={}){
+  const rejectRedirects=(settings.redirect||input?.redirect)==='error';
+  const response=await globalThis.fetch(input,{...settings,...(rejectRedirects?{redirect:'manual'}:{})});
+  if(rejectRedirects&&([301,302,303,307,308].includes(response.status)||response.type==='opaqueredirect'))throw Error('Credentialed upstream redirects are not allowed.');
+  return response;
+}
+
 export function createHostedWorker({html,assets,icon,catalogHandler=catalog,accountFactory=createWebAccount}){
+  let googleProbe=null;
+  async function checkGoogle(env){
+    if(!googleProbe||Date.now()-googleProbe.checkedAt>300000)googleProbe={checkedAt:Date.now(),result:(async()=>{
+      try{const config=googleWebConfiguration({clientId:env.QUIET_SHELF_GOOGLE_WEB_CLIENT_ID,credentialValue:env.QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET});await refreshGoogleToken({...config,refreshToken:'quiet-shelf-runtime-preflight-not-a-user-token'},workerFetch);return {state:'failed',code:'UNEXPECTED_RESPONSE'}}catch(error){return error.oauthError==='invalid_grant'?{state:'ready'}:{state:'failed',code:/^[A-Z_0-9]{1,80}$/.test(error.code||'')?error.code:'NETWORK_OR_RUNTIME'}}
+    })()};
+    return googleProbe.result;
+  }
   function secure(response){
     const headers=new Headers(response.headers);
     headers.set('X-Content-Type-Options','nosniff');
@@ -26,7 +43,7 @@ export function createHostedWorker({html,assets,icon,catalogHandler=catalog,acco
       if(!env.QUIET_SHELF_PUBLIC_ORIGIN||u.origin!==env.QUIET_SHELF_PUBLIC_ORIGIN)return secure(new Response('Invalid app origin',{status:403}));
       if(u.protocol!=='https:')return secure(new Response('HTTPS is required',{status:403}));
       const isGet=request.method==='GET',isHead=request.method==='HEAD';
-      if(u.pathname==='/_health'&&isGet)return secure(Response.json({version:APP_VERSION,source:env.QUIET_SHELF_BUILD_SHA||'',service:'Quiet Shelf',googleConfigured:!!(env.QUIET_SHELF_GOOGLE_WEB_CLIENT_ID&&env.QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET&&env.QUIET_SHELF_SESSION_KEY)}));
+      if(u.pathname==='/_health'&&isGet)return secure(Response.json({version:APP_VERSION,source:env.QUIET_SHELF_BUILD_SHA||'',service:'Quiet Shelf',googleConfigured:!!(env.QUIET_SHELF_GOOGLE_WEB_CLIENT_ID&&env.QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET&&env.QUIET_SHELF_SESSION_KEY),...(u.searchParams.get('google')==='1'?{googleConnection:await checkGoogle(env)}:{})}));
       if(u.pathname.startsWith('/api/')){
         const origin=request.headers.get('Origin'),site=request.headers.get('Sec-Fetch-Site');
         // OAuth callbacks intentionally arrive from Google; account state/PKCE
@@ -37,7 +54,7 @@ export function createHostedWorker({html,assets,icon,catalogHandler=catalog,acco
         // headers. Account isolation here is bound to the encrypted cookie/origin.
         if(u.pathname.startsWith('/api/account/')){
           const headers=new Headers(request.headers);headers.delete('oai-authenticated-user-id');
-          return secure(await accountFactory(env,{browserMerge:true}).handle(new Request(request,{headers})));
+          return secure(await accountFactory(env,{browserMerge:true,fetcher:workerFetch}).handle(new Request(request,{headers})));
         }
         if(u.pathname==='/api/update-check'){
           if(!isGet)return secure(new Response('Method not allowed',{status:405}));
