@@ -23,7 +23,8 @@ if(!start.headers.get('Set-Cookie')?.includes('HttpOnly')||!start.headers.get('S
 const findings=[];
 for(const source of ['kitapyurdu','bkm','nadir','openlibrary','google','dnb','k10plus','thalia','hugendubel','lovelybooks','blackwells','betterworld','anilist']){
  try{
-  const r=await fetch(origin+'/api/books?'+new URLSearchParams({source,q:'9780747532743',lang:''}),{signal:AbortSignal.timeout(30000)});
+  const q=source==='anilist'?'gachiakuta':source==='hugendubel'?'Harry Potter':'9780747532743';
+  const r=await fetch(origin+'/api/books?'+new URLSearchParams({source,q,lang:''}),{signal:AbortSignal.timeout(30000)});
   let data;try{data=await r.json()}catch{}
   const finding={source,status:r.status,results:Array.isArray(data?.results)?data.results.length:null,code:typeof data?.code==='string'?data.code:''};findings.push(finding);console.log(JSON.stringify(finding));
  }catch{findings.push({source,status:'unreachable',results:null,code:''});console.log(source+': hosted request unavailable')}
