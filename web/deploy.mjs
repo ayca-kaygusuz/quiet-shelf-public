@@ -8,7 +8,7 @@ import {pathToFileURL} from 'node:url';
 import {refreshGoogleToken} from '../src/google-oauth.mjs';
 import {googleWebConfiguration} from '../src/web-account.mjs';
 
-export async function deployHosted({accountId,token,clientId,credential,sourceSHA,name='quiet-shelf',workerSource,fetcher=fetch,randomKey=()=>randomBytes(32).toString('base64'),checkGoogle=true}){
+export async function deployHosted({accountId,token,clientId,credential,sourceSHA,name='quiet-shelf',workerSource,fetcher=fetch,randomKey=()=>randomBytes(32).toString('base64'),newSubdomain=()=> 'quiet-shelf-'+randomBytes(4).toString('hex'),checkGoogle=true}){
  if(!/^[a-f0-9]{32}$/.test(accountId||''))throw Error('Set CLOUDFLARE_ACCOUNT_ID to the account ID from your Cloudflare dashboard.');
  if(typeof token!=='string'||!token.trim()||/[\r\n]/.test(token))throw Error('Save CLOUDFLARE_API_TOKEN as a GitHub Actions secret.');
  if(!/^[a-z][a-z0-9-]{1,40}$/.test(name))throw Error('Choose a short lowercase Worker name using letters, numbers, and hyphens.');
@@ -26,7 +26,11 @@ export async function deployHosted({accountId,token,clientId,credential,sourceSH
   if(!response.ok||data?.success!==true){const codes=(data?.errors||[]).map(e=>Number(e.code)).filter(Number.isFinite).join(',');throw Error(`Cloudflare request failed (HTTP ${response.status}${codes?'; codes '+codes:''}). Check the account ID, Workers token permissions, and free workers.dev setup.`)}
   return data.result;
  }
- const account=await api('/workers/subdomain');
+ let account=await api('/workers/subdomain',{},true);
+ if(!account?.subdomain){
+  const subdomain=newSubdomain();if(!/^quiet-shelf-[a-z0-9-]{1,30}$/.test(subdomain))throw Error('Invalid generated free subdomain.');
+  account=await api('/workers/subdomain',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({subdomain})});
+ }
  if(!/^[a-z0-9][a-z0-9-]{0,62}$/.test(account?.subdomain||''))throw Error('Choose your free workers.dev subdomain in Cloudflare → Workers & Pages, then retry.');
  const origin='https://'+name+'.'+account.subdomain+'.workers.dev',path='/workers/scripts/'+name;
  const previous=await api(path+'/secrets',{},true);

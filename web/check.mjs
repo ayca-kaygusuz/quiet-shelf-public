@@ -95,5 +95,15 @@ for(const existingKey of [false,true]){
  assert.equal(metadata.bindings.some(b=>b.name==='QUIET_SHELF_SESSION_KEY'),!existingKey);
  assert.equal(metadata.bindings.find(b=>b.name==='QUIET_SHELF_GOOGLE_WEB_CLIENT_SECRET').text,'test-only-web-secret');
 }
+let registered=false;
+await deployHosted({accountId:'a'.repeat(32),token:'synthetic-cloudflare-token',clientId,credential:'test-only-web-secret',sourceSHA:'b'.repeat(40),workerSource:bundle,checkGoogle:false,newSubdomain:()=> 'quiet-shelf-test',fetcher:async(url,settings={})=>{
+ if(String(url).endsWith('/workers/subdomain')){
+  if(settings.method==='PUT'){assert.equal(JSON.parse(settings.body).subdomain,'quiet-shelf-test');registered=true;return Response.json({success:true,result:{subdomain:'quiet-shelf-test'}})}
+  return Response.json({success:false},{status:404});
+ }
+ if(String(url).endsWith('/secrets'))return Response.json({success:false},{status:404});
+ return Response.json({success:true,result:{enabled:true}});
+}});
+assert(registered,'new accounts receive a free subdomain without changing existing ones');
 globalThis.fetch=originalFetch;
 console.log('PASS: hosted routes/CSP, private header/key isolation, OAuth/PKCE, encrypted cookie continuity, streaming Drive proxy and browser merge, read-only preview, failed-upload recovery, legacy native protocol, deployment session-key preservation, and no bundled runtime credentials.');

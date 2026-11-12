@@ -33,8 +33,10 @@ Keep generated output outside Git.
    deployment never enables a subscription, buys a domain, or creates paid
    databases/storage. Free request/CPU limits still apply; free hosting is not
    unlimited availability.
-2. Under Workers & Pages, finish onboarding and choose your free `workers.dev`
-   account subdomain if Cloudflare asks. A custom domain is optional.
+2. An existing `workers.dev` account subdomain is preserved. If a new account
+   has none, deployment registers a free `quiet-shelf-` address with a random
+   suffix automatically. No domain is purchased. In the current dashboard,
+   Workers is under Compute; Copy account ID is in the top-right account menu.
 3. Create an API token with **Account → Workers Scripts → Edit** restricted to
    this account. Do not use a Global API key. The token needs to read Workers
    subdomain/settings and create/update the app Worker and its secret bindings.
