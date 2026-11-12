@@ -33,6 +33,48 @@ References: [Desktop OAuth](https://developers.google.com/identity/protocols/oau
 [app-data folder](https://developers.google.com/workspace/drive/api/guides/appdata),
 [production readiness](https://developers.google.com/identity/protocols/oauth2/production-readiness/overview).
 
+## Public branding website
+
+The public repository publishes the static `docs/` directory through GitHub
+Pages. This is an informational project website, not a hosted library or OAuth
+callback server. Keep existing client configuration and redirect URIs intact.
+
+Use these values under Google Auth Platform → Branding:
+
+| Field | Value |
+| --- | --- |
+| App name | Quiet Shelf |
+| Application home page | `https://ayca-kaygusuz.github.io/quiet-shelf-public/` |
+| Application privacy policy link | `https://ayca-kaygusuz.github.io/quiet-shelf-public/privacy.html` |
+| Application terms of service link | `https://ayca-kaygusuz.github.io/quiet-shelf-public/terms.html` |
+| Authorized domain for this site | `ayca-kaygusuz.github.io` (keep any other domains still used by valid clients) |
+| Optional logo | `desktop/assets/icon.png` (square 256 × 256 PNG; use Download raw file on GitHub) |
+
+Choose a monitored Google-supported user-support email in the console. It is
+shown publicly on the consent screen; do not put a personal email into this
+repository just to complete that setting. Developer notification contacts are
+configured in the console too.
+
+If Google requires ownership verification, use Google Search Console while
+signed into the same Google account that owns/edits the Cloud project. For
+this hosted path, start with a **URL-prefix** property for the exact homepage
+URL above and the **HTML tag** method. Add Google's public verification meta
+tag to `docs/index.html`, publish it, and complete Verify in Search Console.
+Keep the tag published. If Google's branding flow asks for a broader ownership
+property, follow the exact property it requests; publishing Pages alone does
+not establish Google ownership or approval. Never try to verify `github.com`
+or the shared `github.io` domain as your own.
+
+Google may require brand verification for the name/logo and domain links even
+though Drive app-data access is non-sensitive. Publishing a website does not
+publish the Google OAuth app or complete that verification. Review Branding,
+then Audience → In production in the Google console. Do not remove valid
+Desktop, Web, Android, or iOS clients as a workaround for branding requirements.
+
+References: [Google branding requirements](https://support.google.com/cloud/answer/15549049?hl=en),
+[Search Console ownership verification](https://support.google.com/webmasters/answer/9008080),
+[GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
+
 ## Release configuration without tracked credentials
 
 The public Windows and Linux workflows read their shared Desktop client ID from Actions variable

@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- Copyright 2026 Alex (Ayca Kaygusuz). SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Quiet Shelf is a free, open-source reading tracker for books, manga and comics. Keep a local library or optionally sync through your own Google Drive.">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#18191f">
+  <title>Quiet Shelf — Your reading life, at your pace</title>
+  <link rel="canonical" href="https://ayca-kaygusuz.github.io/quiet-shelf-public/">
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header class="site-header">
+      <a class="brand" href="./"><img src="icon.png" width="39" height="39" alt="">Quiet Shelf</a>
+      <nav aria-label="Main navigation"><a href="#downloads">Downloads</a><a href="privacy.html">Privacy</a><a href="https://github.com/ayca-kaygusuz/quiet-shelf-public">Source code</a></nav>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-heading">
+        <div>
+          <p class="eyebrow">A little space for everything you read</p>
+          <h1 id="hero-heading">Your reading life,<br>at your pace.</h1>
+          <p class="intro">Books, manga, comics, and the stories you come back to. Keep your shelf and reading history together, without counting every page.</p>
+          <div class="actions"><a class="button primary" href="#downloads">Get Quiet Shelf <span aria-hidden="true">↓</span></a><a class="button" href="#how-it-works">Take a look</a></div>
+          <p class="small">Free and open source. No account required.</p>
+        </div>
+        <aside class="shelf-demo" aria-label="Illustrative reading tracker preview">
+          <div class="demo-top"><img src="icon.png" width="48" height="48" alt=""><div><strong>A shelf that feels like yours</strong><small>Just three reading statuses</small></div></div>
+          <div class="demo-row"><span class="book-spine" aria-hidden="true"></span><div><strong>The next chapter</strong><small>A story for another day</small></div><span class="status">Unread</span></div>
+          <div class="demo-row"><span class="book-spine cyan" aria-hidden="true"></span><div><strong>A story in pictures</strong><small>Your next volume</small></div><span class="status progress">In progress</span></div>
+          <div class="demo-row"><span class="book-spine sage" aria-hidden="true"></span><div><strong>Return to a favourite</strong><small>Every reread remembered</small></div><span class="status done">Done</span></div>
+          <p class="demo-caption">An illustrative shelf, with made-up titles.</p>
+        </aside>
+      </section>
+      <section class="section" id="how-it-works" aria-labelledby="features-heading">
+        <div class="section-heading"><h2 id="features-heading">Less recording. More reading.</h2><span class="small">Your shelf, without the homework.</span></div>
+        <div class="features">
+          <article><span class="feature-number">01 / KEEP YOUR PLACE</span><h3>A library that makes sense.</h3><p>Search book catalogs for your edition, group volumes into series, and keep your wishlist and reading archive separate from the books you own.</p></article>
+          <article><span class="feature-number">02 / REMEMBER THE STORY</span><h3>Every read, and reread.</h3><p>Mark a title unread, in progress, or done. Save start and finish dates, come back for a reread, and see your reading history and library insights.</p></article>
+          <article><span class="feature-number">03 / FIND YOUR NEXT READ</span><h3>A nudge when you want one.</h3><p>Generate a Read next checklist from your unread library. Get a varied mix with the next eligible volume in a series, then watch the list fill up as you finish.</p></article>
+        </div>
+      </section>
+      <section class="section" id="downloads" aria-labelledby="downloads-heading">
+        <div class="section-heading"><h2 id="downloads-heading">Choose your reading space.</h2><a class="small" href="https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest">Latest release &amp; all downloads ↗</a></div>
+        <p class="section-intro">Each version shares the same reading features and backup format. Downloads are hosted on GitHub; the latest release page lists the current packages.</p>
+        <div class="platforms">
+          <article class="platform"><h3>Windows</h3><p>A standalone app for Windows 11 on Intel or AMD PCs. Download the x64 setup <code>.exe</code>, install, and open Quiet Shelf.</p><a class="button" href="https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest">Get the Windows installer ↗</a><p class="small">No Node.js, terminal, or separate server needed. The installer is unsigned, so Windows may show a publisher warning.</p></article>
+          <article class="platform"><h3>Android</h3><p>For Android 8 and later. Download the <code>.apk</code> and open it on your device. Google Drive sign-in requires Google Play services.</p><a class="button" href="https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest">Get the Android APK ↗</a><p class="small">Android may ask you to allow installation from your browser.</p></article>
+          <article class="platform"><h3>Linux</h3><p>For x86-64 desktops. Choose the <code>.deb</code> for Ubuntu, Debian, or Mint, or the portable <code>.tar.gz</code> for a compatible distribution.</p><a class="button" href="https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest">Get the Linux packages ↗</a><p class="small">A system keyring is needed to remember Google sign-in between sessions.</p></article>
+          <article class="platform"><h3>iPhone &amp; iPad</h3><p>A universal app for iOS and iPadOS 17.4 or later, including full-size iPad layouts, portrait, and landscape. Install the unsigned <code>.ipa</code> using AltStore Classic.</p><a class="button" href="https://github.com/ayca-kaygusuz/quiet-shelf-public/blob/main/ios/INSTALL.md">Read the installation guide ↗</a><p class="small">Free personal signing needs refreshing within seven days. This is not a tap-to-install or App Store download.</p></article>
+        </div>
+        <p class="small" style="margin-top:22px">Prefer a browser? The release also includes <code>quiet-shelf-pc.zip</code>, which runs locally using Node.js. <a href="https://github.com/ayca-kaygusuz/quiet-shelf-public#run-locally">Browser setup instructions</a>. This website introduces the project; it does not run your library.</p>
+      </section>
+      <section class="section" aria-labelledby="privacy-heading">
+        <div class="privacy-callout"><p class="eyebrow">Keep it local, or take it with you</p><h2 id="privacy-heading">Your library. Your choice.</h2><p>Use Quiet Shelf without signing in, with JSON backup and restore. If you choose Google sign-in, Quiet Shelf uses your basic account details and its own hidden Google Drive app-data folder to sync your library and preferences across devices. It does not request access to your other Drive files.</p><p>The app syncs while open; your PC does not need to stay on for Google Drive to keep the saved copy. Catalog searches, cover images, and update checks use an internet connection.</p><p><a href="privacy.html">Read the privacy policy</a> · <a href="terms.html">Read the terms</a></p></div>
+      </section>
+      <section class="section" aria-labelledby="open-heading"><h2 id="open-heading">Made to be yours, and open to everyone.</h2><p class="section-intro">Originally created by Alex (Ayca Kaygusuz). Quiet Shelf’s original project material is licensed under Apache-2.0. Explore the code, report a problem, or build on it under the license.</p><div class="actions"><a class="button" href="https://github.com/ayca-kaygusuz/quiet-shelf-public">Explore the source ↗</a><a class="button" href="https://github.com/ayca-kaygusuz/quiet-shelf-public/issues">Help &amp; feedback ↗</a></div></section>
+    </main>
+    <footer class="site-footer"><p>Quiet Shelf · © 2026 Alex (Ayca Kaygusuz)</p><nav aria-label="Footer"><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms</a><a href="https://github.com/ayca-kaygusuz/quiet-shelf-public/blob/main/LICENSE">Apache-2.0</a></nav></footer>
+  </div>
+</body>
+</html>

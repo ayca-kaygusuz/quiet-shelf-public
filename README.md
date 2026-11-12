@@ -6,6 +6,24 @@ JSON. Windows, Linux, Android, iPhone/iPad and browser versions share the same l
 and features. Internet access is used for catalog searches, cover images,
 update checks/downloads and optional Google Drive sync.
 
+## Project website
+
+[Quiet Shelf](https://ayca-kaygusuz.github.io/quiet-shelf-public/) introduces the
+app and links to the latest downloads, [privacy policy](https://ayca-kaygusuz.github.io/quiet-shelf-public/privacy.html),
+and [terms](https://ayca-kaygusuz.github.io/quiet-shelf-public/terms.html).
+It is a static informational site hosted on GitHub Pages, not a hosted instance
+of the reading app. It contains no sign-in, analytics, external font requests,
+or library storage. Native and local-browser behavior remains unchanged.
+
+The site source is `docs/index.html`, `docs/privacy.html`, `docs/terms.html`,
+and `docs/site.css`. The public repository's Pages source is `main` → `/docs`;
+`docs/.nojekyll` keeps these files static. The private mirror retains the same
+source without a Pages deployment. Keep the policy consistent with actual
+app behavior and update its effective date when practices change. The website
+icon `docs/icon.png` is copied unchanged from `desktop/assets/icon.png`;
+update both together when changing the app icon. Google branding setup is
+documented in [Google Drive connection](docs/google-drive.md#public-branding-website).
+
 ## Windows application
 
 [Download Quiet Shelf for Windows](https://github.com/ayca-kaygusuz/quiet-shelf-public/releases/latest).
