@@ -1,3 +1,4 @@
+import {checkCoversUI} from './check-covers-ui.mjs';
 import {checkLibraryViewUI} from './check-library-view-ui.mjs';
 import {checkReadNextUI} from './check-read-next-ui.mjs';
 import assert from 'node:assert/strict';
@@ -19,6 +20,7 @@ try{
  await checkUpdatePolicyUI({evaluate,prefix:'browser-update-policy',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkThemeUI({evaluate,prefix:'browser-theme',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkLibraryViewUI({evaluate});
+ await checkCoversUI({evaluate});
  await checkReadNextUI({evaluate,prefix:'browser-read-next',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkFirstSyncUI({evaluate,prefix:'browser-first-sync',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile('work/windows/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});

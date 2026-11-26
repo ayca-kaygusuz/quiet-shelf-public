@@ -1,0 +1,11 @@
+// Copyright 2026 Alex (Ayca Kaygusuz)
+// SPDX-License-Identifier: Apache-2.0
+import assert from 'node:assert/strict';
+export async function checkCoversUI({evaluate}){
+ await evaluate(`(()=>{window.__coverQA=QuietShelfApp.snapshot();const b=(id,title,cover)=>({id,title,cover,author:'Cover test',status:'Unread',history:[]});QuietShelfApp.apply({library:[b('legacy','Dreamers of the Full Moon Coffee Shop','https://covers.openlibrary.org/b/olid/OL61802124M-M.jpg?default=false'),b('missing','No cover recorded',''),b('roman1','Erşan Kuneri - Senaryo 1',''),b('roman2','Erşan Kuneri - Senaryo 2',''),b('roman3','Erşan Kuneri Senaryo III',''),b('roman4','Erşan Kuneri Senaryo IV','')],preferences:{theme:'ink',autoUpdateChecks:false}});document.querySelector('#backToLibrary').click();window.__coverRecords=JSON.stringify(QuietShelfApp.snapshot().library);return true})()`);
+ try{
+  let result=await evaluate(`(()=>{document.querySelectorAll('img.bookcover').forEach(img=>img.dispatchEvent(new Event('error')));render();showResults([books.find(b=>b.id==='legacy')]);return {images:document.querySelectorAll('#list img.bookcover,#detail img.bookcover,#lookupResults img.bookcover').length,list:document.querySelector('[data-id="legacy"] .cover').textContent,search:document.querySelector('#lookupResults .cover').textContent,missing:document.querySelector('[data-id="missing"] .cover').textContent,groups:document.querySelectorAll('.series-heading').length,volumes:[...document.querySelectorAll('.volume-label')].map(e=>e.textContent),unchanged:JSON.stringify(QuietShelfApp.snapshot().library)===window.__coverRecords}})()`);
+  assert.equal(result.images,0);assert.equal(result.list,'D');assert.equal(result.search,'D');assert.equal(result.missing,'N');assert.equal(result.groups,1);assert.deepEqual(result.volumes,['Volume 1','Volume 2','Volume 3','Volume 4']);assert.equal(result.unchanged,true);
+  console.log('PASS: real DOM cover fallback in list/details/search and mixed Arabic/Roman series, with saved records intact');
+ }finally{await evaluate(`QuietShelfApp.apply(window.__coverQA);document.querySelector('#lookupResults').hidden=true;delete window.__coverQA;delete window.__coverRecords;true`)}
+}

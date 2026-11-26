@@ -1,13 +1,10 @@
-Quiet Shelf 0.18.0 adds the native Linux app while keeping Windows, Android and browser releases on the same shared source and library format.
+Quiet Shelf 0.21.1 fixes missing covers and mixed Arabic/Roman series grouping across browser, Windows, Linux, Android and iPhone/iPad.
 
-- Linux x64 downloads: an installable `.deb` for Ubuntu/Debian-based desktops and a portable `.tar.gz` for other compatible Linux desktops. Both bundle the runtime and retain the offline license/attribution notices; no separate Node.js or browser server is needed.
-- Reuse the existing Desktop Google client. GNOME Secret Service/KDE KWallet remembers sign-in securely; without a usable keyring, sign-in is session-only and no plaintext refresh token is saved. Guest/account separation, first-sync choices and recovery remain shared.
-- Use NetworkManager metered state when available, alongside the existing manual connection control. Sync and automatic update checks pause on metered/offline connections.
-- Linux update checks honor the saved preference and manual button. Requested packages are SHA-256 verified, then Show downloaded package lets you install the `.deb` or replace the portable folder. The app does not launch privileged installation commands or force a restart.
-- Rebuild Windows, Android and browser packages from the same current source. The library/backup/Drive format is unchanged from 0.17.0, including checklist/exclusion and view preferences. Existing published binaries remain immutable.
+- Open Library uses recorded edition cover IDs. Editions without cover metadata show the normal title placeholder rather than a guessed image URL.
+- Failed images fall back to the same placeholder in the library, details and catalog results. This also handles old saved cover URLs; no re-adding or library migration is needed.
+- Automatic series grouping recognizes canonical Roman volume numbers. Erşan Kuneri - Senaryo 1 and 2 now group with Erşan Kuneri Senaryo III and IV. Language separation and manual/standalone overrides remain intact.
+- Shared library, reading history, backup and Google Drive formats are unchanged. All maintained platform packages are rebuilt from the same source.
 
-Linux's installed profile is ~/.config/Quiet Shelf (or XDG_CONFIG_HOME/Quiet Shelf). Upgrades/removing the application files preserve it; keep JSON backups. The portable build requires system Electron libraries and Chromium sandbox support; use the Debian package on Ubuntu hosts that restrict portable user namespaces.
+Validation includes the active regression suite, recorded/missing Open Library cover metadata, legacy saved image failures, real browser/native DOM fallback and mixed numeral grouping. Native release workflows check Windows/browser startup and installed updates, Linux startup/keyring/profile persistence, Android emulator behavior, and iPhone/iPad Simulator layouts. Physical-device installation and interactive Google consent remain separate checks.
 
-Validation covers the shared regression suite, native Linux interface and profile restart, Linux OS-keyring encryption across process restarts, Debian/portable package contents and notices, Windows/browser runtime/install checks, and the Android emulator. Interactive Google consent and system file-picker checks still depend on the user's desktop/device.
-
-Original project material remains Apache-2.0, credited to Alex (Ayca Kaygusuz). Third-party notices remain intact, including the pinned Android compatibility runtime source archive beside the APK.
+Original project material remains Apache-2.0, credited to Alex (Ayca Kaygusuz). Third-party notices and the pinned Android compatibility runtime source remain included.

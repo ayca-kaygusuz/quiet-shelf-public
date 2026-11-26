@@ -1,3 +1,4 @@
+import {checkCoversUI} from './check-covers-ui.mjs';
 import {checkLibraryViewUI} from './check-library-view-ui.mjs';
 import {checkReadNextUI} from './check-read-next-ui.mjs';
 // Runs against an isolated native CI app launched with a loopback DevTools port.
@@ -37,6 +38,7 @@ try{
  await checkUpdatePolicyUI({evaluate,prefix:'native-update-policy',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile(output+'/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkThemeUI({evaluate,prefix:'native-theme',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile(output+'/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkLibraryViewUI({evaluate});
+ await checkCoversUI({evaluate});
  await checkReadNextUI({evaluate,prefix:'native-read-next',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile(output+'/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  await checkFirstSyncUI({evaluate,prefix:'native-first-sync',capture:async name=>{const size=await evaluate(`({width:innerWidth,height:Math.min(document.documentElement.scrollHeight,2000)})`),shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,...size,scale:1}});await writeFile(output+'/'+name+'.png',Buffer.from(shot.data,'base64'))}});
  console.log('PASS: actual native account/assets/update bridges, configured Desktop client, Account navigation, visible download card and both themes');

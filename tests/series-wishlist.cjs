@@ -57,3 +57,22 @@ direct.element('#seriesVolume').value='2';direct.element('#detail').onclick({tar
 assert.equal(direct.run('current().seriesMode'),'manual');assert.equal(direct.run('current().seriesId'),directId);assert.equal(direct.run('knownSeries().size'),1);
 assert.equal(app(JSON.parse(direct.storage['quiet-shelf-v1'])).run("books.find(b=>b.id==='auto2').seriesId"),directId);
 console.log('PASS: existing-series picker stays usable in automatic/standalone; opening/cancelling leaves mode intact; selecting a name activates manual mode and Save preserves group identity');
+
+// Existing mixed Arabic/Roman titles are inferred together without changing their records.
+const kuneriTitles=['Erşan Kuneri - Senaryo 1','Erşan Kuneri - Senaryo 2','Erşan Kuneri Senaryo III','Erşan Kuneri Senaryo IV'];
+let kuneriRecords=kuneriTitles.map((title,i)=>({...record('kuneri'+i,title,'library','tr'),...(i===0?{status:'Done',history:[{id:'reading',date:'2026-01-02',startDate:'2026-01-01'}]}:{})}));
+let kuneri=app(kuneriRecords);
+assert.equal(kuneri.run('knownSeries().size'),1);
+assert.equal(kuneri.run('[...knownSeries().values()][0].books.length'),4);
+assert.deepEqual(JSON.parse(kuneri.run('JSON.stringify(books.map(b=>seriesInfo(b).volume))')),[1,2,3,4]);
+assert.equal((kuneri.element('#list').innerHTML.match(/class="volume-label"/g)||[]).length,4);
+assert.equal(kuneri.storage['quiet-shelf-v1'],JSON.stringify(kuneriRecords),'inference must not rewrite saved records');
+assert.deepEqual(JSON.parse(kuneri.run('JSON.stringify(books.map(b=>({id:b.id,title:b.title,status:b.status,dates:b.history.map(h=>[h.startDate,h.date])})))')),kuneriRecords.map(b=>({id:b.id,title:b.title,status:b.status,dates:b.history.map(h=>[h.startDate,h.date])})));
+const beforeInference=kuneri.run('JSON.stringify(books)');kuneri.run('knownSeries();render()');assert.equal(kuneri.run('JSON.stringify(books)'),beforeInference);
+for(const [title,volume] of [['Example Vol. IV',4],['Example III. Cilt',3],['Example cilt I',1],['Example IX',9],['Erşan Kuneri Senaryo V',5]])assert.equal(kuneri.run(`inferSeries(${JSON.stringify(title)}).volume`),volume);
+for(const title of ['Malcolm X','World War I','Vitamin D','Example IIII','Example IC','Example MIXED','Example iii','Example MMXXIV'])assert.equal(kuneri.run(`inferSeries(${JSON.stringify(title)})`),null,title);
+let kuneriOverrides=app([...kuneriRecords,{...record('other-lang',kuneriTitles[2],'library','en')},{...record('no-series',kuneriTitles[3]),seriesMode:'none'},{...record('manual',kuneriTitles[3]),seriesMode:'manual',seriesName:'My custom collection',seriesVolume:9}]);
+assert.equal(kuneriOverrides.run('[...knownSeries().values()][0].books.length'),4);
+assert.equal(kuneriOverrides.run("seriesInfo(books.find(b=>b.id==='no-series'))"),null);
+assert.equal(kuneriOverrides.run("seriesInfo(books.find(b=>b.id==='manual')).name"),'My custom collection');
+console.log('PASS: existing Erşan Kuneri Arabic/Roman volumes group together; strict numerals, language boundaries and manual overrides remain intact');
