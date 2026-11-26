@@ -54,4 +54,4 @@ for(const theme of Object.keys(JSON.parse(themeNames))){
  assert(contrast(palette.danger,palette['danger-surface'])>=4.5,theme+' danger actions');
  assert.equal(new Set(['unread','progress','done'].map(k=>palette[k])).size,3,theme+' uses distinct status colors');
 }
-console.log('PASS: all six theme selections persist, restore and sync without changing books; text, chart labels, status badges and primary actions meet 4.5:1 contrast');
+console.log('PASS: all 12 theme selections persist, restore and sync without changing books; text, chart labels, status badges and primary actions meet 4.5:1 contrast');

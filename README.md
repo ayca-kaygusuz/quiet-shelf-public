@@ -276,10 +276,10 @@ with **Any language**, while manually chosen language filters remain remembered.
 ### Themes
 
 Choose a palette in the header’s Theme menu. Dark options are **Dark Ink**,
-**Midnight Tide** (navy/sea-glass) and **Rosewood** (plum/dusty rose). Light options
-are **Paper Grove**, **Porcelain** (cool white/blue) and **Apricot Hour**
-(warm cream/terracotta). Every palette keeps the same rounded, flat layout,
-readable status colors and chart separators. Theme choices stay on this device,
+**Midnight Tide**, **Rosewood**, **Evergreen**, **Aubergine**, and **Ember**.
+Light options are **Paper Grove**, **Porcelain**, **Apricot Hour**,
+**Lavender Haze**, **Golden Linen**, and **Sea Glass**. Every palette keeps
+the same rounded, flat layout, readable status colors and chart separators. Theme choices stay on this device,
 travel with JSON backups and optional Drive sync, and never change book records.
 Use current browser and Windows versions when syncing the new palette names.
 
@@ -414,9 +414,8 @@ completion dates. Existing records from earlier versions remain in My library.
 ## Interface, themes and insights
 
 The interface uses rounded panels, compact book rows, flat solid colors and
-bundled Manrope type. **Dark Ink** is the default charcoal/violet theme;
-**Paper Grove** provides a lighter alternative with the same layout and charts.
-Use the Theme selector in the header to switch. The font is embedded so loading
+bundled Manrope type. **Dark Ink** is the default. The header’s Theme menu
+offers the same 12 palettes as Quiet Screen and Quiet Quill. The font is embedded so loading
 it does not contact a font service. Its license is in `assets/Manrope-OFL.txt`.
 
 **Library insights** shows a reading-status ring with real title counts and a
